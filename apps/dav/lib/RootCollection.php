@@ -35,6 +35,7 @@ use OCA\DAV\Connector\Sabre\Principal;
 use OCA\DAV\DAV\GroupPrincipalBackend;
 use OCA\DAV\DAV\SystemPrincipalBackend;
 use OCA\DAV\CalDAV\Principal\Collection;
+use OCA\DAV\Provisioning\Apple\AppleProvisioningNode;
 use Sabre\DAV\SimpleCollection;
 
 class RootCollection extends SimpleCollection {
@@ -126,6 +127,8 @@ class RootCollection extends SimpleCollection {
 		$avatarCollection = new Avatars\RootCollection($userPrincipalBackend, 'principals/users');
 		$avatarCollection->disableListing = $disableListing;
 
+		$appleProvisioning = new AppleProvisioningNode();
+
 		$children = [
 				new SimpleCollection('principals', [
 						$userPrincipals,
@@ -147,7 +150,10 @@ class RootCollection extends SimpleCollection {
 				$systemTagRelationsCollection,
 				$commentsCollection,
 				$uploadCollection,
-				$avatarCollection
+				$avatarCollection,
+				new SimpleCollection('provisioning', [
+					$appleProvisioning
+				])
 		];
 
 		parent::__construct('root', $children);
