@@ -363,7 +363,7 @@ class FilesReportPlugin extends ServerPlugin {
 		}
 		*/
 
-		return \OCA\Circles\Api\v1\Circles::getObjectIdsForCircles($circlesIds);
+		return \OCA\Circles\Api\v1\Circles::getFilesForCircles($circlesIds);
 	}
 
 	/**
