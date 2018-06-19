@@ -2,9 +2,9 @@ const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader');
 
 module.exports = {
-  entry: path.join(__dirname, 'main.js'),
+  entry: path.join(__dirname, 'src', 'main.js'),
   output: {
-    path: path.resolve(__dirname, '../js'),
+    path: path.resolve(__dirname, './js'),
     publicPath: '/js',
     filename: 'oauth2.js'
   },
@@ -13,6 +13,12 @@ module.exports = {
       {
         test: /\.vue$/,
         loader: 'vue-loader',
+      },
+      {
+        test: /\.css$/,
+        use: [
+            'css-loader'
+        ]
       }
     ]
   },

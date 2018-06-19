@@ -64,3 +64,9 @@ export default {
 	}
 }
 </script>
+
+<style lang="css">
+	* {
+		color: red;
+	}
+</style>
