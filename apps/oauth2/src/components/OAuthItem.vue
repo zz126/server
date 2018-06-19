@@ -67,6 +67,6 @@ export default {
 
 <style lang="css">
 	* {
-		color: red;
+		color: blue;
 	}
 </style>
