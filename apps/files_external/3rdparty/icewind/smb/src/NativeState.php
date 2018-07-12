@@ -74,6 +74,7 @@ class NativeState {
 		}
 		$this->state = smbclient_state_new();
 		smbclient_option_set($this->state, SMBCLIENT_OPT_AUTO_ANONYMOUS_LOGIN, false);
+		smbclient_option_set($this->state, SMBCLIENT_OPT_TIMEOUT, 200 * 1000);
 		$result = @smbclient_state_init($this->state, $workGroup, $user, $password);
 
 		$this->testResult($result, '');
