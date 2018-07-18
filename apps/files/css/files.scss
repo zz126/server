@@ -412,7 +412,7 @@ table td.selection {
 
 /* Use label to have bigger clickable size for checkbox */
 #fileList tr td.selection>.selectCheckBox + label,
-.select-all + label {
+#fileList .select-all + label {
 	padding: 16px;
 }
 
