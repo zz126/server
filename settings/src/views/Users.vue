@@ -23,6 +23,19 @@
 <template>
 	<div id="content" class="app-settings">
 		<app-navigation :menu="menu">
+
+			<template slot="pinned-content">
+
+					<li id="quota" class="pinned first-pinned" has-tooltip title="Server-Diskusage">
+						<a href="#" class="icon-quota svg">
+							<p id="quotatext">{{t('settings', 'Serverstorage-Usage')}}</p>
+							<div class="quota-container">
+								<progress id="progressbar" value="0" max="100"></progress>
+							</div>
+						</a>
+					</li>
+			</template>
+
 			<template slot="settings-content">
 				<div>
 					<p>{{t('settings', 'Default quota :')}}</p>
@@ -32,7 +45,6 @@
 								:allowEmpty="false" :taggable="true"
 								@tag="validateQuota" @input="setDefaultQuota">
 					</multiselect>
-
 				</div>
 				<div>
 					<input type="checkbox" id="showLanguages" class="checkbox" v-model="showLanguages">
@@ -82,6 +94,7 @@ export default {
 			userCount: this.$store.getters.getServerData.userCount
 		});
 		this.$store.dispatch('getPasswordPolicyMinLength');
+		this.getServerDiskUsage();
 	},
 	data() {
 		return {
@@ -170,6 +183,31 @@ export default {
 			}
 			// if no valid do not change
 			return false;
+		},
+
+		getServerDiskUsage(){
+			console.log("getstorage");
+
+			api.get(OC.generateUrl('settings/storage/get'))
+				.then((response) => {
+
+					console.log(response.data);
+
+					$('#progressbar').attr("value", response.data['used-relative']);
+
+					var overlaystring=t('settings', 'Current Serverusage:')+"\n";
+					overlaystring+=t('settings', 'Usage relative:')+"\n";
+					overlaystring+=response.data['used-relative']+"\n";
+					overlaystring+=t('settings', 'Usage absolute:')+"\n";
+					overlaystring+=response.data['used-absolute']+"\n";
+
+					$('#quota').attr("title", overlaystring);
+
+				})
+				.catch((error) => {
+					console.log(error);
+				});
+
 		},
 	},
 	computed: {

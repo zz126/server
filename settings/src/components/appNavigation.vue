@@ -28,6 +28,11 @@
 		<ul :id="menu.id">
 			<navigation-item v-for="item in menu.items" :item="item" :key="item.key" />
 		</ul>
+
+		<ul>
+			<slot name="pinned-content"></slot>
+		</ul>
+
 		<div id="app-settings" v-if="!!$slots['settings-content']">
 			<div id="app-settings-header">
 				<button class="settings-button"

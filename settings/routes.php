@@ -80,7 +80,8 @@ $application->registerRoutes($this, [
 		['name' => 'AdminSettings#index', 'url' => '/settings/admin/{section}', 'verb' => 'GET', 'defaults' => ['section' => 'server']],
 		['name' => 'AdminSettings#form', 'url' => '/settings/admin/{section}', 'verb' => 'GET'],
 		['name' => 'ChangePassword#changePersonalPassword', 'url' => '/settings/personal/changepassword', 'verb' => 'POST'],
-		['name' => 'ChangePassword#changeUserPassword', 'url' => '/settings/users/changepassword', 'verb' => 'POST']
+		['name' => 'ChangePassword#changeUserPassword', 'url' => '/settings/users/changepassword', 'verb' => 'POST'],
+		['name' => 'AdminSettings#getServerStorage', 'url' => '/settings/storage/get', 'verb' => 'GET']
 	]
 ]);
 

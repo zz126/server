@@ -1177,3 +1177,27 @@ $popovericon-size: 16px;
 		}
 	}
 }
+
+#quota {
+	margin: 0 !important;
+	border: none;
+	border-radius: 0;
+	background-color: transparent;
+	z-index:1;
+
+	.quota-container {
+		height: 5px;
+		border-radius: var(--border-radius);
+
+		div {
+			height: 100%;
+			background-color: var(--color-primary);
+		}
+	}
+}
+
+#quotatext {
+	padding: 0;
+	height: 30px;
+	line-height: 30px;
+}
