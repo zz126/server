@@ -41,6 +41,13 @@
 		fileList: null,
 
 		/**
+		 * File details view
+		 *
+		 * @member {OCA.Files.DetailsView}
+		 */
+		detailsView: null,
+
+		/**
 		 * Backbone model for storing files preferences
 		 */
 		_filesConfig: null,
