@@ -600,6 +600,7 @@ kbd {
 	position: relative;
 	flex-basis: 100vw;
 	min-height: 100%;
+	width: calc(63vw - 250px);
 	/* margin if navigation element is here */
 	#app-navigation:not(.hidden) + & {
 		margin-left: $navigation-width;
