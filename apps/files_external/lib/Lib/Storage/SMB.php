@@ -172,15 +172,7 @@ class SMB extends Common implements INotifyStorage {
 			foreach ($files as $file) {
 				$this->statCache[$path . '/' . $file->getName()] = $file;
 			}
-			return array_filter($files, function (IFileInfo $file) {
-				try {
-					return !$file->isHidden();
-				} catch (ForbiddenException $e) {
-					return false;
-				} catch (NotFoundException $e) {
-					return false;
-				}
-			});
+			return $files;
 		} catch (ConnectException $e) {
 			\OC::$server->getLogger()->logException($e, ['message' => 'Error while getting folder content']);
 			throw new StorageNotAvailableException($e->getMessage(), $e->getCode(), $e);
