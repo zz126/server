@@ -304,12 +304,15 @@ class UsersController extends Controller {
 		$disksize=$usedByUser+$free;
 
 		$formatted['total-disksize-absolute']=$disksize;
+		$formatted['total-disksize-human']=\OC_Helper::humanFileSize($disksize);
 		$formatted['overall-assigned-absolute']=$sizeAssigned;
 		$formatted['overall-assigned-relative']=($sizeAssigned/$disksize)*100;
 		$formatted['used-absolute']=$usedByUser;
 		$formatted['used-relative']=($usedByUser/$disksize)*100;
+		$formatted['used-human']=\OC_Helper::humanFileSize($usedByUser);
 		$formatted['free-absolute']=$free;
 		$formatted['free-relative']=($free/$disksize)*100;
+		$formatted['free-human']=\OC_Helper::humanFileSize($free);
 
 		return $formatted;
 

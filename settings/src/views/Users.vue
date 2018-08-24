@@ -26,7 +26,7 @@
 
 			<template slot="pinned-content">
 
-					<li id="quota" class="pinned first-pinned" has-tooltip title="Server-Diskusage">
+					<li id="quota" class="pinned first-pinned" has-tooltip title="">
 						<a href="#" class="icon-quota svg">
 							<p id="quotatext">{{t('settings', 'Serverstorage-Usage')}}</p>
 							<div class="quota-container">
@@ -184,34 +184,18 @@ export default {
 			// if no valid do not change
 			return false;
 		},
-
-
-		calcSize(){
-
-			return this.$store.getters.getUserCount;
-		},
 		getServerDiskUsage(){
-			console.log("getstorage");
-			console.log("users :");
-
 			api.get(OC.generateUrl('/settings/storage/get'))
 				.then((response) => {
-					console.log("resp:");
-					console.log(response.data);
-					console.log(response);
-
 
 					$('#progressbar').attr("value", response.data['used-relative']);
 
-					var overlaystring=t('settings', 'Current Serverusage:')+"\n";
-					overlaystring+=t('settings', 'Usage absolute:')+"\n";
-					overlaystring+=response.data['used-absolute']+"\n";
-					overlaystring+=t('settings', 'Free absolute:')+"\n";
-					overlaystring+=response.data['free-absolute']+"\n";
-					overlaystring+=t('settings', 'overall-assigned absolute:')+"\n";
-					overlaystring+=response.data['overall-assigned-absolute']+"\n";
+					$('#quota').attr("title", t('settings',"Server - Diskusage"));
 
-					$('#quota').attr("title", overlaystring);
+					var translation=t('settings','%s of %s used');
+					translation=translation.replace("%s",response.data['used-human']);
+					translation=translation.replace("%s",response.data['total-disksize-human']);
+					$('#quotatext').html(translation);
 
 				})
 				.catch((error) => {
