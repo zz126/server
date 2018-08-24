@@ -65,6 +65,7 @@ $application->registerRoutes($this, [
 		['name' => 'Users#setUserSettings', 'url' => '/settings/users/{username}/settings', 'verb' => 'PUT'],
 		['name' => 'Users#getVerificationCode', 'url' => '/settings/users/{account}/verify', 'verb' => 'GET'],
 		['name' => 'Users#usersList', 'url' => '/settings/users', 'verb' => 'GET'],
+		['name' => 'Users#usersList', 'url' => '/settings/users', 'verb' => 'GET'],
 		['name' => 'Users#usersListByGroup', 'url' => '/settings/users/{group}', 'verb' => 'GET'],
 		['name' => 'LogSettings#setLogLevel', 'url' => '/settings/admin/log/level', 'verb' => 'POST'],
 		['name' => 'LogSettings#getEntries', 'url' => '/settings/admin/log/entries', 'verb' => 'GET'],
@@ -81,7 +82,7 @@ $application->registerRoutes($this, [
 		['name' => 'AdminSettings#form', 'url' => '/settings/admin/{section}', 'verb' => 'GET'],
 		['name' => 'ChangePassword#changePersonalPassword', 'url' => '/settings/personal/changepassword', 'verb' => 'POST'],
 		['name' => 'ChangePassword#changeUserPassword', 'url' => '/settings/users/changepassword', 'verb' => 'POST'],
-		['name' => 'AdminSettings#getServerStorage', 'url' => '/settings/storage/get', 'verb' => 'GET']
+		['name' => 'Users#getDetailedServerStorageInfos', 'url' => '/settings/storage/get', 'verb' => 'GET']
 	]
 ]);
 

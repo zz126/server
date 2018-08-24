@@ -108,30 +108,4 @@ class AdminSettingsController extends Controller {
 		return $out->fetchPage();
 	}
 
-
-
-	/**
-	 *
-	 * @return array
-	 */
-	public function getServerStorage() {
-
-
-
-		$storageInfo= \OC_Helper::getStorageInfo('/');
-
-
-		$formatted['stifo']=$storageInfo;
-		$formatted['used-absolute']="50";
-		$formatted['used-relative']="50";
-		$formatted['free-absolute']="10";
-		$formatted['free-relative']="10";
-		$formatted['overall-absolute']="60";
-		$formatted['overall-relative']="60";
-		$formatted['oversize-absolute']="0";
-		$formatted['oversize-relative']="0";
-
-		return $formatted;
-	}
-
 }

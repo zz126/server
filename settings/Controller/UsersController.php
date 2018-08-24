@@ -41,6 +41,7 @@ namespace OC\Settings\Controller;
 
 use OC\Accounts\AccountManager;
 use OC\AppFramework\Http;
+use OC\Files\View;
 use OC\ForbiddenException;
 use OC\Security\IdentityProof\Manager;
 use OCP\App\IAppManager;
@@ -49,6 +50,7 @@ use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\BackgroundJob\IJobList;
 use OCP\Encryption\IManager;
+use OCP\Files\Config\IUserMountCache;
 use OCP\IConfig;
 use OCP\IGroupManager;
 use OCP\IL10N;
@@ -91,6 +93,8 @@ class UsersController extends Controller {
 	private $jobList;
 	/** @var IManager */
 	private $encryptionManager;
+	/** @var IUserMountCache */
+	private $mountCache;
 
 
 	public function __construct(string $appName,
@@ -107,7 +111,8 @@ class UsersController extends Controller {
 								AccountManager $accountManager,
 								Manager $keyManager,
 								IJobList $jobList,
-								IManager $encryptionManager) {
+								IManager $encryptionManager,
+								IUserMountCache $mountCache) {
 		parent::__construct($appName, $request);
 		$this->userManager = $userManager;
 		$this->groupManager = $groupManager;
@@ -122,6 +127,7 @@ class UsersController extends Controller {
 		$this->keyManager = $keyManager;
 		$this->jobList = $jobList;
 		$this->encryptionManager = $encryptionManager;
+		$this->mountCache = $mountCache;
 	}
 
 
@@ -247,6 +253,66 @@ class UsersController extends Controller {
 		$serverData['canChangePassword'] = $canChangePassword;
 
 		return new TemplateResponse('settings', 'settings-vue', ['serverData' => $serverData]);
+	}
+
+
+	/**
+	 *
+	 * Display users list template
+	 *
+	 * @return Array Contains StorageValues
+	 */
+	public function getDetailedServerStorageInfos() {
+
+		$userlist=array();
+
+		$function = function (IUser $user) use (&$userlist) {
+			array_push($userlist, $user);
+		};
+		$this->userManager->callForAllUsers($function, '', false);
+
+		$usedByUserList=$this->mountCache->getUsedSpaceForUsers($userlist);
+		$free = (new View(''))->free_space('');
+
+
+		$usedByUser=0;
+		foreach($usedByUserList as $user){
+			$usedByUser+=$user;
+		}
+
+
+		$sizeAssigned=0;
+
+		for($i=0; $i<sizeof($userlist);$i++){
+
+			$humanReadableSize=preg_split("([\s])",$userlist[$i]->getQuota());
+
+			$size=0;
+
+			switch($humanReadableSize[1]){
+				case "B": $size=$humanReadableSize[0]; break;
+				case "KB": $size=$humanReadableSize[0]*1024; break;
+				case "MB": $size=$humanReadableSize[0]*1048576;break;
+				case "GB": $size=$humanReadableSize[0]*1073741824;break;
+				case "TB": $size=$humanReadableSize[0]*1099511627776;break;
+				case "none": break;
+			}
+
+			$sizeAssigned+=$size;
+		}
+
+		$disksize=$usedByUser+$free;
+
+		$formatted['total-disksize-absolute']=$disksize;
+		$formatted['overall-assigned-absolute']=$sizeAssigned;
+		$formatted['overall-assigned-relative']=($sizeAssigned/$disksize)*100;
+		$formatted['used-absolute']=$usedByUser;
+		$formatted['used-relative']=($usedByUser/$disksize)*100;
+		$formatted['free-absolute']=$free;
+		$formatted['free-relative']=($free/$disksize)*100;
+
+		return $formatted;
+
 	}
 
 	/**

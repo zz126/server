@@ -185,21 +185,31 @@ export default {
 			return false;
 		},
 
+
+		calcSize(){
+
+			return this.$store.getters.getUserCount;
+		},
 		getServerDiskUsage(){
 			console.log("getstorage");
+			console.log("users :");
 
-			api.get(OC.generateUrl('settings/storage/get'))
+			api.get(OC.generateUrl('/settings/storage/get'))
 				.then((response) => {
-
+					console.log("resp:");
 					console.log(response.data);
+					console.log(response);
+
 
 					$('#progressbar').attr("value", response.data['used-relative']);
 
 					var overlaystring=t('settings', 'Current Serverusage:')+"\n";
-					overlaystring+=t('settings', 'Usage relative:')+"\n";
-					overlaystring+=response.data['used-relative']+"\n";
 					overlaystring+=t('settings', 'Usage absolute:')+"\n";
 					overlaystring+=response.data['used-absolute']+"\n";
+					overlaystring+=t('settings', 'Free absolute:')+"\n";
+					overlaystring+=response.data['free-absolute']+"\n";
+					overlaystring+=t('settings', 'overall-assigned absolute:')+"\n";
+					overlaystring+=response.data['overall-assigned-absolute']+"\n";
 
 					$('#quota').attr("title", overlaystring);
 
@@ -207,7 +217,6 @@ export default {
 				.catch((error) => {
 					console.log(error);
 				});
-
 		},
 	},
 	computed: {
