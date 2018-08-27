@@ -218,6 +218,7 @@ class ViewController extends Controller {
 		}
 		$nav->assign('total_space', $totalSpace);
 		$nav->assign('quota', $storageInfo['quota']);
+		$nav->assign('usage_relative_unprecise', round($storageInfo['relative'], 1));
 		$nav->assign('usage_relative', $storageInfo['relative']);
 
 		$contentItems = [];
@@ -312,4 +313,5 @@ class ViewController extends Controller {
 		}
 		throw new \OCP\Files\NotFoundException();
 	}
+
 }
