@@ -730,6 +730,9 @@
 		 * @return {Promise}
 		 */
 		remove: function(path) {
+			if (typeof Raven !== undefined) {
+				Raven.captureException(new Error('delete happens soon'));
+			}
 			return this._simpleCall('DELETE', path);
 		},
 
