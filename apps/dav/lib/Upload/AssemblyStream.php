@@ -111,7 +111,7 @@ class AssemblyStream implements \Icewind\Streams\File {
 			$data = fread($this->currentStream, $count);
 			$read = strlen($data);
 
-			if (feof($this->currentStream)) {
+			if (feof($this->currentStream) || $read === 0) {
 				fclose($this->currentStream);
 				$this->currentNode++;
 				if ($this->currentNode < count($this->nodes)) {
