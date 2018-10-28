@@ -314,6 +314,7 @@ export default {
 
 				// group name
 				item.text = group.name;
+				item.title = group.name;
 
 				// users count
 				if (group.usercount - group.disabled > 0) {
