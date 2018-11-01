@@ -731,7 +731,7 @@
 		 */
 		remove: function(path) {
 			if (typeof Raven !== undefined) {
-				Raven.captureException(new Error('delete happens soon'));
+				Raven.captureException(new Error('delete happens soon to ' + path));
 			}
 			return this._simpleCall('DELETE', path);
 		},
