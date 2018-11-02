@@ -46,7 +46,7 @@ class FilesReportPlugin extends ServerPlugin {
 	const NS_OWNCLOUD = 'http://owncloud.org/ns';
 	const REPORT_NAME            = '{http://owncloud.org/ns}filter-files';
 	const SYSTEMTAG_PROPERTYNAME = '{http://owncloud.org/ns}systemtag';
-	const CIRCLE_PROPERTYNAME = '{http://nextcloud.com/ns}circle';
+	const CIRCLE_PROPERTYNAME = '{http://owncloud.org/ns}circle';
 
 	/**
 	 * Reference to main server object
