@@ -3,13 +3,19 @@ const { VueLoaderPlugin } = require('vue-loader');
 
 module.exports = {
   entry: {
-	  'settings-vue': './src/main.js',
+	  'settings-apps-users-management': './src/main-apps-users-management',
 	  'settings-admin-security': './src/main-admin-security'
   },
   output: {
     path: path.resolve(__dirname, './js'),
     publicPath: '/',
-    filename: '[name].js'
+    filename: 'vue-[name].js'
+  },
+  optimization: {
+    splitChunks: {
+      automaticNameDelimiter: '-',
+      chunks: 'all'
+    }
   },
   module: {
     rules: [
