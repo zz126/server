@@ -28,11 +28,11 @@ const testFolder = './test/'
 
 var tests = [
 	'install',
-	'login',
-	'files',
-	'public',
-	'settings',
-	'apps',
+	//'login',
+	//'files',
+	//'public',
+	//'settings',
+	//'apps',
 ]
 
 var args = process.argv.slice(2);
