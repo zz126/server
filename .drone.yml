@@ -777,6 +777,7 @@ pipeline:
       - sudo -u pptruser node runTests.js || true
       - echo "The result can be found at https://s3.bitgrid.net/nextcloud-ui-regression/nextcloud/server/${DRONE_PULL_REQUEST}/index.html"
     shm_size: '1gb'
+    secrets: [ github_token ]
     when:
       matrix:
         TESTS: ui-regression
