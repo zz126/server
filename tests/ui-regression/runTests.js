@@ -89,11 +89,8 @@ function errorJSON (err) {
 	return res;
 }
 
-function updateGithubStatus(failures) {
+function updateGithubStatus(postData) {
 	const http = require('https');
-	let url = `https://ci-assets.nextcloud.com/nextcloud-ui-regression/nextcloud/server/${process.env.DRONE_PULL_REQUEST}/index.html`;
-	let status = failures > 0 ? 'failure' : 'success';
-	let description = failures > 0 ? failures + ' possible UI regressions found' : 'UI regression tests passed';
 	var options = {
 		host: 'api.github.com',
 		port: 443,
@@ -106,12 +103,8 @@ function updateGithubStatus(failures) {
 		}
 	};
 
-	const postData = {
-	  "state": status,
-	  "target_url": url,
-	  "description": description,
-	  "context": "continuous-integration/ui-regression"
-	};
+	console.log(process.env.DRONE_COMMIT_SHA);
+	console.log(postData);
 
 	const req = http.request(options, function(res) {
 		res.setEncoding('utf8');
@@ -121,6 +114,14 @@ function updateGithubStatus(failures) {
 	});
 	req.end(JSON.stringify(postData));
 }
+
+const postData = {
+	"state": "pending",
+	"target_url": process.env.DRONE_BUILD_LINK,
+	"description": "UI regression tests pending",
+	"context": "continuous-integration/ui-regression"
+};
+updateGithubStatus(postData)
 
 mocha.run()
 	.on('test', function (test) {
@@ -159,7 +160,17 @@ mocha.run()
 		}
 
 		if (process.env.GITHUB_TOKEN) {
-			updateGithubStatus(failures)
+			console.log('Publish test status to github')
+			let url = `https://ci-assets.nextcloud.com/nextcloud-ui-regression/nextcloud/server/${process.env.DRONE_PULL_REQUEST}/index.html`;
+			let status = failures > 0 ? 'failure' : 'success';
+			let description = failures > 0 ? failures + ' possible UI regressions found' : 'UI regression tests passed';
+			const postData = {
+				"state": status,
+				"target_url": url,
+				"description": description,
+				"context": "continuous-integration/ui-regression"
+			};
+			updateGithubStatus(postData)
 		}
 	});
 
