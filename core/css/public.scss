@@ -1,4 +1,4 @@
-$footer-height: 60px;
+$footer-height: 65px;
 
 #body-public {
 	.header-right {
@@ -7,18 +7,7 @@ $footer-height: 60px;
 			color: var(--color-primary-text);
 		}
 
-		.menutoggle,
-		#header-primary-action[class^='icon-'] {
-			padding: 14px;
-			padding-right: 40px;
-			background-position: right 15px center;
-			color: var(--color-primary-text);
-			cursor: pointer;
-		}
-
 		#header-secondary-action {
-			margin-right: 13px;
-
 			ul li {
 				min-width: 270px;
 			}
@@ -75,13 +64,18 @@ $footer-height: 60px;
 		align-items: center;
 		justify-content: center;
 		height: $footer-height;
+		flex-direction: column;
 		p {
+			text-align: center;
 			color: var(--color-text-lighter);
 			a {
 				color: var(--color-text-lighter);
-				font-weight: 600;
+				font-weight: bold;
+				white-space: nowrap;
+				/* increasing clickability to more than the text height */
 				padding: 13px;
 				margin: -13px;
+				line-height: 200%;
 			}
 		}
 	}

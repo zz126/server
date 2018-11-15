@@ -729,6 +729,13 @@ $CONFIG = array(
 'logfile' => '/var/log/nextcloud.log',
 
 /**
+ * Log file mode for the Nextcloud loggin type in octal notation.
+ *
+ * Defaults to 0640 (writeable by user, readable by group).
+ */
+'logfilemode' => 0640,
+
+/**
  * Loglevel to start logging at. Valid values are: 0 = Debug, 1 = Info, 2 =
  * Warning, 3 = Error, and 4 = Fatal. The default value is Warning.
  *
@@ -952,6 +959,7 @@ $CONFIG = array(
  *
  *  - OC\Preview\BMP
  *  - OC\Preview\GIF
+ *  - OC\Preview\HEIC
  *  - OC\Preview\JPEG
  *  - OC\Preview\MarkDown
  *  - OC\Preview\MP3
@@ -963,6 +971,7 @@ $CONFIG = array(
 	'OC\Preview\PNG',
 	'OC\Preview\JPEG',
 	'OC\Preview\GIF',
+	'OC\Preview\HEIC',
 	'OC\Preview\BMP',
 	'OC\Preview\XBitmap',
 	'OC\Preview\MP3',
@@ -1504,7 +1513,7 @@ $CONFIG = array(
  * If set incorrectly, a client can spoof their IP address as visible to
  * Nextcloud, bypassing access controls and making logs useless!
  *
- * Defaults to ``'HTTP_X_FORWARED_FOR'``
+ * Defaults to ``'HTTP_X_FORWARDED_FOR'``
  */
 'forwarded_for_headers' => array('HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR'),
 
@@ -1632,4 +1641,11 @@ $CONFIG = array(
 	'/^Microsoft-WebDAV-MiniRedir/', // Windows webdav drive
 ),
 
+/**
+ * By default there is on public pages a link shown that allows users to
+ * learn about the "simple sign up" - see https://nextcloud.com/signup/
+ *
+ * If this is set to "false" it will not show the link.
+ */
+'simpleSignUpLink.shown' => true,
 );

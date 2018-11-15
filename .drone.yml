@@ -42,6 +42,13 @@ pipeline:
     when:
       matrix:
         TESTS: vue-build-accessibility
+  vue-build-backupcodes:
+    image: node
+    commands:
+      - ./build/vue-builds.sh ./apps/twofactor_backupcodes/js/settings.js
+    when:
+      matrix:
+        TESTS: vue-build-backupscodes
   checkers:
     image: nextcloudci/php7.0:php7.0-19
     commands:
@@ -50,11 +57,19 @@ pipeline:
     when:
       matrix:
         TESTS: checkers
+  handlebars:
+    image: node
+    commands:
+      - npm install handlebars -g
+      - ./build/compile-handlebars-templates.sh
+    when:
+      matrix:
+        TESTS: handlebars
   syntax-php7.0:
     image: nextcloudci/php7.0:php7.0-19
     commands:
       - composer install
-      - ./lib/composer/bin/parallel-lint --exclude lib/composer/jakub-onderka/ --exclude 3rdparty/symfony/polyfill-php70/Resources/stubs/ --exclude 3rdparty/patchwork/utf8/src/Patchwork/Utf8/Bootup/ --exclude 3rdparty/paragonie/random_compat/lib/ --exclude lib/composer/composer/autoload_static.php --exclude 3rdparty/composer/autoload_static.php .
+      - ./lib/composer/bin/parallel-lint --exclude lib/composer/jakub-onderka/ --exclude 3rdparty/symfony/polyfill-php70/Resources/stubs/ --exclude 3rdparty/patchwork/utf8/src/Patchwork/Utf8/Bootup/ --exclude lib/composer/composer/autoload_static.php --exclude 3rdparty/composer/autoload_static.php .
     when:
       matrix:
         TESTS: syntax-php7.0
@@ -62,10 +77,26 @@ pipeline:
     image: nextcloudci/php7.1:php7.1-16
     commands:
       - composer install
-      - ./lib/composer/bin/parallel-lint --exclude lib/composer/jakub-onderka/ --exclude 3rdparty/symfony/polyfill-php70/Resources/stubs/ --exclude 3rdparty/patchwork/utf8/src/Patchwork/Utf8/Bootup/ --exclude 3rdparty/paragonie/random_compat/lib/ --exclude lib/composer/composer/autoload_static.php --exclude 3rdparty/composer/autoload_static.php .
+      - ./lib/composer/bin/parallel-lint --exclude lib/composer/jakub-onderka/ --exclude 3rdparty/symfony/polyfill-php70/Resources/stubs/ --exclude 3rdparty/patchwork/utf8/src/Patchwork/Utf8/Bootup/ --exclude lib/composer/composer/autoload_static.php --exclude 3rdparty/composer/autoload_static.php .
     when:
       matrix:
         TESTS: syntax-php7.1
+  syntax-php7.2:
+    image: nextcloudci/php7.2:php7.2-12
+    commands:
+      - composer install
+      - ./lib/composer/bin/parallel-lint --exclude lib/composer/jakub-onderka/ --exclude 3rdparty/symfony/polyfill-php70/Resources/stubs/ --exclude 3rdparty/patchwork/utf8/src/Patchwork/Utf8/Bootup/ --exclude lib/composer/composer/autoload_static.php --exclude 3rdparty/composer/autoload_static.php --exclude 3rdparty/doctrine/cache/lib/Doctrine/Common/Cache/RiakCache.php .
+    when:
+      matrix:
+        TESTS: syntax-php7.2
+  syntax-php7.3:
+    image: nextcloudci/php7.3:php7.3-1
+    commands:
+      - composer install
+      - ./lib/composer/bin/parallel-lint --exclude lib/composer/jakub-onderka/ --exclude 3rdparty/symfony/polyfill-php70/Resources/stubs/ --exclude 3rdparty/patchwork/utf8/src/Patchwork/Utf8/Bootup/ --exclude 3rdparty/paragonie/random_compat/lib/ --exclude lib/composer/composer/autoload_static.php --exclude 3rdparty/composer/autoload_static.php --exclude 3rdparty/doctrine/cache/lib/Doctrine/Common/Cache/RiakCache.php .
+    when:
+      matrix:
+        TESTS: syntax-php7.3
   phan:
     image: nextcloudci/php7.2:php7.2-12
     commands:
@@ -191,6 +222,14 @@ pipeline:
       matrix:
         DB: NODB
         PHP: 7.2
+  nodb-php7.3:
+    image: nextcloudci/php7.3:php7.3-1
+    commands:
+      - NOCOVERAGE=true TEST_SELECTION=NODB ./autotest.sh sqlite
+    when:
+      matrix:
+        DB: NODB
+        PHP: 7.3
   sqlite-php7.0:
     image: nextcloudci/php7.0:php7.0-19
     commands:
@@ -215,6 +254,14 @@ pipeline:
       matrix:
         DB: sqlite
         PHP: 7.2
+  sqlite-php7.3:
+    image: nextcloudci/php7.3:php7.3-1
+    commands:
+      - NOCOVERAGE=true TEST_SELECTION=DB ./autotest.sh sqlite
+    when:
+      matrix:
+        DB: sqlite
+        PHP: 7.3
   mysql-php7.0:
     image: nextcloudci/php7.0:php7.0-19
     commands:
@@ -239,6 +286,14 @@ pipeline:
       matrix:
         DB: mysql
         PHP: 7.2
+  mysql-php7.3:
+    image: nextcloudci/php7.3:php7.3-1
+    commands:
+      - NOCOVERAGE=true TEST_SELECTION=DB ./autotest.sh mysql
+    when:
+      matrix:
+        DB: mysql
+        PHP: 7.3
   mysql5.6-php7.0:
     image: nextcloudci/php7.0:php7.0-19
     commands:
@@ -284,7 +339,7 @@ pipeline:
     image: nextcloudci/php7.1:php7.1-16
     commands:
       - sleep 10 # gives the database enough time to initialize
-      - NOCOVERAGE=true TEST_SELECTION=DB ./autotest.sh pgsql
+      - POSTGRES=${POSTGRES} NOCOVERAGE=true TEST_SELECTION=DB ./autotest.sh pgsql
     when:
       matrix:
         DB: postgres
@@ -313,6 +368,14 @@ pipeline:
       matrix:
         DB: mysqlmb4
         PHP: 7.2
+  mysqlmb4-php7.3:
+    image: nextcloudci/php7.3:php7.3-1
+    commands:
+      - NOCOVERAGE=true TEST_SELECTION=DB ./autotest.sh mysqlmb4
+    when:
+      matrix:
+        DB: mysqlmb4
+        PHP: 7.3
   integration-capabilities_features:
     image: nextcloudci/integration-php7.0:integration-php7.0-8
     commands:
@@ -582,6 +645,16 @@ pipeline:
         when:
           matrix:
             TESTS: integration-ldap-openldap-uid-features
+  integration-ldap-openldap-numerical-id-features:
+    image: nextcloudci/integration-php7.0:integration-php7.0-6
+    commands:
+    - ./occ maintenance:install --admin-pass=admin --data-dir=/dev/shm/nc_int
+    - ./occ app:enable user_ldap
+    - cd build/integration
+    - ./run.sh ldap_features/openldap-numerical-id.feature
+    when:
+      matrix:
+        TESTS: integration-ldap-openldap-numerical-id-features
   integration-trashbin:
     image: nextcloudci/integration-php7.0:integration-php7.0-8
     commands:
@@ -756,6 +829,8 @@ matrix:
     - TESTS: vue-build-updatenotification
     - TESTS: vue-build-oauth2
     - TESTS: vue-build-accessibility
+    - TESTS: vue-build-backupcodes
+    - TESTS: handlebars
     - TESTS: nodb-codecov
       ENABLE_REDIS: true
     - TESTS: db-codecov
@@ -769,6 +844,9 @@ matrix:
     - DB: NODB
       PHP: 7.2
       ENABLE_REDIS: false
+    - DB: NODB
+      PHP: 7.3
+      ENABLE_REDIS: false
     - DB: sqlite
       PHP: 7.0
       ENABLE_REDIS: true
@@ -778,6 +856,9 @@ matrix:
     - DB: sqlite
       PHP: 7.2
       ENABLE_REDIS: false
+    - DB: sqlite
+      PHP: 7.3
+      ENABLE_REDIS: false
     - DB: mysql
       PHP: 7.0
       ENABLE_REDIS: true
@@ -786,6 +867,9 @@ matrix:
       ENABLE_REDIS: true
     - DB: mysql
       PHP: 7.2
+      ENABLE_REDIS: false
+    - DB: mysql
+      PHP: 7.3
       ENABLE_REDIS: false
     - DB: mysql5.6
       PHP: 7.0
@@ -820,6 +904,9 @@ matrix:
     - DB: mysqlmb4
       PHP: 7.2
       ENABLE_REDIS: false
+    - DB: mysqlmb4
+      PHP: 7.3
+      ENABLE_REDIS: false
     - TESTS: integration-capabilities_features
     - TESTS: integration-federation_features
     - TESTS: integration-maintenance-mode
@@ -852,6 +939,8 @@ matrix:
       ENABLE_OPENLDAP: true
     - TESTS: integration-ldap-openldap-uid-features
       ENABLE_OPENLDAP: true
+    - TESTS: integration-ldap-openldap-numerical-id-features
+      ENABLE_OPENLDAP: true
     - TESTS: integration-trashbin
     - TESTS: integration-remote-api
     - TESTS: integration-download
@@ -874,6 +963,8 @@ matrix:
     - TESTS: jsunit
     - TESTS: syntax-php7.0
     - TESTS: syntax-php7.1
+    - TESTS: syntax-php7.2
+    - TESTS: syntax-php7.3
     - TESTS: phan
     - TESTS: litmus-v1
     - TESTS: litmus-v2
@@ -936,6 +1027,7 @@ services:
     image: postgres:9
     environment:
       - POSTGRES_USER=oc_autotest
+      - POSTGRES_DB=oc_autotest_dummy
       - POSTGRES_PASSWORD=owncloud
     tmpfs:
       - /var/lib/postgresql/data
@@ -947,6 +1039,7 @@ services:
       image: postgres:10
       environment:
         - POSTGRES_USER=oc_autotest
+        - POSTGRES_DB=oc_autotest_dummy
         - POSTGRES_PASSWORD=owncloud
       tmpfs:
         - /var/lib/postgresql/data
@@ -1032,7 +1125,7 @@ services:
       matrix:
         TESTS: acceptance
   openldap:
-    image: nextcloudci/openldap:openldap-4
+    image: nextcloudci/openldap:openldap-5
     environment:
       - SLAPD_DOMAIN=nextcloud.ci
       - SLAPD_ORGANIZATION=Nextcloud

@@ -33,7 +33,6 @@
 
 namespace OCA\Theming;
 
-
 use OCP\App\AppPathNotFoundException;
 use OCP\App\IAppManager;
 use OCP\Files\NotFoundException;
@@ -151,9 +150,14 @@ class ThemingDefaults extends \OC_Defaults {
 
 	public function getShortFooter() {
 		$slogan = $this->getSlogan();
-		$footer = '<a href="'. $this->getBaseUrl() . '" target="_blank"' .
-			' rel="noreferrer noopener">' .$this->getEntity() . '</a>'.
-			($slogan !== '' ? ' – ' . $slogan : '');
+		$baseUrl = $this->getBaseUrl();
+		if ($baseUrl !== '') {
+			$footer = '<a href="' . $baseUrl . '" target="_blank"' .
+				' rel="noreferrer noopener" class="entity-name">' . $this->getEntity() . '</a>';
+		} else {
+			$footer = '<span class="entity-name">' .$this->getEntity() . '</span>';
+		}
+		$footer .= ($slogan !== '' ? ' – ' . $slogan : '');
 
 		$links = [
 			[
@@ -169,9 +173,7 @@ class ThemingDefaults extends \OC_Defaults {
 		$legalLinks = ''; $divider = '';
 		foreach($links as $link) {
 			if($link['url'] !== ''
-				&& filter_var($link['url'], FILTER_VALIDATE_URL, [
-					'flags' => FILTER_FLAG_SCHEME_REQUIRED | FILTER_FLAG_HOST_REQUIRED
-				])
+				&& filter_var($link['url'], FILTER_VALIDATE_URL)
 			) {
 				$legalLinks .= $divider . '<a href="' . $link['url'] . '" class="legal" target="_blank"' .
 					' rel="noreferrer noopener">' . $link['text'] . '</a>';
@@ -214,9 +216,9 @@ class ThemingDefaults extends \OC_Defaults {
 
 		if(!$logo || !$logoExists) {
 			if($useSvg) {
-				$logo = $this->urlGenerator->imagePath('core', 'logo.svg');
+				$logo = $this->urlGenerator->imagePath('core', 'logo/logo.svg');
 			} else {
-				$logo = $this->urlGenerator->imagePath('core', 'logo.png');
+				$logo = $this->urlGenerator->imagePath('core', 'logo/logo.png');
 			}
 			return $logo . '?v=' . $cacheBusterCounter;
 		}
@@ -306,7 +308,7 @@ class ThemingDefaults extends \OC_Defaults {
 	 * @return bool|string false if image should not replaced, otherwise the location of the image
 	 */
 	public function replaceImagePath($app, $image) {
-		if($app==='') {
+		if ($app === '' || $app === 'files_sharing') {
 			$app = 'core';
 		}
 		$cacheBusterValue = $this->config->getAppValue('theming', 'cachebuster', '0');
@@ -334,7 +336,7 @@ class ThemingDefaults extends \OC_Defaults {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Increases the cache buster key
 	 */

@@ -15,20 +15,6 @@
 		OC.Share = {};
 	}
 
-	var TEMPLATE_BASE =
-		'<div class="resharerInfoView subView"></div>' +
-		'{{#if isSharingAllowed}}' +
-		'<label for="shareWith-{{cid}}" class="hidden-visually">{{shareLabel}}</label>' +
-		'<div class="oneline">' +
-		'    <input id="shareWith-{{cid}}" class="shareWithField" type="text" placeholder="{{sharePlaceholder}}" />' +
-		'    <span class="shareWithLoading icon-loading-small hidden"></span>'+
-		'    <span class="shareWithConfirm icon icon-confirm"></span>' +
-		'</div>' +
-		'{{/if}}' +
-		'<div class="shareeListView subView"></div>' +
-		'<div class="linkShareView subView"></div>' +
-		'<div class="loading hidden" style="height: 50px"></div>';
-
 	/**
 	 * @class OCA.Share.ShareDialogView
 	 * @member {OC.Share.ShareItemModel} model
@@ -159,12 +145,15 @@
 				},
 				function (result) {
 					if (result.ocs.meta.statuscode === 100) {
-						var filter = function(users, groups, remotes, remote_groups, emails, circles) {
+						var filter = function(users, groups, remotes, remote_groups, emails, circles, rooms) {
 							if (typeof(emails) === 'undefined') {
 								emails = [];
 							}
 							if (typeof(circles) === 'undefined') {
 								circles = [];
+							}
+							if (typeof(rooms) === 'undefined') {
+								rooms = [];
 							}
 
 							var usersLength;
@@ -173,6 +162,7 @@
 							var remoteGroupsLength;
 							var emailsLength;
 							var circlesLength;
+							var roomsLength;
 
 							var i, j;
 
@@ -251,6 +241,14 @@
 											break;
 										}
 									}
+								} else if (share.share_type === OC.Share.SHARE_TYPE_ROOM) {
+									roomsLength = rooms.length;
+									for (j = 0; j < roomsLength; j++) {
+										if (rooms[j].value.shareWith === share.share_with) {
+											rooms.splice(j, 1);
+											break;
+										}
+									}
 								}
 							}
 						};
@@ -261,7 +259,8 @@
 							result.ocs.data.exact.remotes,
 							result.ocs.data.exact.remote_groups,
 							result.ocs.data.exact.emails,
-							result.ocs.data.exact.circles
+							result.ocs.data.exact.circles,
+							result.ocs.data.exact.rooms
 						);
 
 						var exactUsers   = result.ocs.data.exact.users;
@@ -276,8 +275,12 @@
 						if (typeof(result.ocs.data.circles) !== 'undefined') {
 							exactCircles = result.ocs.data.exact.circles;
 						}
+						var exactRooms = [];
+						if (typeof(result.ocs.data.rooms) !== 'undefined') {
+							exactRooms = result.ocs.data.exact.rooms;
+						}
 
-						var exactMatches = exactUsers.concat(exactGroups).concat(exactRemotes).concat(exactRemoteGroups).concat(exactEmails).concat(exactCircles);
+						var exactMatches = exactUsers.concat(exactGroups).concat(exactRemotes).concat(exactRemoteGroups).concat(exactEmails).concat(exactCircles).concat(exactRooms);
 
 						filter(
 							result.ocs.data.users,
@@ -285,7 +288,8 @@
 							result.ocs.data.remotes,
 							result.ocs.data.remote_groups,
 							result.ocs.data.emails,
-							result.ocs.data.circles
+							result.ocs.data.circles,
+							result.ocs.data.rooms
 						);
 
 						var users   = result.ocs.data.users;
@@ -301,10 +305,30 @@
 						if (typeof(result.ocs.data.circles) !== 'undefined') {
 							circles = result.ocs.data.circles;
 						}
+						var rooms = [];
+						if (typeof(result.ocs.data.rooms) !== 'undefined') {
+							rooms = result.ocs.data.rooms;
+						}
 
-						var suggestions = exactMatches.concat(users).concat(groups).concat(remotes).concat(remoteGroups).concat(emails).concat(circles).concat(lookup);
+						var suggestions = exactMatches.concat(users).concat(groups).concat(remotes).concat(remoteGroups).concat(emails).concat(circles).concat(rooms).concat(lookup);
 
-						deferred.resolve(suggestions, exactMatches);
+						var moreResultsAvailable =
+							(
+								oc_config['sharing.maxAutocompleteResults'] > 0
+								&& Math.min(perPage, oc_config['sharing.maxAutocompleteResults'])
+									<= Math.max(
+										users.length + exactUsers.length,
+										groups.length + exactGroups.length,
+										remoteGroups.length + exactRemoteGroups.length,
+										remotes.length + exactRemotes.length,
+										emails.length + exactEmails.length,
+										circles.length + exactCircles.length,
+										rooms.length + exactRooms.length,
+										lookup.length
+									)
+							);
+
+						deferred.resolve(suggestions, exactMatches, moreResultsAvailable);
 					} else {
 						deferred.reject(result.ocs.meta.message);
 					}
@@ -358,12 +382,12 @@
 			$shareWithField.removeClass('error')
 				.tooltip('hide');
 
-			var perPage = 200;
+			var perPage = parseInt(oc_config['sharing.maxAutocompleteResults'], 10) || 200;
 			this._getSuggestions(
 				search.term.trim(),
 				perPage,
 				view.model
-			).done(function(suggestions) {
+			).done(function(suggestions, exactMatches, moreResultsAvailable) {
 				view._pendingOperationsCount--;
 				if (view._pendingOperationsCount === 0) {
 					$loading.addClass('hidden');
@@ -379,10 +403,7 @@
 
 					// show a notice that the list is truncated
 					// this is the case if one of the search results is at least as long as the max result config option
-					if(oc_config['sharing.maxAutocompleteResults'] > 0 &&
-						Math.min(perPage, oc_config['sharing.maxAutocompleteResults'])
-						<= Math.max(users.length, groups.length, remotes.length, emails.length, lookup.length)) {
-
+					if(moreResultsAvailable) {
 						var message = t('core', 'This list is maybe truncated - please refine your search term to see more results.');
 						$('.ui-autocomplete').append('<li class="autocomplete-note">' + message + '</li>');
 					}
@@ -432,6 +453,8 @@
 				text = t('core', '{sharee} (email)', { sharee: text }, undefined, { escape: false });
 			} else if (item.value.shareType === OC.Share.SHARE_TYPE_CIRCLE) {
 				text = t('core', '{sharee} ({type}, {owner})', {sharee: text, type: item.value.circleInfo, owner: item.value.circleOwner}, undefined, {escape: false});
+			} else if (item.value.shareType === OC.Share.SHARE_TYPE_ROOM) {
+				text = t('core', '{sharee} (conversation)', { sharee: text }, undefined, { escape: false });
 			}
 			var insert = $("<div class='share-autocomplete-item'/>");
 			var avatar = $("<div class='avatardiv'></div>").appendTo(insert);
@@ -533,7 +556,7 @@
 				$shareWithField.focus();
 			};
 
-			var perPage = 200;
+			var perPage = parseInt(oc_config['sharing.maxAutocompleteResults'], 10) || 200;
 			var onlyExactMatches = true;
 			this._getSuggestions(
 				$shareWithField.val(),
@@ -626,7 +649,7 @@
 
 		render: function() {
 			var self = this;
-			var baseTemplate = this._getTemplate('base', TEMPLATE_BASE);
+			var baseTemplate = OC.Share.Templates['sharedialogview'];
 
 			this.$el.html(baseTemplate({
 				cid: this.cid,
@@ -700,20 +723,6 @@
 			}
 
 			return 	t('core', 'Name...');
-		},
-
-		/**
-		 *
-		 * @param {string} key - an identifier for the template
-		 * @param {string} template - the HTML to be compiled by Handlebars
-		 * @returns {Function} from Handlebars
-		 * @private
-		 */
-		_getTemplate: function (key, template) {
-			if (!this._templates[key]) {
-				this._templates[key] = Handlebars.compile(template);
-			}
-			return this._templates[key];
 		},
 
 	});

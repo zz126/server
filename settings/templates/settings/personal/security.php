@@ -24,6 +24,7 @@
 script('settings', [
 	'authtoken',
 	'authtoken_collection',
+	'templates',
 	'authtoken_view',
 	'settings/authtoken-init'
 ]);
@@ -99,4 +100,30 @@ if($_['passwordChangeSupported']) {
 			<button id="app-password-hide" class="button"><?php p($l->t('Done')); ?></button>
 		</div>
 	</div>
+</div>
+
+<div id="two-factor-auth" class="section">
+	<h2><?php p($l->t('Two-Factor Authentication'));?></h2>
+	<ul>
+	<?php foreach ($_['twoFactorProviderData']['providers'] as $data) { ?>
+		<li>
+			<?php
+			/** @var \OCP\Authentication\TwoFactorAuth\IProvidesPersonalSettings $provider */
+			$provider = $data['provider'];
+			if ($provider instanceof \OCP\Authentication\TwoFactorAuth\IProvidesIcons) {
+				$icon = $provider->getDarkIcon();
+			} else {
+				$icon = image_path('core', 'actions/password.svg');
+			}
+			/** @var \OCP\Authentication\TwoFactorAuth\IPersonalProviderSettings $settings */
+			$settings = $data['settings'];
+			?>
+			<h3>
+				<img class="two-factor-provider-settings-icon" src="<?php p($icon) ?>" alt="">
+				<?php p($provider->getDisplayName()) ?>
+			</h3>
+			<?php print_unescaped($settings->getBody()->fetchPage()) ?>
+		</li>
+	<?php } ?>
+	</ul>
 </div>

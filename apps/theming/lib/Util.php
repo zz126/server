@@ -79,7 +79,7 @@ class Util {
 	public function elementColor($color) {
 		$l = $this->calculateLuminance($color);
 		if($l>0.8) {
-			return '#555555';
+			return '#dddddd';
 		}
 		return $color;
 	}
@@ -161,7 +161,7 @@ class Util {
 				}
 			} catch (NotFoundException $e) {}
 		}
-		return \OC::$SERVERROOT . '/core/img/logo.svg';
+		return \OC::$SERVERROOT . '/core/img/logo/logo.svg';
 	}
 
 	/**
@@ -223,7 +223,7 @@ class Util {
 
 	/**
 	 * Check if a custom theme is set in the server configuration
-	 * 
+	 *
 	 * @return bool
 	 */
 	public function isAlreadyThemed() {

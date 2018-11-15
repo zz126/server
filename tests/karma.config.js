@@ -56,7 +56,8 @@ module.exports = function(config) {
 					'apps/files_sharing/js/sharebreadcrumbview.js',
 					'apps/files_sharing/js/public.js',
 					'apps/files_sharing/js/sharetabview.js',
-					'apps/files_sharing/js/files_drop.js'
+					'apps/files_sharing/js/files_drop.js',
+					'apps/files_sharing/js/templates.js',
 				],
 				testFiles: ['apps/files_sharing/tests/js/*.js']
 			},
@@ -66,6 +67,7 @@ module.exports = function(config) {
 					// only test these files, others are not ready and mess
 					// up with the global namespace/classes/state
 					'apps/files_external/js/app.js',
+					'apps/files_external/js/templates.js',
 					'apps/files_external/js/mountsfilelist.js',
 					'apps/files_external/js/settings.js',
 					'apps/files_external/js/statusmanager.js'
@@ -77,6 +79,7 @@ module.exports = function(config) {
 				srcFiles: [
 					// need to enforce loading order...
 					'apps/files_versions/js/versionmodel.js',
+					'apps/files_versions/js/templates.js',
 					'apps/files_versions/js/versioncollection.js',
 					'apps/files_versions/js/versionstabview.js'
 				],
@@ -87,6 +90,7 @@ module.exports = function(config) {
 				srcFiles: [
 					// need to enforce loading order...
 					'apps/comments/js/app.js',
+					'apps/comments/js/templates.js',
 					'apps/comments/js/vendor/Caret.js/dist/jquery.caret.min.js',
 					'apps/comments/js/vendor/At.js/dist/js/jquery.atwho.min.js',
 					'apps/comments/js/commentmodel.js',

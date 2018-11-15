@@ -10,17 +10,6 @@
 
 (function() {
 
-	var TEMPLATE_FILE_ACTION_TRIGGER =
-		'<a class="action action-{{nameLowerCase}}" href="#" data-action="{{name}}">' +
-		'{{#if icon}}' +
-			'<img class="svg" alt="{{altText}}" src="{{icon}}" />' +
-		'{{else}}' +
-			'{{#if iconClass}}<span class="icon {{iconClass}}" />{{/if}}' +
-			'{{#unless hasDisplayName}}<span class="hidden-visually">{{altText}}</span>{{/unless}}' +
-		'{{/if}}' +
-		'{{#if displayName}}<span> {{displayName}}</span>{{/if}}' +
-		'</a>';
-
 	/**
 	 * Construct a new FileActions instance
 	 * @constructs FileActions
@@ -335,11 +324,7 @@
 		 * @param {Object} params action params
 		 */
 		_makeActionLink: function(params) {
-			if (!this._fileActionTriggerTemplate) {
-				this._fileActionTriggerTemplate = Handlebars.compile(TEMPLATE_FILE_ACTION_TRIGGER);
-			}
-
-			return $(this._fileActionTriggerTemplate(params));
+			return $(OCA.Files.Templates['file_action_trigger'](params));
 		},
 
 		/**
@@ -662,7 +647,7 @@
 					if (permissions & OC.PERMISSION_UPDATE) {
 						actions = OC.dialogs.FILEPICKER_TYPE_COPY_MOVE;
 					}
-					OC.dialogs.filepicker(t('files', 'Target folder'), function(targetPath, type) {
+					OC.dialogs.filepicker(t('files', 'Choose target folder'), function(targetPath, type) {
 						if (type === OC.dialogs.FILEPICKER_TYPE_COPY) {
 							context.fileList.copy(filename, targetPath, false, context.dir);
 						}

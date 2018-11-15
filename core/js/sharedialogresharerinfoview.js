@@ -15,14 +15,6 @@
 		OC.Share = {};
 	}
 
-	var TEMPLATE =
-		'<span class="reshare">' +
-		'    <div class="avatar" data-userName="{{reshareOwner}}"></div>' +
-		'    {{sharedByText}}' +
-		'</span>' +
-		'{{#if hasShareNote}}<div class="share-note">{{shareNote}}</div>{{/if}}'
-		;
-
 	/**
 	 * @class OCA.Share.ShareDialogView
 	 * @member {OC.Share.ShareItemModel} model
@@ -100,16 +92,28 @@
 					{escape: false}
 				);
 			} else if (this.model.getReshareType() === OC.Share.SHARE_TYPE_ROOM) {
-				sharedByText = t(
-					'core',
-					'Shared with you and the conversation {conversation} by {owner}',
-					{
-						conversation: this.model.getReshareWithDisplayName(),
-						owner: ownerDisplayName
-					},
-					undefined,
-					{escape: false}
-				);
+				if (this.model.get('reshare').share_with_displayname) {
+					sharedByText = t(
+						'core',
+						'Shared with you and the conversation {conversation} by {owner}',
+						{
+							conversation: this.model.getReshareWithDisplayName(),
+							owner: ownerDisplayName
+						},
+						undefined,
+						{escape: false}
+					);
+				} else {
+					sharedByText = t(
+						'core',
+						'Shared with you in a conversation by {owner}',
+						{
+							owner: ownerDisplayName
+						},
+						undefined,
+						{escape: false}
+					);
+				}
 			} else {
 				sharedByText = t(
 					'core',
@@ -147,10 +151,7 @@
 		 * @private
 		 */
 		template: function () {
-			if (!this._template) {
-				this._template = Handlebars.compile(TEMPLATE);
-			}
-			return this._template;
+			return OC.Share.Templates['sharedialogresharerinfoview'];
 		}
 
 	});

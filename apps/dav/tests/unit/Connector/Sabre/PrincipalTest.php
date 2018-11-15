@@ -1,12 +1,14 @@
 <?php
 /**
  * @copyright Copyright (c) 2016, ownCloud, Inc.
+ * @copyright Copyright (c) 2018, Georg Ehrke
  *
  * @author Joas Schilling <coding@schilljs.com>
  * @author Lukas Reschke <lukas@statuscode.ch>
  * @author Roeland Jago Douma <roeland@famdouma.nl>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Vincent Petry <pvince81@owncloud.com>
+ * @author Georg Ehrke <oc.list@georgehrke.com>
  *
  * @license AGPL-3.0
  *
@@ -38,16 +40,22 @@ use OCP\IUserManager;
 use Test\TestCase;
 
 class PrincipalTest extends TestCase {
+
 	/** @var IUserManager | \PHPUnit_Framework_MockObject_MockObject */
 	private $userManager;
+
 	/** @var \OCA\DAV\Connector\Sabre\Principal */
 	private $connector;
+
 	/** @var IGroupManager | \PHPUnit_Framework_MockObject_MockObject */
 	private $groupManager;
+
 	/** @var IManager | \PHPUnit_Framework_MockObject_MockObject */
 	private $shareManager;
+
 	/** @var IUserSession | \PHPUnit_Framework_MockObject_MockObject */
 	private $userSession;
+
 	/** @var IConfig | \PHPUnit_Framework_MockObject_MockObject  */
 	private $config;
 
@@ -94,7 +102,7 @@ class PrincipalTest extends TestCase {
 		$barUser
 				->expects($this->exactly(1))
 				->method('getEMailAddress')
-				->will($this->returnValue('bar@owncloud.org'));
+				->will($this->returnValue('bar@nextcloud.com'));
 		$this->userManager
 			->expects($this->once())
 			->method('search')
@@ -104,12 +112,14 @@ class PrincipalTest extends TestCase {
 		$expectedResponse = [
 			0 => [
 				'uri' => 'principals/users/foo',
-				'{DAV:}displayname' => 'Dr. Foo-Bar'
+				'{DAV:}displayname' => 'Dr. Foo-Bar',
+				'{urn:ietf:params:xml:ns:caldav}calendar-user-type' => 'INDIVIDUAL',
 			],
 			1 => [
 				'uri' => 'principals/users/bar',
 				'{DAV:}displayname' => 'bar',
-				'{http://sabredav.org/ns}email-address' => 'bar@owncloud.org'
+				'{urn:ietf:params:xml:ns:caldav}calendar-user-type' => 'INDIVIDUAL',
+				'{http://sabredav.org/ns}email-address' => 'bar@nextcloud.com',
 			]
 		];
 		$response = $this->connector->getPrincipalsByPrefix('principals/users');
@@ -141,7 +151,8 @@ class PrincipalTest extends TestCase {
 
 		$expectedResponse = [
 			'uri' => 'principals/users/foo',
-			'{DAV:}displayname' => 'foo'
+			'{DAV:}displayname' => 'foo',
+			'{urn:ietf:params:xml:ns:caldav}calendar-user-type' => 'INDIVIDUAL',
 		];
 		$response = $this->connector->getPrincipalByPath('principals/users/foo');
 		$this->assertSame($expectedResponse, $response);
@@ -152,7 +163,7 @@ class PrincipalTest extends TestCase {
 		$fooUser
 				->expects($this->exactly(1))
 				->method('getEMailAddress')
-				->will($this->returnValue('foo@owncloud.org'));
+				->will($this->returnValue('foo@nextcloud.com'));
 		$fooUser
 				->expects($this->exactly(1))
 				->method('getUID')
@@ -166,7 +177,8 @@ class PrincipalTest extends TestCase {
 		$expectedResponse = [
 			'uri' => 'principals/users/foo',
 			'{DAV:}displayname' => 'foo',
-			'{http://sabredav.org/ns}email-address' => 'foo@owncloud.org'
+			'{urn:ietf:params:xml:ns:caldav}calendar-user-type' => 'INDIVIDUAL',
+			'{http://sabredav.org/ns}email-address' => 'foo@nextcloud.com',
 		];
 		$response = $this->connector->getPrincipalByPath('principals/users/foo');
 		$this->assertSame($expectedResponse, $response);
@@ -283,37 +295,26 @@ class PrincipalTest extends TestCase {
 	/**
 	 * @dataProvider searchPrincipalsDataProvider
 	 */
-	public function testSearchPrincipals($disableFreeBusy, $sharingEnabled, $disableFBSharingCombination, $groupsOnly, $result) {
+	public function testSearchPrincipals($sharingEnabled, $groupsOnly, $test, $result) {
 		$this->shareManager->expects($this->once())
 			->method('shareAPIEnabled')
 			->will($this->returnValue($sharingEnabled));
-		$this->config->expects($this->once())
-			->method('getAppValue')
-			->with('dav', 'disableFreeBusy', $sharingEnabled ? 'no' : 'yes')
-			->will($this->returnValue($disableFBSharingCombination));
 
-		if ($disableFreeBusy === 'no') {
-			if ($sharingEnabled) {
-				$this->shareManager->expects($this->once())
-					->method('shareWithGroupMembersOnly')
-					->will($this->returnValue($groupsOnly));
+		if ($sharingEnabled) {
+			$this->shareManager->expects($this->once())
+				->method('shareWithGroupMembersOnly')
+				->will($this->returnValue($groupsOnly));
 
-				if ($groupsOnly) {
-					$user = $this->createMock(IUser::class);
-					$this->userSession->expects($this->once())
-						->method('getUser')
-						->will($this->returnValue($user));
+			if ($groupsOnly) {
+				$user = $this->createMock(IUser::class);
+				$this->userSession->expects($this->once())
+					->method('getUser')
+					->will($this->returnValue($user));
 
-					$this->groupManager->expects($this->at(0))
-						->method('getUserGroupIds')
-						->with($user)
-						->will($this->returnValue(['group1', 'group2']));
-				}
-			} else {
-				$this->shareManager->expects($this->never())
-					->method('shareWithGroupMembersOnly');
-				$this->groupManager->expects($this->never())
-					->method($this->anything());
+				$this->groupManager->expects($this->at(0))
+					->method('getUserGroupIds')
+					->with($user)
+					->will($this->returnValue(['group1', 'group2', 'group5']));
 			}
 		} else {
 			$this->shareManager->expects($this->never())
@@ -322,57 +323,64 @@ class PrincipalTest extends TestCase {
 				->method($this->anything());
 		}
 
-
 		$user2 = $this->createMock(IUser::class);
 		$user2->method('getUID')->will($this->returnValue('user2'));
 		$user3 = $this->createMock(IUser::class);
 		$user3->method('getUID')->will($this->returnValue('user3'));
+		$user4 = $this->createMock(IUser::class);
+		$user4->method('getUID')->will($this->returnValue('user4'));
 
-		if ($disableFreeBusy === 'no') {
-			if ($sharingEnabled) {
-				$this->userManager->expects($this->at(0))
-					->method('getByEmail')
-					->with('user')
-					->will($this->returnValue([$user2, $user3]));
-			} else {
-				$this->userManager->expects($this->never())
-					->method('getByEmail');
-			}
+		if ($sharingEnabled) {
+			$this->userManager->expects($this->at(0))
+				->method('getByEmail')
+				->with('user@example.com')
+				->will($this->returnValue([$user2, $user3]));
+
+			$this->userManager->expects($this->at(1))
+				->method('searchDisplayName')
+				->with('User 12')
+				->will($this->returnValue([$user3, $user4]));
 		} else {
 			$this->userManager->expects($this->never())
 				->method('getByEmail');
+
+			$this->userManager->expects($this->never())
+				->method('searchDisplayName');
 		}
 
-		if ($disableFreeBusy === 'no') {
-			if ($sharingEnabled && $groupsOnly) {
-				$this->groupManager->expects($this->at(1))
-					->method('getUserGroupIds')
-					->with($user2)
-					->will($this->returnValue(['group1', 'group3']));
-				$this->groupManager->expects($this->at(2))
-					->method('getUserGroupIds')
-					->with($user3)
-					->will($this->returnValue(['group3', 'group4']));
-			}
-		} else {
-			$this->groupManager->expects($this->never())
-				->method('getUserGroupIds');
-			$this->groupManager->expects($this->never())
-				->method('getUserGroupIds');
+		if ($sharingEnabled && $groupsOnly) {
+			$this->groupManager->expects($this->at(1))
+				->method('getUserGroupIds')
+				->with($user2)
+				->will($this->returnValue(['group1', 'group3']));
+			$this->groupManager->expects($this->at(2))
+				->method('getUserGroupIds')
+				->with($user3)
+				->will($this->returnValue(['group3', 'group4']));
+			$this->groupManager->expects($this->at(3))
+				->method('getUserGroupIds')
+				->with($user3)
+				->will($this->returnValue(['group3', 'group4']));
+			$this->groupManager->expects($this->at(4))
+				->method('getUserGroupIds')
+				->with($user4)
+				->will($this->returnValue(['group4', 'group5']));
 		}
+
 
 		$this->assertEquals($result, $this->connector->searchPrincipals('principals/users',
-			['{http://sabredav.org/ns}email-address' => 'user']));
+			['{http://sabredav.org/ns}email-address' => 'user@example.com',
+				'{DAV:}displayname' => 'User 12'], $test));
 	}
 
 	public function searchPrincipalsDataProvider() {
 		return [
-			['yes', true, 'yes', false, []],
-			['no', true, 'no', false, ['principals/users/user2', 'principals/users/user3']],
-			['yes', true, 'yes', true, []],
-			['no', true, 'no', true, ['principals/users/user2']],
-			['yes', false, 'yes', false, []],
-			['no', false, 'yes', false, []],
+			[true, false, 'allof', ['principals/users/user3']],
+			[true, false, 'anyof', ['principals/users/user2', 'principals/users/user3', 'principals/users/user4']],
+			[true, true, 'allof', []],
+			[true, true, 'anyof', ['principals/users/user2', 'principals/users/user4']],
+			[false, false, 'allof', []],
+			[false, false, 'anyof', []],
 		];
 	}
 
@@ -380,10 +388,6 @@ class PrincipalTest extends TestCase {
 		$this->shareManager->expects($this->once())
 			->method('shareApiEnabled')
 			->will($this->returnValue(false));
-		$this->config->expects($this->once())
-			->method('getAppValue')
-			->with('dav', 'disableFreeBusy', 'yes')
-			->will($this->returnValue('yes'));
 
 		$this->assertEquals(null, $this->connector->findByUri('mailto:user@foo.com', 'principals/users'));
 	}
@@ -391,21 +395,11 @@ class PrincipalTest extends TestCase {
 	/**
 	 * @dataProvider findByUriWithGroupRestrictionDataProvider
 	 */
-	public function testFindByUriWithGroupRestriction($disableFreeBusy, $uri, $email, $expects) {
+	public function testFindByUriWithGroupRestriction($uri, $email, $expects) {
 		$this->shareManager->expects($this->once())
 			->method('shareApiEnabled')
 			->will($this->returnValue(true));
-		$this->config->expects($this->once())
-			->method('getAppValue')
-			->with('dav', 'disableFreeBusy', 'no')
-			->will($this->returnValue($disableFreeBusy));
 
-		if ($disableFreeBusy === 'yes') {
-			$this->shareManager->expects($this->never())
-				->method('shareWithGroupMembersOnly');
-			$this->userSession->expects($this->never())
-				->method('getUser');
-		} else {
 			$this->shareManager->expects($this->once())
 				->method('shareWithGroupMembersOnly')
 				->will($this->returnValue(true));
@@ -441,39 +435,25 @@ class PrincipalTest extends TestCase {
 					->with($user3)
 					->will($this->returnValue(['group3', 'group3']));
 			}
-		}
 
 		$this->assertEquals($expects, $this->connector->findByUri($uri, 'principals/users'));
 	}
 
 	public function findByUriWithGroupRestrictionDataProvider() {
 		return [
-			['yes', 'mailto:user2@foo.bar', 'user2@foo.bar', null],
-			['no', 'mailto:user2@foo.bar', 'user2@foo.bar', 'principals/users/user2'],
-			['yes', 'mailto:user3@foo.bar', 'user3@foo.bar', null],
-			['no', 'mailto:user3@foo.bar', 'user3@foo.bar', null],
+			['mailto:user2@foo.bar', 'user2@foo.bar', 'principals/users/user2'],
+			['mailto:user3@foo.bar', 'user3@foo.bar', null],
 		];
 	}
 
 	/**
 	 * @dataProvider findByUriWithoutGroupRestrictionDataProvider
 	 */
-	public function testFindByUriWithoutGroupRestriction($disableFreeBusy, $uri, $email, $expects) {
+	public function testFindByUriWithoutGroupRestriction($uri, $email, $expects) {
 		$this->shareManager->expects($this->once())
 			->method('shareApiEnabled')
 			->will($this->returnValue(true));
-		$this->config->expects($this->once())
-			->method('getAppValue')
-			->with('dav', 'disableFreeBusy', 'no')
-			->will($this->returnValue($disableFreeBusy));
 
-		if ($disableFreeBusy === 'yes') {
-			$this->shareManager->expects($this->never())
-				->method('shareWithGroupMembersOnly');
-
-			$this->userManager->expects($this->never())
-				->method('getByEmail');
-		} else {
 			$this->shareManager->expects($this->once())
 				->method('shareWithGroupMembersOnly')
 				->will($this->returnValue(false));
@@ -487,17 +467,14 @@ class PrincipalTest extends TestCase {
 				->method('getByEmail')
 				->with($email)
 				->will($this->returnValue([$email === 'user2@foo.bar' ? $user2 : $user3]));
-		}
 
 		$this->assertEquals($expects, $this->connector->findByUri($uri, 'principals/users'));
 	}
 
 	public function findByUriWithoutGroupRestrictionDataProvider() {
 		return [
-			['yes', 'mailto:user2@foo.bar', 'user2@foo.bar', null],
-			['yes', 'mailto:user3@foo.bar', 'user3@foo.bar', null],
-			['no', 'mailto:user2@foo.bar', 'user2@foo.bar', 'principals/users/user2'],
-			['no', 'mailto:user3@foo.bar', 'user3@foo.bar', 'principals/users/user3'],
+			['mailto:user2@foo.bar', 'user2@foo.bar', 'principals/users/user2'],
+			['mailto:user3@foo.bar', 'user3@foo.bar', 'principals/users/user3'],
 		];
 	}
 }

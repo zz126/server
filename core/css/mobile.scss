@@ -39,6 +39,8 @@
 		flex: 1 1 100%;
 		// make full height scroll since app-content-details is hidden
 		max-height: unset;
+		// ignore 300px default max width
+		max-width: 100%;
 		+ .app-content-details {
 			display: none;
 		}
@@ -121,7 +123,7 @@
 		display: none;
 	}
 	#oc-dialog-filepicker-content .filelist .filename {
-		max-width: 80%;
+		max-width: 100%;
 	}
 
 	.snapjs-left table.multiselect thead {
@@ -132,7 +134,7 @@
 }
 
 @media only screen and (max-width: 480px) {
-	#header .header-right .menu {
+	#header .header-right > div > .menu {
 		max-width: calc(100vw - 10px);
 		position: fixed;
 		&::after {
@@ -164,5 +166,10 @@
 		&#settings::after {
 			right: 27px;
 		}
+	}
+
+	#notification-container {
+		max-width: 100%;
+		width: 100%;
 	}
 }

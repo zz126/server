@@ -23,87 +23,44 @@
 
 namespace Tests\Settings;
 
-use OC\Accounts\AccountManager;
 use OC\Settings\Admin\Sharing;
 use OC\Settings\Manager;
 use OC\Settings\Mapper;
 use OC\Settings\Personal\Security;
 use OC\Settings\Section;
-use OCP\App\IAppManager;
-use OCP\Encryption\IManager;
-use OCP\IConfig;
 use OCP\IDBConnection;
-use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\ILogger;
-use OCP\IRequest;
+use OCP\IServerContainer;
 use OCP\IURLGenerator;
-use OCP\IUserManager;
-use OCP\L10N\IFactory;
-use OCP\Lock\ILockingProvider;
 use Test\TestCase;
 
 class ManagerTest extends TestCase {
+
 	/** @var Manager|\PHPUnit_Framework_MockObject_MockObject */
 	private $manager;
 	/** @var ILogger|\PHPUnit_Framework_MockObject_MockObject */
 	private $logger;
 	/** @var IDBConnection|\PHPUnit_Framework_MockObject_MockObject */
-	private $dbConnection;
-	/** @var IL10N|\PHPUnit_Framework_MockObject_MockObject */
 	private $l10n;
-	/** @var IConfig|\PHPUnit_Framework_MockObject_MockObject */
-	private $config;
-	/** @var IManager|\PHPUnit_Framework_MockObject_MockObject */
-	private $encryptionManager;
-	/** @var IUserManager|\PHPUnit_Framework_MockObject_MockObject */
-	private $userManager;
-	/** @var ILockingProvider|\PHPUnit_Framework_MockObject_MockObject */
-	private $lockingProvider;
-	/** @var IRequest|\PHPUnit_Framework_MockObject_MockObject */
-	private $request;
 	/** @var IURLGenerator|\PHPUnit_Framework_MockObject_MockObject */
 	private $url;
-	/** @var AccountManager|\PHPUnit_Framework_MockObject_MockObject */
-	private $accountManager;
-	/** @var  IGroupManager|\PHPUnit_Framework_MockObject_MockObject */
-	private $groupManager;
-	/** @var  IFactory|\PHPUnit_Framework_MockObject_MockObject */
-	private $l10nFactory;
-	/** @var IAppManager */
-	private $appManager;
+	/** @var IServerContainer|\PHPUnit_Framework_MockObject_MockObject */
+	private $container;
 
 	public function setUp() {
 		parent::setUp();
 
 		$this->logger = $this->createMock(ILogger::class);
-		$this->dbConnection = $this->createMock(IDBConnection::class);
 		$this->l10n = $this->createMock(IL10N::class);
-		$this->config = $this->createMock(IConfig::class);
-		$this->encryptionManager = $this->createMock(IManager::class);
-		$this->userManager = $this->createMock(IUserManager::class);
-		$this->lockingProvider = $this->createMock(ILockingProvider::class);
-		$this->request = $this->createMock(IRequest::class);
 		$this->url = $this->createMock(IURLGenerator::class);
-		$this->accountManager = $this->createMock(AccountManager::class);
-		$this->groupManager = $this->createMock(IGroupManager::class);
-		$this->l10nFactory = $this->createMock(IFactory::class);
-		$this->appManager = $this->createMock(IAppManager::class);
+		$this->container = $this->createMock(IServerContainer::class);
 
 		$this->manager = new Manager(
 			$this->logger,
-			$this->dbConnection,
 			$this->l10n,
-			$this->config,
-			$this->encryptionManager,
-			$this->userManager,
-			$this->lockingProvider,
-			$this->request,
 			$this->url,
-			$this->accountManager,
-			$this->groupManager,
-			$this->l10nFactory,
-			$this->appManager
+			$this->container
 		);
 	}
 
@@ -210,14 +167,77 @@ class ManagerTest extends TestCase {
 	}
 
 	public function testGetAdminSettings() {
+		$section = $this->createMock(Sharing::class);
+		$section->expects($this->once())
+			->method('getPriority')
+			->willReturn(13);
+		$this->container->expects($this->once())
+			->method('query')
+			->with(Sharing::class)
+			->willReturn($section);
+
+		$settings = $this->manager->getAdminSettings('sharing');
+
 		$this->assertEquals([
-			0 => [new Sharing($this->config, $this->l10n)],
-		], $this->manager->getAdminSettings('sharing'));
+			13 => [$section]
+		], $settings);
 	}
 
 	public function testGetPersonalSettings() {
+		$section = $this->createMock(Security::class);
+		$section->expects($this->once())
+			->method('getPriority')
+			->willReturn(16);
+		$this->container->expects($this->once())
+			->method('query')
+			->with(Security::class)
+			->willReturn($section);
+
+		$settings = $this->manager->getPersonalSettings('security');
+
 		$this->assertEquals([
-			10 => [new Security($this->userManager)],
-		], $this->manager->getPersonalSettings('security'));
+			16 => [$section]
+		], $settings);
+	}
+
+	public function testSameSectionAsPersonalAndAdmin() {
+		$this->l10n
+			->expects($this->any())
+			->method('t')
+			->will($this->returnArgument(0));
+
+		$this->manager->registerSection('personal', \OCA\WorkflowEngine\Settings\Section::class);
+		$this->manager->registerSection('admin', \OCA\WorkflowEngine\Settings\Section::class);
+
+		$this->url->expects($this->exactly(9))
+			->method('imagePath')
+			->willReturnMap([
+				['core', 'actions/info.svg', '1'],
+				['settings', 'password.svg', '2'],
+				['core', 'clients/phone.svg', '3'],
+				['settings', 'admin.svg', '0'],
+				['core', 'actions/settings-dark.svg', '1'],
+				['core', 'actions/share.svg', '2'],
+				['core', 'actions/password.svg', '3'],
+				['core', 'places/contacts.svg', '5'],
+				['settings', 'help.svg', '4'],
+			]);
+
+		$this->assertEquals([
+			0 => [new Section('personal-info', 'Personal info', 0, '1')],
+			5 => [new Section('security', 'Security', 0, '2')],
+			15 => [new Section('sync-clients', 'Mobile & desktop', 0, '3')],
+			55 => [\OC::$server->query(\OCA\WorkflowEngine\Settings\Section::class)],
+		], $this->manager->getPersonalSections());
+
+		$this->assertEquals([
+			0 => [new Section('overview', 'Overview', 0, '0')],
+			1 => [new Section('server', 'Basic settings', 0, '1')],
+			5 => [new Section('sharing', 'Sharing', 0, '2')],
+			10 => [new Section('security', 'Security', 0, '3')],
+			50 => [new Section('groupware', 'Groupware', 0, '5')],
+			55 => [\OC::$server->query(\OCA\WorkflowEngine\Settings\Section::class)],
+			98 => [new Section('additional', 'Additional settings', 0, '1')],
+		], $this->manager->getAdminSections());
 	}
 }

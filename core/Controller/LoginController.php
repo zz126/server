@@ -131,7 +131,7 @@ class LoginController extends Controller {
 		$this->userSession->logout();
 
 		$response = new RedirectResponse($this->urlGenerator->linkToRouteAbsolute('core.login.showLoginForm'));
-		$response->addHeader('Clear-Site-Data', '"cache", "cookies", "storage", "executionContexts"');
+		$response->addHeader('Clear-Site-Data', '"cache", "storage", "executionContexts"');
 		return $response;
 	}
 
@@ -194,7 +194,7 @@ class LoginController extends Controller {
 		Util::addHeader('meta', ['property' => 'og:site_name', 'content' => Util::sanitizeHTML($this->defaults->getName())]);
 		Util::addHeader('meta', ['property' => 'og:url', 'content' => $this->urlGenerator->getAbsoluteURL('/')]);
 		Util::addHeader('meta', ['property' => 'og:type', 'content' => 'website']);
-		Util::addHeader('meta', ['property' => 'og:image', 'content' => $this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath('core','favicon-touch.png'))]);
+		Util::addHeader('meta', ['property' => 'og:image', 'content' => $this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath('core', 'favicon-touch.png'))]);
 
 		return new TemplateResponse(
 			$this->appName, 'login', $parameters, 'guest'
@@ -320,6 +320,7 @@ class LoginController extends Controller {
 		// requires https://github.com/owncloud/core/pull/24616
 		$this->userSession->completeLogin($loginResult, ['loginName' => $user, 'password' => $password]);
 		$this->userSession->createSessionToken($this->request, $loginResult->getUID(), $user, $password, IToken::REMEMBER);
+		$this->userSession->updateTokens($loginResult->getUID(), $password);
 
 		// User has successfully logged in, now remove the password reset link, when it is available
 		$this->config->deleteUserValue($loginResult->getUID(), 'core', 'lostpassword');
@@ -382,7 +383,7 @@ class LoginController extends Controller {
 		$response = new RedirectResponse(
 			$this->urlGenerator->linkToRoute('core.login.showLoginForm', $args)
 		);
-		$response->throttle(['user' => $user]);
+		$response->throttle(['user' => substr($user, 0, 64)]);
 		$this->session->set('loginMessages', [
 			[$loginMessage], []
 		]);

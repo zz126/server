@@ -1,5 +1,6 @@
 [
   "app.js",
+  "templates.js",
   "file-upload.js",
   "newfilemenu.js",
   "jquery.fileupload.js",

@@ -79,7 +79,7 @@ OCA.External.StatusManager = {
 		} else {
 			defObj = $.ajax({
 				type: 'GET',
-				url: OC.webroot + '/index.php/apps/files_external/' + ((mountData.type === 'personal') ? 'userstorages' : 'userglobalstorages') + '/' + mountData.id,
+				url: OC.getRootPath() + '/index.php/apps/files_external/' + ((mountData.type === 'personal') ? 'userstorages' : 'userglobalstorages') + '/' + mountData.id,
 				data: {'testOnly' : false},
 				success: function (response) {
 					if (response && response.status === 0) {
@@ -392,8 +392,7 @@ OCA.External.StatusManager = {
 	 * @param mountData
 	 */
 	showCredentialsDialog: function (mountPoint, mountData) {
-		var template = Handlebars.compile(OCA.External.StatusManager.credentialsDialogTemplate);
-		var dialog = $(template({
+		var dialog = $(OCA.External.Templates.credentialsDialog({
 			credentials_text: t('files_external', 'Please enter the credentials for the {mount} mount', {
 				'mount': mountPoint
 			}),

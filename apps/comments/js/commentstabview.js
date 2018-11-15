@@ -11,49 +11,6 @@
 /* global Handlebars, escapeHTML */
 
 (function(OC, OCA) {
-	var TEMPLATE =
-		'<ul class="comments">' +
-		'</ul>' +
-		'<div class="emptycontent hidden"><div class="icon-comment"></div>' +
-		'<p>{{emptyResultLabel}}</p></div>' +
-		'<input type="button" class="showMore hidden" value="{{moreLabel}}"' +
-		' name="show-more" id="show-more" />' +
-		'<div class="loading hidden" style="height: 50px"></div>';
-
-	var EDIT_COMMENT_TEMPLATE =
-		'<{{tag}} class="newCommentRow comment" data-id="{{id}}">' +
-		'    <div class="authorRow">' +
-		'        <div class="avatar currentUser" data-username="{{actorId}}"></div>' +
-		'        <div class="author currentUser">{{actorDisplayName}}</div>' +
-		'{{#if isEditMode}}' +
-		'        <div class="action-container">' +
-		'            <a href="#" class="action cancel icon icon-close has-tooltip" title="{{cancelText}}"></a>' +
-		'        </div>' +
-		'{{/if}}' +
-		'    </div>' +
-		'    <form class="newCommentForm">' +
-		'        <div contentEditable="true" class="message" data-placeholder="{{newMessagePlaceholder}}">{{message}}</div>' +
-		'        <input class="submit icon-confirm has-tooltip" type="submit" value="" title="{{submitText}}"/>' +
-		'        <div class="submitLoading icon-loading-small hidden"></div>'+
-		'    </form>' +
-		'</{{tag}}>';
-
-	var COMMENT_TEMPLATE =
-		'<li class="comment{{#if isUnread}} unread{{/if}}{{#if isLong}} collapsed{{/if}}" data-id="{{id}}">' +
-		'    <div class="authorRow">' +
-		'        <div class="avatar{{#if isUserAuthor}} currentUser{{/if}}" {{#if actorId}}data-username="{{actorId}}"{{/if}}> </div>' +
-		'        <div class="author{{#if isUserAuthor}} currentUser{{/if}}">{{actorDisplayName}}</div>' +
-		'{{#if isUserAuthor}}' +
-		'        <a href="#" class="action more icon icon-more has-tooltip"></a>' +
-		'        <div class="deleteLoading icon-loading-small hidden"></div>' +
-		'{{/if}}' +
-		'        <div class="date has-tooltip live-relative-timestamp" data-timestamp="{{timestamp}}" title="{{altDate}}">{{date}}</div>' +
-		'    </div>' +
-		'    <div class="message">{{{formattedMessage}}}</div>' +
-		'{{#if isLong}}' +
-		'    <div class="message-overlay"></div>' +
-		'{{/if}}' +
-		'</li>';
 
 	/**
 	 * @memberof OCA.Comments
@@ -93,22 +50,16 @@
 		},
 
 		template: function(params) {
-			if (!this._template) {
-				this._template = Handlebars.compile(TEMPLATE);
-			}
 			var currentUser = OC.getCurrentUser();
-			return this._template(_.extend({
+			return OCA.Comments.Templates['view'](_.extend({
 				actorId: currentUser.uid,
 				actorDisplayName: currentUser.displayName
 			}, params));
 		},
 
 		editCommentTemplate: function(params) {
-			if (!this._editCommentTemplate) {
-				this._editCommentTemplate = Handlebars.compile(EDIT_COMMENT_TEMPLATE);
-			}
 			var currentUser = OC.getCurrentUser();
-			return this._editCommentTemplate(_.extend({
+			return OCA.Comments.Templates['edit_comment'](_.extend({
 				actorId: currentUser.uid,
 				actorDisplayName: currentUser.displayName,
 				newMessagePlaceholder: t('comments', 'New comment …'),
@@ -119,10 +70,6 @@
 		},
 
 		commentTemplate: function(params) {
-			if (!this._commentTemplate) {
-				this._commentTemplate = Handlebars.compile(COMMENT_TEMPLATE);
-			}
-
 			params = _.extend({
 				editTooltip: t('comments', 'Edit comment'),
 				isUserAuthor: OC.getCurrentUser().uid === params.actorId,
@@ -135,11 +82,15 @@
 				params.actorDisplayName = t('comments', '[Deleted user]');
 			}
 
-			return this._commentTemplate(params);
+			return OCA.Comments.Templates['comment'](params);
 		},
 
 		getLabel: function() {
 			return t('comments', 'Comments');
+		},
+
+		getIcon: function() {
+			return 'icon-comment';
 		},
 
 		setFileInfo: function(fileInfo) {
@@ -195,22 +146,28 @@
 					},
 					sorter: function (q, items) { return items; }
 				},
-				displayTpl: '<li>'
-				+ '<span class="avatar-name-wrapper">'
-				+ '<div class="avatar" '
-				+ 'data-username="${id}"'	// for avatars
-				+ ' data-user="${id}"'		// for contactsmenu
-				+ ' data-user-display-name="${label}"></div>'
-				+ ' <strong>${label}</strong>'
-				+ '</span></li>',
-				insertTpl: ''
-				+ '<span class="avatar-name-wrapper">'
-				+ '<div class="avatar" '
-				+ 'data-username="${id}"'	// for avatars
-				+ ' data-user="${id}"'		// for contactsmenu
-				+ ' data-user-display-name="${label}"></div>'
-				+ ' <strong>${label}</strong>'
-				+ '</span>',
+				displayTpl: function (item) {
+					return '<li>' +
+						'<span class="avatar-name-wrapper">' +
+							'<span class="avatar" ' +
+									'data-username="' + escapeHTML(item.id) + '" ' + // for avatars
+									'data-user="' + escapeHTML(item.id) + '" ' + // for contactsmenu
+									'data-user-display-name="' + escapeHTML(item.label) + '">' +
+							'</span>' +
+							'<strong>' + escapeHTML(item.label) + '</strong>' +
+						'</span></li>';
+				},
+				insertTpl: function (item) {
+					return '' +
+						'<span class="avatar-name-wrapper">' +
+							'<span class="avatar" ' +
+									'data-username="' + escapeHTML(item.id) + '" ' + // for avatars
+									'data-user="' + escapeHTML(item.id) + '" ' + // for contactsmenu
+									'data-user-display-name="' + escapeHTML(item.label) + '">' +
+							'</span>' +
+							'<strong>' + escapeHTML(item.label) + '</strong>' +
+						'</span>';
+				},
 				searchKey: "label"
 			});
 			$target.on('inserted.atwho', function (je, $el) {
@@ -220,7 +177,7 @@
 					// passing the whole comments form would re-apply and request
 					// avatars from the server
 					$(je.target).find(
-						'div[data-username="' + $el.find('[data-username]').data('username') + '"]'
+						'span[data-username="' + $el.find('[data-username]').data('username') + '"]'
 					).parent(),
 					editionMode
 				);
@@ -436,14 +393,13 @@
 				return;
 			}
 
-			$el.find('.avatar').each(function() {
-				var avatar = $(this);
-				var strong = $(this).next();
-				var appendTo = $(this).parent();
+			$el.find('.avatar-name-wrapper').each(function() {
+				var $this = $(this);
+				var $avatar = $this.find('.avatar');
 
-				var username = $(this).data('username');
-				if (username !== oc_current_user) {
-					$.merge(avatar, strong).contactsMenu(avatar.data('user'), 0, appendTo);
+				var user = $avatar.data('user');
+				if (user !== OC.getCurrentUser().uid) {
+					$this.contactsMenu(user, 0, $this);
 				}
 			});
 		},
@@ -482,20 +438,22 @@
 		},
 
 		_composeHTMLMention: function(uid, displayName) {
-			var avatar = '<div class="avatar" '
-				+ 'data-username="' + _.escape(uid) + '"'
-				+ ' data-user="' + _.escape(uid) + '"'
-				+ ' data-user-display-name="'
-				+ _.escape(displayName) + '"></div>';
+			var avatar = '' +
+				'<span class="avatar" ' +
+						'data-username="' + _.escape(uid) + '" ' +
+						'data-user="' + _.escape(uid) + '" ' +
+						'data-user-display-name="' + _.escape(displayName) + '">' +
+				'</span>';
 
 			var isCurrentUser = (uid === OC.getCurrentUser().uid);
 
-			return ''
-				+ '<span class="atwho-inserted" contenteditable="false">'
-				+ '<span class="avatar-name-wrapper' + (isCurrentUser ? ' currentUser' : '') + '">'
-				+ avatar + ' <strong>'+ _.escape(displayName)+'</strong>'
-				+ '</span>'
-				+ '</span>';
+			return '' +
+				'<span class="atwho-inserted" contenteditable="false">' +
+					'<span class="avatar-name-wrapper' + (isCurrentUser ? ' currentUser' : '') + '">' +
+						avatar +
+						'<strong>' + _.escape(displayName) + '</strong>' +
+					'</span>' +
+				'</span>';
 		},
 
 		nextPage: function() {

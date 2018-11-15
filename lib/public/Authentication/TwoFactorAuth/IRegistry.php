@@ -39,6 +39,10 @@ use OCP\IUser;
  */
 interface IRegistry {
 
+
+	const EVENT_PROVIDER_ENABLED = self::class . '::enable';
+	const EVENT_PROVIDER_DISABLED = self::class . '::disable';
+
 	/**
 	 * Get a key-value map of providers and their enabled/disabled state for
 	 * the given user.
@@ -62,4 +66,19 @@ interface IRegistry {
 	 * @since 14.0.0
 	 */
 	public function disableProviderFor(IProvider $provider, IUser $user);
+
+	/**
+	 * Cleans up all entries of the provider with the given id. This is only
+	 * necessary in edge-cases where an admin disabled and/or uninstalled a
+	 * provider app. Invoking this method will make sure outdated provider
+	 * associations are removed so that users can log in.
+	 *
+	 * @since 15.0.0
+	 *
+	 * @param string $providerId
+	 *
+	 * @return void
+	 */
+	public function cleanUp(string $providerId);
+
 }

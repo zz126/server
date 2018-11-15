@@ -35,6 +35,7 @@
 
 namespace OCA\Files_Sharing\Controller;
 
+use OC\Security\CSP\ContentSecurityPolicy;
 use OC_Files;
 use OC_Util;
 use OCA\FederatedFileSharing\FederatedShareProvider;
@@ -60,6 +61,7 @@ use OCA\Files_Sharing\Activity\Providers\Downloads;
 use OCP\Files\NotFoundException;
 use OCP\Files\IRootFolder;
 use OCP\Share\Exceptions\ShareNotFound;
+use OCP\Util;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\GenericEvent;
 use OCP\Share\IManager as ShareManager;
@@ -157,7 +159,16 @@ class ShareController extends AuthPublicShareController {
 		$event = new GenericEvent(null, $templateParameters);
 		$this->eventDispatcher->dispatch('OCA\Files_Sharing::loadAdditionalScripts::publicShareAuth', $event);
 
-		return new TemplateResponse('core', 'publicshareauth', $templateParameters, 'guest');
+		$response = new TemplateResponse('core', 'publicshareauth', $templateParameters, 'guest');
+		if ($this->share->getSendPasswordByTalk()) {
+			$csp = new ContentSecurityPolicy();
+			$csp->addAllowedConnectDomain('*');
+			$csp->addAllowedMediaDomain('blob:');
+			$csp->allowEvalScript(true);
+			$response->setContentSecurityPolicy($csp);
+		}
+
+		return $response;
 	}
 
 	/**
@@ -169,7 +180,16 @@ class ShareController extends AuthPublicShareController {
 		$event = new GenericEvent(null, $templateParameters);
 		$this->eventDispatcher->dispatch('OCA\Files_Sharing::loadAdditionalScripts::publicShareAuth', $event);
 
-		return new TemplateResponse('core', 'publicshareauth', $templateParameters, 'guest');
+		$response = new TemplateResponse('core', 'publicshareauth', $templateParameters, 'guest');
+		if ($this->share->getSendPasswordByTalk()) {
+			$csp = new ContentSecurityPolicy();
+			$csp->addAllowedConnectDomain('*');
+			$csp->addAllowedMediaDomain('blob:');
+			$csp->allowEvalScript(true);
+			$response->setContentSecurityPolicy($csp);
+		}
+
+		return $response;
 	}
 
 	protected function verifyPassword(string $password): bool {
@@ -337,6 +357,7 @@ class ShareController extends AuthPublicShareController {
 			$folder->assign('isPublic', true);
 			$folder->assign('hideFileList', $hideFileList);
 			$folder->assign('publicUploadEnabled', 'no');
+			$folder->assign('showgridview', true);
 			$folder->assign('uploadMaxFilesize', $maxUploadFilesize);
 			$folder->assign('uploadMaxHumanFilesize', \OCP\Util::humanFileSize($maxUploadFilesize));
 			$folder->assign('freeSpace', $freeSpace);
@@ -386,6 +407,8 @@ class ShareController extends AuthPublicShareController {
 		\OCP\Util::addScript('files', 'file-upload');
 		\OCP\Util::addStyle('files_sharing', 'publicView');
 		\OCP\Util::addScript('files_sharing', 'public');
+		\OCP\Util::addScript('files_sharing', 'templates');
+		\OCP\Util::addScript('files_sharing', 'public_note');
 		\OCP\Util::addScript('files', 'fileactions');
 		\OCP\Util::addScript('files', 'fileactionsmenu');
 		\OCP\Util::addScript('files', 'jquery.fileupload');
@@ -395,6 +418,7 @@ class ShareController extends AuthPublicShareController {
 			// JS required for folders
 			\OCP\Util::addStyle('files', 'merged');
 			\OCP\Util::addScript('files', 'filesummary');
+			\OCP\Util::addScript('files', 'templates');
 			\OCP\Util::addScript('files', 'breadcrumb');
 			\OCP\Util::addScript('files', 'fileinfomodel');
 			\OCP\Util::addScript('files', 'newfilemenu');

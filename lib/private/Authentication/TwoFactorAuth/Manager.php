@@ -57,6 +57,9 @@ class Manager {
 	/** @var IRegistry */
 	private $providerRegistry;
 
+	/** @var MandatoryTwoFactor */
+	private $mandatoryTwoFactor;
+
 	/** @var ISession */
 	private $session;
 
@@ -79,10 +82,14 @@ class Manager {
 	private $dispatcher;
 
 	public function __construct(ProviderLoader $providerLoader,
-								IRegistry $providerRegistry, ISession $session, IConfig $config,
+								IRegistry $providerRegistry,
+								MandatoryTwoFactor $mandatoryTwoFactor,
+								ISession $session, IConfig $config,
 								IManager $activityManager, ILogger $logger, TokenProvider $tokenProvider,
 								ITimeFactory $timeFactory, EventDispatcherInterface $eventDispatcher) {
 		$this->providerLoader = $providerLoader;
+		$this->providerRegistry = $providerRegistry;
+		$this->mandatoryTwoFactor = $mandatoryTwoFactor;
 		$this->session = $session;
 		$this->config = $config;
 		$this->activityManager = $activityManager;
@@ -90,7 +97,6 @@ class Manager {
 		$this->tokenProvider = $tokenProvider;
 		$this->timeFactory = $timeFactory;
 		$this->dispatcher = $eventDispatcher;
-		$this->providerRegistry = $providerRegistry;
 	}
 
 	/**
@@ -100,10 +106,8 @@ class Manager {
 	 * @return boolean
 	 */
 	public function isTwoFactorAuthenticated(IUser $user): bool {
-		$twoFactorEnabled = ((int) $this->config->getUserValue($user->getUID(), 'core', 'two_factor_auth_disabled', 0)) === 0;
-
-		if (!$twoFactorEnabled) {
-			return false;
+		if ($this->mandatoryTwoFactor->isEnforcedFor($user)) {
+			return true;
 		}
 
 		$providerStates = $this->providerRegistry->getProviderStates($user);
@@ -113,25 +117,7 @@ class Manager {
 		$providerIds = array_keys($enabled);
 		$providerIdsWithoutBackupCodes = array_diff($providerIds, [self::BACKUP_CODES_PROVIDER_ID]);
 
-		return $twoFactorEnabled && !empty($providerIdsWithoutBackupCodes);
-	}
-
-	/**
-	 * Disable 2FA checks for the given user
-	 *
-	 * @param IUser $user
-	 */
-	public function disableTwoFactorAuthentication(IUser $user) {
-		$this->config->setUserValue($user->getUID(), 'core', 'two_factor_auth_disabled', 1);
-	}
-
-	/**
-	 * Enable all 2FA checks for the given user
-	 *
-	 * @param IUser $user
-	 */
-	public function enableTwoFactorAuthentication(IUser $user) {
-		$this->config->deleteUserValue($user->getUID(), 'core', 'two_factor_auth_disabled');
+		return !empty($providerIdsWithoutBackupCodes);
 	}
 
 	/**

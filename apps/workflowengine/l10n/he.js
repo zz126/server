@@ -1,10 +1,16 @@
 OC.L10N.register(
     "workflowengine",
     {
+    "Short rule description" : "תיאור מקוצר לכלל",
+    "Add rule" : "הוספת כלל",
+    "Reset" : "איפוס",
+    "Save" : "שמירה",
+    "Saving…" : "בהליכי שמירה…",
     "Group list is empty" : "רשימת הקבוצות ריקה",
     "Unable to retrieve the group list" : "לא ניתן לקבל את רשימת הקבוצות",
     "Saved" : "נשמרה",
     "Saving failed:" : "השמירה נכשלה:",
+    "Add rule group" : "הוספת קבוצת כללים",
     "File MIME type" : "סוג ה־MIME של הקובץ",
     "is" : "הוא",
     "is not" : "אינו",
@@ -39,6 +45,7 @@ OC.L10N.register(
     "Android client" : "לקוח Android",
     "iOS client" : "לקוח iOS",
     "Desktop client" : "לקוח שולחן עבודה",
+    "Thunderbird & Outlook addons" : "תוספות ל־Thunderbird ול־Outlook",
     "User group membership" : "חברות בקבוצת משתמשים",
     "is member of" : "חבר בקבוצה",
     "is not member of" : "לא חבר בקבוצה",
@@ -56,10 +63,7 @@ OC.L10N.register(
     "Operation #%s does not exist" : "פעולה מס׳ %s לא קיימת",
     "Operation %s does not exist" : "הפעולה %s לא קיימת",
     "Operation %s is invalid" : "הפעולה %s שגויה",
-    "Add rule" : "הוספת כלל",
-    "Reset" : "איפוס",
-    "Save" : "שמירה",
-    "Saving…" : "בהליכי שמירה…",
+    "Open documentation" : "פתיחת תיעוד",
     "Loading…" : "בטעינה…"
 },
 "nplurals=4; plural=(n == 1 && n % 1 == 0) ? 0 : (n == 2 && n % 1 == 0) ? 1: (n % 10 == 0 && n % 1 == 0 && n > 10) ? 2 : 3;");

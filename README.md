@@ -36,7 +36,16 @@
 
 […learn more about how to get support for Nextcloud here!](https://nextcloud.com/support)
 
-## Contribution Guidelines
+## Join the team :family:
+
+### How to contribute
+
+1. [Set up your local development environment](https://docs.nextcloud.com/server/14/developer_manual/general/devenv.html) :rocket:
+2. [Pick a good first issue](https://github.com/nextcloud/server/labels/good%20first%20issue) :notebook:
+3. Create a branch, a [Pull Request](https://opensource.guide/how-to-contribute/#opening-a-pull-request) and `@mention` the people from the issue :computer:
+4. Wait for it to get merged and :tada:
+
+### Contribution Guidelines
 
 All contributions to this repository from June, 16 2016 on are considered to be
 licensed under the AGPLv3 or any later version.
@@ -52,11 +61,11 @@ changed it substantially:
 
 Please read the [Code of Conduct](https://nextcloud.com/community/code-of-conduct/). This document offers some guidance to ensure Nextcloud participants can cooperate effectively in a positive and inspiring atmosphere, and to explain how together we can strengthen and support each other.
 
-Please review the [guidelines for contributing](https://github.com/nextcloud/server/blob/master/CONTRIBUTING.md) to this repository.
+Please review the [guidelines for contributing](.github/CONTRIBUTING.md) to this repository.
 
 More information how to contribute: [https://nextcloud.com/contribute/](https://nextcloud.com/contribute/)
 
-## Running master checkouts
+### Running master checkouts
 
 Third-party components are handled as git submodules which have to be initialized first. So aside from the regular git checkout invoking `git submodule update --init` or a similar command is needed, for details see Git documentation.
 

@@ -29,96 +29,39 @@
 
 namespace OC\Settings;
 
-use OC\Accounts\AccountManager;
-use OCP\App\IAppManager;
 use OCP\AppFramework\QueryException;
-use OCP\Encryption\IManager as EncryptionManager;
-use OCP\IConfig;
-use OCP\IDBConnection;
-use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\ILogger;
-use OCP\IRequest;
+use OCP\IServerContainer;
 use OCP\IURLGenerator;
-use OCP\IUserManager;
-use OCP\L10N\IFactory;
-use OCP\Lock\ILockingProvider;
 use OCP\Settings\ISettings;
 use OCP\Settings\IManager;
 use OCP\Settings\ISection;
-use OCP\Util;
 
 class Manager implements IManager {
+
 	/** @var ILogger */
 	private $log;
-	/** @var IDBConnection */
-	private $dbc;
+
 	/** @var IL10N */
 	private $l;
-	/** @var IConfig */
-	private $config;
-	/** @var EncryptionManager */
-	private $encryptionManager;
-	/** @var IUserManager */
-	private $userManager;
-	/** @var ILockingProvider */
-	private $lockingProvider;
-	/** @var IRequest */
-	private $request;
+
 	/** @var IURLGenerator */
 	private $url;
-	/** @var AccountManager */
-	private $accountManager;
-	/** @var IGroupManager */
-	private $groupManager;
-	/** @var IFactory */
-	private $l10nFactory;
-	/** @var IAppManager */
-	private $appManager;
 
-	/**
-	 * @param ILogger $log
-	 * @param IDBConnection $dbc
-	 * @param IL10N $l
-	 * @param IConfig $config
-	 * @param EncryptionManager $encryptionManager
-	 * @param IUserManager $userManager
-	 * @param ILockingProvider $lockingProvider
-	 * @param IRequest $request
-	 * @param IURLGenerator $url
-	 * @param AccountManager $accountManager
-	 * @param IGroupManager $groupManager
-	 * @param IFactory $l10nFactory
-	 * @param IAppManager $appManager
-	 */
+	/** @var IServerContainer */
+	private $container;
+
 	public function __construct(
 		ILogger $log,
-		IDBConnection $dbc,
-		IL10N $l,
-		IConfig $config,
-		EncryptionManager $encryptionManager,
-		IUserManager $userManager,
-		ILockingProvider $lockingProvider,
-		IRequest $request,
+		IL10N $l10n,
 		IURLGenerator $url,
-		AccountManager $accountManager,
-		IGroupManager $groupManager,
-		IFactory $l10nFactory,
-		IAppManager $appManager
+		IServerContainer $container
 	) {
 		$this->log = $log;
-		$this->dbc = $dbc;
-		$this->l = $l;
-		$this->config = $config;
-		$this->encryptionManager = $encryptionManager;
-		$this->userManager = $userManager;
-		$this->lockingProvider = $lockingProvider;
-		$this->request = $request;
+		$this->l = $l10n;
 		$this->url = $url;
-		$this->accountManager = $accountManager;
-		$this->groupManager = $groupManager;
-		$this->l10nFactory = $l10nFactory;
-		$this->appManager = $appManager;
+		$this->container = $container;
 	}
 
 	/** @var array */
@@ -130,14 +73,20 @@ class Manager implements IManager {
 	/**
 	 * @param string $type 'admin' or 'personal'
 	 * @param string $section Class must implement OCP\Settings\ISection
+	 *
 	 * @return void
 	 */
 	public function registerSection(string $type, string $section) {
-		$this->sectionClasses[$section] = $type;
+		if (!isset($this->sectionClasses[$type])) {
+			$this->sectionClasses[$type] = [];
+		}
+
+		$this->sectionClasses[$type][] = $section;
 	}
 
 	/**
 	 * @param string $type 'admin' or 'personal'
+	 *
 	 * @return ISection[]
 	 */
 	protected function getSections(string $type): array {
@@ -145,7 +94,11 @@ class Manager implements IManager {
 			$this->sections[$type] = [];
 		}
 
-		foreach ($this->sectionClasses as $class => $sectionType) {
+		if (!isset($this->sectionClasses[$type])) {
+			return $this->sections[$type];
+		}
+
+		foreach ($this->sectionClasses[$type] as $index => $class) {
 			try {
 				/** @var ISection $section */
 				$section = \OC::$server->query($class);
@@ -159,9 +112,16 @@ class Manager implements IManager {
 				continue;
 			}
 
-			$this->sections[$sectionType][$section->getID()] = $section;
+			$sectionID = $section->getID();
 
-			unset($this->sectionClasses[$class]);
+			if (isset($this->sections[$type][$sectionID])) {
+				$this->log->logException(new \InvalidArgumentException('Section with the same ID already registered'), ['level' => ILogger::INFO]);
+				continue;
+			}
+
+			$this->sections[$type][$sectionID] = $section;
+
+			unset($this->sectionClasses[$type][$index]);
 		}
 
 		return $this->sections[$type];
@@ -176,6 +136,7 @@ class Manager implements IManager {
 	/**
 	 * @param string $type 'admin' or 'personal'
 	 * @param string $setting Class must implement OCP\Settings\ISetting
+	 *
 	 * @return void
 	 */
 	public function registerSetting(string $type, string $setting) {
@@ -185,6 +146,7 @@ class Manager implements IManager {
 	/**
 	 * @param string $type 'admin' or 'personal'
 	 * @param string $section
+	 *
 	 * @return ISettings[]
 	 */
 	protected function getSettings(string $type, string $section): array {
@@ -252,6 +214,7 @@ class Manager implements IManager {
 
 	/**
 	 * @param string $section
+	 *
 	 * @return ISection[]
 	 */
 	private function getBuiltInAdminSettings($section): array {
@@ -259,24 +222,24 @@ class Manager implements IManager {
 
 		if ($section === 'overview') {
 			/** @var ISettings $form */
-			$form = new Admin\Overview($this->config);
+			$form = $this->container->query(Admin\Overview::class);
 			$forms[$form->getPriority()] = [$form];
 		}
 		if ($section === 'server') {
 			/** @var ISettings $form */
-			$form = new Admin\Server($this->dbc, $this->request, $this->config, $this->lockingProvider, $this->l);
+			$form = $this->container->query(Admin\Server::class);
 			$forms[$form->getPriority()] = [$form];
-			$form = new Admin\Mail($this->config);
+			$form = $this->container->query(Admin\Mail::class);
 			$forms[$form->getPriority()] = [$form];
 		}
 		if ($section === 'security') {
 			/** @var ISettings $form */
-			$form = new Admin\Encryption($this->encryptionManager, $this->userManager);
+			$form = $this->container->query(Admin\Security::class);
 			$forms[$form->getPriority()] = [$form];
 		}
 		if ($section === 'sharing') {
 			/** @var ISettings $form */
-			$form = new Admin\Sharing($this->config, $this->l);
+			$form = $this->container->query(Admin\Sharing::class);
 			$forms[$form->getPriority()] = [$form];
 		}
 
@@ -285,6 +248,7 @@ class Manager implements IManager {
 
 	/**
 	 * @param string $section
+	 *
 	 * @return ISection[]
 	 */
 	private function getBuiltInPersonalSettings($section): array {
@@ -292,27 +256,19 @@ class Manager implements IManager {
 
 		if ($section === 'personal-info') {
 			/** @var ISettings $form */
-			$form = new Personal\PersonalInfo(
-				$this->config,
-				$this->userManager,
-				$this->groupManager,
-				$this->accountManager,
-				$this->appManager,
-				$this->l10nFactory,
-				$this->l
-			);
+			$form = $this->container->query(Personal\PersonalInfo::class);
 			$forms[$form->getPriority()] = [$form];
 			$form = new Personal\ServerDevNotice();
 			$forms[$form->getPriority()] = [$form];
 		}
-		if($section === 'security') {
+		if ($section === 'security') {
 			/** @var ISettings $form */
-			$form = new Personal\Security($this->userManager);
+			$form = $this->container->query(Personal\Security::class);
 			$forms[$form->getPriority()] = [$form];
 		}
 		if ($section === 'additional') {
 			/** @var ISettings $form */
-			$form = new Personal\Additional();
+			$form = $this->container->query(Personal\Additional::class);
 			$forms[$form->getPriority()] = [$form];
 		}
 
@@ -348,7 +304,7 @@ class Manager implements IManager {
 		];
 
 		$legacyForms = \OC_App::getForms('personal');
-		if(!empty($legacyForms) && $this->hasLegacyPersonalSettingsToRender($legacyForms)) {
+		if (!empty($legacyForms) && $this->hasLegacyPersonalSettingsToRender($legacyForms)) {
 			$sections[98] = [new Section('additional', $this->l->t('Additional settings'), 0, $this->url->imagePath('core', 'actions/settings-dark.svg'))];
 		}
 
@@ -370,11 +326,12 @@ class Manager implements IManager {
 
 	/**
 	 * @param string[] $forms
+	 *
 	 * @return bool
 	 */
 	private function hasLegacyPersonalSettingsToRender(array $forms): bool {
 		foreach ($forms as $form) {
-			if(trim($form) !== '') {
+			if (trim($form) !== '') {
 				return true;
 			}
 		}

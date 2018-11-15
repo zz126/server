@@ -26,6 +26,7 @@ use Exception;
 use OC;
 use OC\Authentication\Token\IProvider as TokenProvider;
 use OC\Authentication\TwoFactorAuth\Manager;
+use OC\Authentication\TwoFactorAuth\MandatoryTwoFactor;
 use OC\Authentication\TwoFactorAuth\ProviderLoader;
 use OCP\Activity\IEvent;
 use OCP\Activity\IManager;
@@ -36,56 +37,61 @@ use OCP\IConfig;
 use OCP\ILogger;
 use OCP\ISession;
 use OCP\IUser;
+use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Test\TestCase;
 
 class ManagerTest extends TestCase {
 
-	/** @var IUser|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IUser|MockObject */
 	private $user;
 
-	/** @var ProviderLoader|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ProviderLoader|MockObject */
 	private $providerLoader;
 
-	/** @var IRegistry|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IRegistry|MockObject */
 	private $providerRegistry;
 
-	/** @var ISession|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var MandatoryTwoFactor|MockObject */
+	private $mandatoryTwoFactor;
+
+	/** @var ISession|MockObject */
 	private $session;
 
 	/** @var Manager */
 	private $manager;
 
-	/** @var IConfig|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IConfig|MockObject */
 	private $config;
 
-	/** @var IManager|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IManager|MockObject */
 	private $activityManager;
 
-	/** @var ILogger|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ILogger|MockObject */
 	private $logger;
 
-	/** @var IProvider|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IProvider|MockObject */
 	private $fakeProvider;
 
-	/** @var IProvider|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IProvider|MockObject */
 	private $backupProvider;
 
-	/** @var TokenProvider|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var TokenProvider|MockObject */
 	private $tokenProvider;
 
-	/** @var ITimeFactory|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ITimeFactory|MockObject */
 	private $timeFactory;
 
-	/** @var EventDispatcherInterface|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var EventDispatcherInterface|MockObject */
 	private $eventDispatcher;
 
 	protected function setUp() {
 		parent::setUp();
 
 		$this->user = $this->createMock(IUser::class);
-		$this->providerLoader = $this->createMock(\OC\Authentication\TwoFactorAuth\ProviderLoader::class);
+		$this->providerLoader = $this->createMock(ProviderLoader::class);
 		$this->providerRegistry = $this->createMock(IRegistry::class);
+		$this->mandatoryTwoFactor = $this->createMock(MandatoryTwoFactor::class);
 		$this->session = $this->createMock(ISession::class);
 		$this->config = $this->createMock(IConfig::class);
 		$this->activityManager = $this->createMock(IManager::class);
@@ -97,6 +103,7 @@ class ManagerTest extends TestCase {
 		$this->manager = new Manager(
 			$this->providerLoader,
 			$this->providerRegistry,
+			$this->mandatoryTwoFactor,
 			$this->session,
 			$this->config,
 			$this->activityManager,
@@ -142,14 +149,22 @@ class ManagerTest extends TestCase {
 			]);
 	}
 
+	public function testIsTwoFactorAuthenticatedEnforced() {
+		$this->mandatoryTwoFactor->expects($this->once())
+			->method('isEnforcedFor')
+			->with($this->user)
+			->willReturn(true);
+
+		$enabled = $this->manager->isTwoFactorAuthenticated($this->user);
+
+		$this->assertTrue($enabled);
+	}
+
 	public function testIsTwoFactorAuthenticatedNoProviders() {
-		$this->user->expects($this->once())
-			->method('getUID')
-			->will($this->returnValue('user123'));
-		$this->config->expects($this->once())
-			->method('getUserValue')
-			->with('user123', 'core', 'two_factor_auth_disabled', 0)
-			->willReturn(0);
+		$this->mandatoryTwoFactor->expects($this->once())
+			->method('isEnforcedFor')
+			->with($this->user)
+			->willReturn(false);
 		$this->providerRegistry->expects($this->once())
 			->method('getProviderStates')
 			->willReturn([]); // No providers registered
@@ -161,13 +176,10 @@ class ManagerTest extends TestCase {
 	}
 
 	public function testIsTwoFactorAuthenticatedOnlyBackupCodes() {
-		$this->user->expects($this->once())
-			->method('getUID')
-			->will($this->returnValue('user123'));
-		$this->config->expects($this->once())
-			->method('getUserValue')
-			->with('user123', 'core', 'two_factor_auth_disabled', 0)
-			->willReturn(0);
+		$this->mandatoryTwoFactor->expects($this->once())
+			->method('isEnforcedFor')
+			->with($this->user)
+			->willReturn(false);
 		$this->providerRegistry->expects($this->once())
 			->method('getProviderStates')
 			->willReturn([
@@ -187,13 +199,10 @@ class ManagerTest extends TestCase {
 	}
 
 	public function testIsTwoFactorAuthenticatedFailingProviders() {
-		$this->user->expects($this->once())
-			->method('getUID')
-			->will($this->returnValue('user123'));
-		$this->config->expects($this->once())
-			->method('getUserValue')
-			->with('user123', 'core', 'two_factor_auth_disabled', 0)
-			->willReturn(0);
+		$this->mandatoryTwoFactor->expects($this->once())
+			->method('isEnforcedFor')
+			->with($this->user)
+			->willReturn(false);
 		$this->providerRegistry->expects($this->once())
 			->method('getProviderStates')
 			->willReturn([
@@ -225,13 +234,6 @@ class ManagerTest extends TestCase {
 	 * @dataProvider providerStatesFixData
 	 */
 	public function testIsTwoFactorAuthenticatedFixesProviderStates(bool $providerEnabled, bool $expected) {
-		$this->user->expects($this->once())
-			->method('getUID')
-			->will($this->returnValue('user123'));
-		$this->config->expects($this->once())
-			->method('getUserValue')
-			->with('user123', 'core', 'two_factor_auth_disabled', 0)
-			->willReturn(0);
 		$this->providerRegistry->expects($this->once())
 			->method('getProviderStates')
 			->willReturn([]); // Nothing registered yet
@@ -502,6 +504,7 @@ class ManagerTest extends TestCase {
 			->setConstructorArgs([
 				$this->providerLoader,
 				$this->providerRegistry,
+				$this->mandatoryTwoFactor,
 				$this->session,
 				$this->config,
 				$this->activityManager,

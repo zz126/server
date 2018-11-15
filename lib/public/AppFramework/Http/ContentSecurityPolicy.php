@@ -44,12 +44,8 @@ namespace OCP\AppFramework\Http;
 class ContentSecurityPolicy extends EmptyContentSecurityPolicy {
 	/** @var bool Whether inline JS snippets are allowed */
 	protected $inlineScriptAllowed = false;
-	/**
-	 * @var bool Whether eval in JS scripts is allowed
-	 * TODO: Disallow per default
-	 * @link https://github.com/owncloud/core/issues/11925
-	 */
-	protected $evalScriptAllowed = true;
+	/** @var bool Whether eval in JS scripts is allowed */
+	protected $evalScriptAllowed = false;
 	/** @var array Domains from which scripts can get loaded */
 	protected $allowedScriptDomains = [
 		'\'self\'',
@@ -91,4 +87,10 @@ class ContentSecurityPolicy extends EmptyContentSecurityPolicy {
 
 	/** @var array Domains which can embed this Nextcloud instance */
 	protected $allowedFrameAncestors = [];
+
+	/** @var array Domains from which web-workers can be loaded */
+	protected $allowedWorkerSrcDomains = [];
+
+	/** @var array Locations to report violations to */
+	protected $reportTo = [];
 }

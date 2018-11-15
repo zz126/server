@@ -475,9 +475,9 @@ class Manager extends PublicEmitter implements IUserManager {
 	 */
 	public function countDisabledUsersOfGroups(array $groups): int {
 		$queryBuilder = \OC::$server->getDatabaseConnection()->getQueryBuilder();
-		$queryBuilder->select($queryBuilder->createFunction('COUNT(Distinct uid)'))
+		$queryBuilder->select($queryBuilder->createFunction('COUNT(DISTINCT ' . $queryBuilder->getColumnName('uid') . ')'))
 			->from('preferences', 'p')
-			->innerJoin('p', 'group_user', 'g', 'p.userid = g.uid')
+			->innerJoin('p', 'group_user', 'g', $queryBuilder->expr()->eq('p.userid', 'g.uid'))
 			->where($queryBuilder->expr()->eq('appid', $queryBuilder->createNamedParameter('core')))
 			->andWhere($queryBuilder->expr()->eq('configkey', $queryBuilder->createNamedParameter('enabled')))
 			->andWhere($queryBuilder->expr()->eq('configvalue', $queryBuilder->createNamedParameter('false'), IQueryBuilder::PARAM_STR))
@@ -591,8 +591,12 @@ class Manager extends PublicEmitter implements IUserManager {
 	public function getByEmail($email) {
 		$userIds = $this->config->getUsersForUserValue('settings', 'email', $email);
 
-		return array_map(function($uid) {
+		$users = array_map(function($uid) {
 			return $this->get($uid);
 		}, $userIds);
+
+		return array_values(array_filter($users, function($u) {
+			return ($u instanceof IUser);
+		}));
 	}
 }

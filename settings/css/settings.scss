@@ -104,6 +104,11 @@ input {
 	display: inline-grid;
 	grid-template-columns: 1fr;
 	grid-template-rows: 1fr 1fr 1fr;
+
+	/* Same font-weight exception as for .personal-settings-container */
+	> div h3 {
+		font-weight: 300;
+	}
 }
 
 .personal-show-container {
@@ -213,12 +218,14 @@ select {
 		clear: both;
 	}
 	> div {
-		h2 {
+		h3 {
 			position: relative;
 			display: inline-flex;
 			flex-wrap: nowrap;
 			justify-content: flex-start;
 			width: 100%;
+			font-weight: 300;
+
 			> label {
 				white-space: nowrap;
 				text-overflow: ellipsis;
@@ -321,7 +328,7 @@ select {
 				&.active {
 					box-shadow: inset 2px 0 var(--color-primary);
 					.menuitem-text {
-						font-weight: 600;
+						font-weight: bold;
 					}
 				}
 			}
@@ -471,6 +478,27 @@ table.nostyle {
 	}
 }
 
+
+
+/* Two-Factor Authentication (2FA) */
+
+#two-factor-auth {
+	h3 {
+		margin-top: 24px;
+	}
+
+	li > div {
+    	margin-left: 20px;
+	}
+
+	.two-factor-provider-settings-icon {
+		width: 16px;
+		height: 16px;
+		vertical-align: sub;
+	}
+}
+
+
 #new-app-login-name,
 #new-app-password {
 	width: 245px;
@@ -538,7 +566,7 @@ li.active {
 		width: 150px;
 	}
 	label {
-		font-weight: 700;
+		font-weight: bold;
 	}
 }
 
@@ -1377,21 +1405,6 @@ doesnotexist:-o-prefocus, .strengthify-wrapper {
 
 /* USERS LIST -------------------------------------------------------------- */
 #body-settings {
-	#app-navigation {
-		/* Hack to override the javascript orderBy */
-		#usergrouplist > li {
-			order: 4;
-			&#everyone {
-				order:1;
-			}
-			&#admin {
-				order:2;
-			}
-			&#disabled {
-				order:3;
-			}
-		}
-	}
 	$grid-row-height: 46px;
 	#app-content.user-list-grid {
 		display: grid;
@@ -1409,7 +1422,7 @@ doesnotexist:-o-prefocus, .strengthify-wrapper {
 			/* let's define the column until storage path,
 			   what follows will be manually defined  */
 			grid-template-columns: 44px minmax(150px, 1fr) repeat(auto-fit, minmax(120px, 1fr));
-			border-top: var(--color-border) 1px solid;
+			border-bottom: var(--color-border) 1px solid;
 			&.disabled {
 				opacity: .5;
 			}
@@ -1443,7 +1456,7 @@ doesnotexist:-o-prefocus, .strengthify-wrapper {
 				align-self: normal;
 				background-color: var(--color-main-background);
 				z-index: 55; /* above multiselect */
-				top: 0;
+				top: $header-height;
 				&.sticky {
 					box-shadow: 0 -2px 10px 1px var(--color-box-shadow);
 				}
@@ -1456,13 +1469,24 @@ doesnotexist:-o-prefocus, .strengthify-wrapper {
 					z-index: 0;
 				}
 			}
-			// separate prop to set initial value to top:0
+			// separate prop to set initial value to top: 50px
 			&#new-user {
-				top: $grid-row-height;
+				top: $header-height + $grid-row-height;
 			}
 			&#grid-header {
 				color: var(--color-text-maxcontrast);
 				z-index: 60; /* above new-user */
+
+				#headerDisplayName,
+				#headerPassword,
+				#headerAddress,
+				#headerGroups,
+				#headerSubAdmins,
+				#headerQuota,
+				#headerLanguages {
+					/* Line up header text with column content for when there’s inputs */
+					padding-left: 7px;
+				}
 			}
 			&:hover {
 				input:not([type='submit']):not(:focus):not(:active) {
@@ -1544,6 +1568,9 @@ doesnotexist:-o-prefocus, .strengthify-wrapper {
 					}
 				}
 				&.userActions {
+					#newsubmit {
+						width: 100%;
+					}
 					.toggleUserActions {
 						position: relative;
 						.icon-more {

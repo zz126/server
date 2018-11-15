@@ -23,86 +23,9 @@ declare(strict_types=1);
  */
 namespace OCA\Files_Trashbin\Sabre;
 
-use OCP\Files\FileInfo;
-use Sabre\DAV\Exception\Forbidden;
-use Sabre\DAV\IFile;
 
-class TrashFolderFile implements IFile, ITrash {
-	/** @var string */
-	private $root;
-
-	/** @var string */
-	private $userId;
-
-	/** @var FileInfo */
-	private $data;
-
-	/** @var string */
-	private $location;
-
-	public function __construct(string $root,
-								string $userId,
-								FileInfo $data,
-								string $location) {
-		$this->root = $root;
-		$this->userId = $userId;
-		$this->data = $data;
-		$this->location = $location;
-	}
-
-	public function put($data) {
-		throw new Forbidden();
-	}
-
+class TrashFolderFile extends AbstractTrashFile {
 	public function get() {
 		return $this->data->getStorage()->fopen($this->data->getInternalPath(), 'rb');
-	}
-
-	public function getContentType(): string {
-		return $this->data->getMimetype();
-	}
-
-	public function getETag(): string {
-		return $this->data->getEtag();
-	}
-
-	public function getSize(): int {
-		return $this->data->getSize();
-	}
-
-	public function delete() {
-		\OCA\Files_Trashbin\Trashbin::delete($this->root . '/' . $this->getName(), $this->userId, null);
-	}
-
-	public function getName(): string {
-		return $this->data->getName();
-	}
-
-	public function setName($name) {
-		throw new Forbidden();
-	}
-
-	public function getLastModified(): int {
-		return $this->data->getMtime();
-	}
-
-	public function restore(): bool {
-		return \OCA\Files_Trashbin\Trashbin::restore($this->root . '/' . $this->getName(), $this->data->getName(), null);
-	}
-
-	public function getFilename(): string {
-		return $this->data->getName();
-	}
-
-	public function getOriginalLocation(): string {
-		return $this->location . '/' . $this->getFilename();
-	}
-
-	public function getDeletionTime(): int {
-		return $this->getLastModified();
-	}
-
-	public function getFileId(): int {
-		return $this->data->getId();
 	}
 }

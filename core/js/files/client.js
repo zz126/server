@@ -61,6 +61,7 @@
 		}
 		this._client = new dav.Client(clientOptions);
 		this._client.xhrProvider = _.bind(this._xhrProvider, this);
+		this._fileInfoParsers = [];
 	};
 
 	Client.NS_OWNCLOUD = 'http://owncloud.org/ns';
@@ -271,7 +272,7 @@
 		 * @return {Array.<FileInfo>} array of file info
 		 */
 		_parseFileInfo: function(response) {
-			var path = response.href;
+			var path = decodeURIComponent(response.href);
 			if (path.substr(0, this._root.length) === this._root) {
 				path = path.substr(this._root.length);
 			}
@@ -279,8 +280,6 @@
 			if (path.charAt(path.length - 1) === '/') {
 				path = path.substr(0, path.length - 1);
 			}
-
-			path = decodeURIComponent(path);
 
 			if (response.propStat.length === 0 || response.propStat[0].status !== 'HTTP/1.1 200 OK') {
 				return null;
@@ -390,7 +389,7 @@
 
 			// extend the parsed data using the custom parsers
 			_.each(this._fileInfoParsers, function(parserFunction) {
-				_.extend(data, parserFunction(response) || {});
+				_.extend(data, parserFunction(response, data) || {});
 			});
 
 			return new FileInfo(data);
@@ -838,7 +837,7 @@
 		/**
 		 * Add a file info parser function
 		 *
-		 * @param {OC.Files.Client~parseFileInfo>}
+		 * @param {OC.Files.Client~parseFileInfo} parserFunction
 		 */
 		addFileInfoParser: function(parserFunction) {
 			this._fileInfoParsers.push(parserFunction);

@@ -1,11 +1,3 @@
-/**
- * Disable console output unless DEBUG mode is enabled.
- * Add
- *      'debug' => true,
- * To the definition of $CONFIG in config/config.php to enable debug mode.
- * The undefined checks fix the broken ie8 console
- */
-
 /* global oc_isadmin */
 
 var oc_debug;
@@ -46,19 +38,11 @@ function escapeHTML(s) {
 	return s.toString().split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;').split('\'').join('&#039;');
 }
 
-/**
-* Get the path to download a file
-* @param {string} file The filename
-* @param {string} dir The directory the file is in - e.g. $('#dir').val()
-* @return {string} Path to download the file
-* @deprecated use Files.getDownloadURL() instead
-*/
-function fileDownloadPath(dir, file) {
-	return OC.filePath('files', 'ajax', 'download.php')+'?files='+encodeURIComponent(file)+'&dir='+encodeURIComponent(dir);
-}
-
-/** @namespace */
+/** @namespace OCP */
 var OCP = {},
+	/**
+	 * @namespace OC
+	 */
 	OC = {
 	PERMISSION_NONE:0,
 	PERMISSION_CREATE:4,
@@ -118,7 +102,7 @@ var OCP = {},
 	 * @return {string} the url
 	 */
 	linkToRemoteBase:function(service) {
-		return OC.webroot + '/remote.php/' + service;
+		return OC.getRootPath() + '/remote.php/' + service;
 	},
 
 	/**
@@ -138,7 +122,7 @@ var OCP = {},
 	 */
 	linkToOCS: function(service, version) {
 		version = (version !== 2) ? 1 : 2;
-		return window.location.protocol + '//' + window.location.host + OC.webroot + '/ocs/v' + version + '.php/' + service + '/';
+		return window.location.protocol + '//' + window.location.host + OC.getRootPath() + '/ocs/v' + version + '.php/' + service + '/';
 	},
 
 	/**
@@ -176,10 +160,10 @@ var OCP = {},
 		}
 
 		if(oc_config.modRewriteWorking == true) {
-			return OC.webroot + _build(url, params);
+			return OC.getRootPath() + _build(url, params);
 		}
 
-		return OC.webroot + '/index.php' + _build(url, params);
+		return OC.getRootPath() + '/index.php' + _build(url, params);
 	},
 
 	/**
@@ -191,7 +175,7 @@ var OCP = {},
 	 */
 	filePath:function(app,type,file){
 		var isCore=OC.coreApps.indexOf(app)!==-1,
-			link=OC.webroot;
+			link=OC.getRootPath();
 		if(file.substring(file.length-3) === 'php' && !isCore){
 			link+='/index.php/apps/' + app;
 			if (file != 'index.php') {
@@ -387,15 +371,9 @@ var OCP = {},
 	addScript:function(app,script,ready){
 		var deferred, path=OC.filePath(app,'js',script+'.js');
 		if(!OC.addScript.loaded[path]) {
-			deferred = jQuery.ajax({
-				url: path,
-				cache: true,
-				success: function (content) {
-					window.eval(content);
-					if(ready) {
-						ready();
-					}
-				}
+			deferred = $.Deferred();
+			$.getScript(path, function() {
+				deferred.resolve();
 			});
 			OC.addScript.loaded[path] = deferred;
 		} else {
@@ -684,7 +662,12 @@ var OCP = {},
 	registerMenu: function($toggle, $menuEl, toggle, headerMenu) {
 		var self = this;
 		$menuEl.addClass('menu');
-		$toggle.on('click.menu keyup.menu', function(event) {
+
+		// On link, the enter key trigger a click event
+		// Only use the click to avoid two fired events
+		$toggle.on($toggle.prop('tagName') === 'A'
+			? 'click.menu'
+			: 'click.menu keyup.menu', function(event) {
 			// prevent the link event (append anchor to URL)
 			event.preventDefault();
 
@@ -788,6 +771,16 @@ var OCP = {},
 			return window.matchMedia(media);
 		}
 		return false;
+	},
+
+	/**
+	 * Returns the user's locale as a BCP 47 compliant language tag
+	 *
+	 * @return {String} locale string
+	 */
+	getCanonicalLocale: function() {
+		var locale = this.getLocale();
+		return typeof locale === 'string' ? locale.replace(/_/g, '-') : locale;
 	},
 
 	/**
@@ -1111,7 +1104,8 @@ OC.Notification={
 	getDefaultNotificationFunction: null,
 
 	/**
-	 * @type Array.<int> array of notification timers
+	 * @type Array<int>
+	 * @description array of notification timers
 	 */
 	notificationTimers: [],
 
@@ -1397,10 +1391,12 @@ function initCore() {
 	 */
 	function initSessionHeartBeat() {
 		// interval in seconds
-		var interval = 900;
+		var interval = NaN;
 		if (oc_config.session_lifetime) {
 			interval = Math.floor(oc_config.session_lifetime / 2);
 		}
+		interval = isNaN(interval)? 900: interval;
+
 		// minimum one minute
 		interval = Math.max(60, interval);
 		// max interval in seconds set to 24 hours
@@ -1452,7 +1448,7 @@ function initCore() {
 	function setupMainMenu() {
 
 		// init the more-apps menu
-		OC.registerMenu($('#more-apps'), $('#navigation'));
+		OC.registerMenu($('#more-apps > a'), $('#navigation'));
 
 		// toggle the navigation
 		var $toggle = $('#header .header-appname-container');
@@ -1566,7 +1562,7 @@ function initCore() {
 
 	var resizeMenu = function() {
 		var appList = $('#appmenu li');
-		var headerWidth = $('.header-left').width() - $('#nextcloud').width();
+		var headerWidth = $('.header-left').outerWidth() - $('#nextcloud').outerWidth();
 		var usePercentualAppMenuLimit = 0.33;
 		var minAppsDesktop = 8;
 		var availableWidth = headerWidth - $(appList).width();
@@ -1861,6 +1857,9 @@ function humanFileSize(size, skipSmallSizes) {
 	else if(relativeSize.substr(relativeSize.length-2,2)==='.0'){
 		relativeSize=relativeSize.substr(0,relativeSize.length-2);
 	}
+	else{
+		relativeSize = parseFloat(relativeSize).toLocaleString(OC.getCanonicalLocale());
+	}
 	return relativeSize + ' ' + readableFormat;
 }
 
@@ -1976,44 +1975,6 @@ OC.Util = {
 		}
 		return moment(timestamp).fromNow();
 	},
-	/**
-	 * Returns whether the browser supports SVG
-	 * @deprecated SVG is always supported (since 9.0)
-	 * @return {boolean} true if the browser supports SVG, false otherwise
-	 */
-	hasSVGSupport: function(){
-		return true;
-	},
-	/**
-	 * If SVG is not supported, replaces the given icon's extension
-	 * from ".svg" to ".png".
-	 * If SVG is supported, return the image path as is.
-	 * @param {string} file image path with svg extension
-	 * @deprecated SVG is always supported (since 9.0)
-	 * @return {string} fixed image path with png extension if SVG is not supported
-	 */
-	replaceSVGIcon: function(file) {
-		return file;
-	},
-	/**
-	 * Replace SVG images in all elements that have the "svg" class set
-	 * with PNG images.
-	 *
-	 * @param $el root element from which to search, defaults to $('body')
-	 * @deprecated SVG is always supported (since 9.0)
-	 */
-	replaceSVG: function($el) {},
-
-	/**
-	 * Fix image scaling for IE8, since background-size is not supported.
-	 *
-	 * This scales the image to the element's actual size, the URL is
-	 * taken from the "background-image" CSS attribute.
-	 *
-	 * @deprecated IE8 isn't supported since 9.0
-	 * @param {Object} $el image element
-	 */
-	scaleFixForIE8: function($el) {},
 
 	/**
 	 * Returns whether this is IE
@@ -2022,16 +1983,6 @@ OC.Util = {
 	 */
 	isIE: function() {
 		return $('html').hasClass('ie');
-	},
-
-	/**
-	 * Returns whether this is IE8
-	 *
-	 * @deprecated IE8 isn't supported since 9.0
-	 * @return {bool} false (IE8 isn't supported anymore)
-	 */
-	isIE8: function() {
-		return false;
 	},
 
 	/**
@@ -2417,13 +2368,6 @@ jQuery.fn.selectRange = function(start, end) {
 jQuery.fn.exists = function(){
 	return this.length > 0;
 };
-
-/**
- * @deprecated use OC.Util.getScrollBarWidth() instead
- */
-function getScrollBarWidth() {
-	return OC.Util.getScrollBarWidth();
-}
 
 /**
  * jQuery tipsy shim for the bootstrap tooltip

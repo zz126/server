@@ -52,9 +52,14 @@
 		 * @param url the URL to test
 		 * @param placeholderUrl the placeholder URL - can be found at oc_defaults.docPlaceholderUrl
 		 * @param {boolean} runCheck if this is set to false the check is skipped and no error is returned
+		 * @param {int} expectedStatus the expected HTTP status to be returned by the URL, 207 by default
 		 * @return $.Deferred object resolved with an array of error messages
 		 */
-		checkWellKnownUrl: function(url, placeholderUrl, runCheck) {
+		checkWellKnownUrl: function(url, placeholderUrl, runCheck, expectedStatus) {
+			if (expectedStatus === undefined) {
+				expectedStatus = 207;
+			}
+
 			var deferred = $.Deferred();
 
 			if(runCheck === false) {
@@ -63,7 +68,7 @@
 			}
 			var afterCall = function(xhr) {
 				var messages = [];
-				if (xhr.status !== 207) {
+				if (xhr.status !== expectedStatus) {
 					var docUrl = placeholderUrl.replace('PLACEHOLDER', 'admin-setup-well-known-URL');
 					messages.push({
 						msg: t('core', 'Your web server is not properly set up to resolve "{url}". Further information can be found in the <a target="_blank" rel="noreferrer noopener" href="{docLink}">documentation</a>.', { docLink: docUrl, url: url }),
@@ -183,10 +188,10 @@
 							type: OC.SetupChecks.MESSAGE_TYPE_INFO
 						});
 					}
-					if(!data.isUrandomAvailable) {
+					if(!data.isRandomnessSecure) {
 						messages.push({
-							msg: t('core', '/dev/urandom is not readable by PHP which is highly discouraged for security reasons. Further information can be found in the <a target="_blank" rel="noreferrer noopener" href="{docLink}">documentation</a>.', {docLink: data.securityDocs}),
-							type: OC.SetupChecks.MESSAGE_TYPE_WARNING
+							msg: t('core', 'No suitable source for randomness found by PHP which is highly discouraged for security reasons. Further information can be found in the <a target="_blank" rel="noreferrer noopener" href="{docLink}">documentation</a>.', {docLink: data.securityDocs}),
+							type: OC.SetupChecks.MESSAGE_TYPE_ERROR
 						});
 					}
 					if(data.isUsedTlsLibOutdated) {
@@ -316,8 +321,17 @@
 							type: OC.SetupChecks.MESSAGE_TYPE_WARNING
 						});
 					}
+					if (!data.isMemoryLimitSufficient) {
+						messages.push({
+							msg: t(
+								'core',
+								'The PHP memory limit is below the recommended value of 512MB.'
+							),
+							type: OC.SetupChecks.MESSAGE_TYPE_WARNING
+						})
+					}
 
-					if(data.appDirsWithDifferentOwner.length > 0) {
+					if(data.appDirsWithDifferentOwner && data.appDirsWithDifferentOwner.length > 0) {
 						var appDirsWithDifferentOwner = data.appDirsWithDifferentOwner.reduce(
 							function(appDirsWithDifferentOwner, directory) {
 								return appDirsWithDifferentOwner + '<li>' + directory + '</li>';
@@ -413,7 +427,6 @@
 
 			if (xhr.status === 200) {
 				var securityHeaders = {
-					'X-XSS-Protection': ['1; mode=block'],
 					'X-Content-Type-Options': ['nosniff'],
 					'X-Robots-Tag': ['none'],
 					'X-Frame-Options': ['SAMEORIGIN', 'DENY'],
@@ -434,19 +447,33 @@
 					}
 				}
 
+				var xssfields = xhr.getResponseHeader('X-XSS-Protection') ? xhr.getResponseHeader('X-XSS-Protection').split(';').map(function(item) { return item.trim(); }) : [];
+				if (xssfields.length === 0 || xssfields.indexOf('1') === -1 || xssfields.indexOf('mode=block') === -1) {
+					messages.push({
+						msg: t('core', 'The "{header}" HTTP header doesn\'t contain "{expected}". This is a potential security or privacy risk, as it is recommended to adjust this setting accordingly.',
+							{
+								header: 'X-XSS-Protection',
+								expected: '1; mode=block'
+							}),
+						type: OC.SetupChecks.MESSAGE_TYPE_WARNING
+					});
+				}
+
 				if (!xhr.getResponseHeader('Referrer-Policy') ||
 					(xhr.getResponseHeader('Referrer-Policy').toLowerCase() !== 'no-referrer' &&
 					xhr.getResponseHeader('Referrer-Policy').toLowerCase() !== 'no-referrer-when-downgrade' &&
 					xhr.getResponseHeader('Referrer-Policy').toLowerCase() !== 'strict-origin' &&
-					xhr.getResponseHeader('Referrer-Policy').toLowerCase() !== 'strict-origin-when-cross-origin')) {
+					xhr.getResponseHeader('Referrer-Policy').toLowerCase() !== 'strict-origin-when-cross-origin' &&
+					xhr.getResponseHeader('Referrer-Policy').toLowerCase() !== 'same-origin')) {
 					messages.push({
-						msg: t('core', 'The "{header}" HTTP header is not set to "{val1}", "{val2}", "{val3}" or "{val4}". This can leak referer information. See the <a target="_blank" rel="noreferrer noopener" href="{link}">W3C Recommendation ↗</a>.',
+						msg: t('core', 'The "{header}" HTTP header is not set to "{val1}", "{val2}", "{val3}", "{val4}" or "{val5}". This can leak referer information. See the <a target="_blank" rel="noreferrer noopener" href="{link}">W3C Recommendation ↗</a>.',
 							{
 								header: 'Referrer-Policy',
 								val1: 'no-referrer',
 								val2: 'no-referrer-when-downgrade',
 								val3: 'strict-origin',
 								val4: 'strict-origin-when-cross-origin',
+								val5: 'same-origin',
 								link: 'https://www.w3.org/TR/referrer-policy/'
 							}),
 						type: OC.SetupChecks.MESSAGE_TYPE_INFO

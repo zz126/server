@@ -80,6 +80,7 @@ use OC\Files\Mount\ObjectHomeMountProvider;
 use OC\Files\Node\HookConnector;
 use OC\Files\Node\LazyRoot;
 use OC\Files\Node\Root;
+use OC\Files\Storage\StorageFactory;
 use OC\Files\View;
 use OC\Http\Client\ClientService;
 use OC\IntegrityCheck\Checker;
@@ -119,13 +120,16 @@ use OC\Tagging\TagMapper;
 use OC\Template\IconsCacher;
 use OC\Template\JSCombiner;
 use OC\Template\SCSSCacher;
+use OC\Dashboard\DashboardManager;
 use OCA\Theming\ImageManager;
 use OCA\Theming\ThemingDefaults;
 
+use OCP\Accounts\IAccountManager;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Collaboration\AutoComplete\IManager;
 use OCP\Contacts\ContactsMenu\IContactsStore;
+use OCP\Dashboard\IDashboardManager;
 use OCP\Defaults;
 use OCA\Theming\Util;
 use OCP\Federation\ICloudFederationFactory;
@@ -133,6 +137,7 @@ use OCP\Federation\ICloudFederationProviderManager;
 use OCP\Federation\ICloudIdManager;
 use OCP\Authentication\LoginCredentials\IStore;
 use OCP\Files\NotFoundException;
+use OCP\Files\Storage\IStorageFactory;
 use OCP\GlobalScale\IConfig;
 use OCP\ICacheFactory;
 use OCP\IDBConnection;
@@ -1081,18 +1086,9 @@ class Server extends ServerContainer implements IServerContainer {
 		$this->registerService('SettingsManager', function (Server $c) {
 			$manager = new \OC\Settings\Manager(
 				$c->getLogger(),
-				$c->getDatabaseConnection(),
 				$c->getL10N('lib'),
-				$c->getConfig(),
-				$c->getEncryptionManager(),
-				$c->getUserManager(),
-				$c->getLockingProvider(),
-				$c->getRequest(),
 				$c->getURLGenerator(),
-				$c->query(AccountManager::class),
-				$c->getGroupManager(),
-				$c->getL10NFactory(),
-				$c->getAppManager()
+				$c
 			);
 			return $manager;
 		});
@@ -1180,6 +1176,13 @@ class Server extends ServerContainer implements IServerContainer {
 			);
 		});
 		$this->registerAlias(IContactsStore::class, ContactsStore::class);
+		$this->registerAlias(IAccountManager::class, AccountManager::class);
+
+		$this->registerService(IStorageFactory::class, function() {
+			return new StorageFactory();
+		});
+
+		$this->registerAlias(IDashboardManager::class, Dashboard\DashboardManager::class);
 
 		$this->connectDispatcher();
 	}
@@ -2028,5 +2031,12 @@ class Server extends ServerContainer implements IServerContainer {
 	 */
 	public function getRemoteInstanceFactory() {
 		return $this->query(IInstanceFactory::class);
+	}
+
+	/**
+	 * @return IStorageFactory
+	 */
+	public function getStorageFactory() {
+		return $this->query(IStorageFactory::class);
 	}
 }

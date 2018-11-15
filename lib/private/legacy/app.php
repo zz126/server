@@ -152,7 +152,7 @@ class OC_App {
 			\OC::$server->getEventLogger()->start('load_app_' . $app, 'Load app: ' . $app);
 			try {
 				self::requireAppFile($app);
-			} catch (Error $ex) {
+			} catch (Throwable $ex) {
 				\OC::$server->getLogger()->logException($ex);
 				if (!\OC::$server->getAppManager()->isShipped($app)) {
 					// Only disable apps which are not shipped
@@ -1096,7 +1096,7 @@ class OC_App {
 		if (!empty($missing)) {
 			$missingMsg = implode(PHP_EOL, $missing);
 			throw new \Exception(
-				$l->t('App "%s" cannot be installed because the following dependencies are not fulfilled: %s',
+				$l->t('App "%1$s" cannot be installed because the following dependencies are not fulfilled: %2$s',
 					[$info['name'], $missingMsg]
 				)
 			);

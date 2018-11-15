@@ -18,16 +18,20 @@
 
 /* BASE STYLING ------------------------------------------------------------ */
 
+h2,
+h3,
+h4 {
+	font-weight: bold;
+}
+
 h2 {
 	font-size: 20px;
-	font-weight: 300;
 	margin-bottom: 12px;
 	line-height: 140%;
 }
 
 h3 {
 	font-size: 15px;
-	font-weight: 300;
 	margin: 12px 0;
 }
 
@@ -369,7 +373,7 @@ kbd {
 			margin: 0;
 			padding: 0;
 			background: none;
-			background-image: url('../img/actions/triangle-s.svg?v=1');
+			@include icon-color('triangle-s', 'actions', $color-black, 1, true);
 			background-size: 16px;
 			background-repeat: no-repeat;
 			background-position: center;
@@ -723,7 +727,7 @@ kbd {
 	border-radius: 0;
 	text-align: left;
 	padding-left: 42px;
-	font-weight: 400;
+	font-weight: normal;
 
 	/* like app-navigation a */
 	color: var(--color-main-text);
@@ -742,7 +746,6 @@ kbd {
 .section {
 	display: block;
 	padding: 30px;
-	color: var(--color-text-lighter);
 	margin-bottom: 24px;
 	&.hidden {
 		display: none !important;
@@ -785,12 +788,22 @@ kbd {
 		cursor: pointer;
 		color: var(--color-text-lighter);
 		margin-bottom: 1px;
+		.icon {
+			display: inline-block;
+			width: 16px;
+			height: 16px;
+			background-size: 16px;
+			vertical-align: middle;
+			margin-top: -2px;
+			margin-right: 3px;
+			opacity: .7;
+		}
 		a {
 			color: var(--color-text-lighter);
 			margin-bottom: 1px;
 		}
 		&.selected {
-			font-weight: 600;
+			font-weight: bold;
 		}
 		&.selected,
 		&:hover,
@@ -842,7 +855,7 @@ $popovericon-size: 16px;
 		// Required right-distance is half menu icon size + right padding
 		// = 16px/2 + 14px = 22px
 		// popover right margin is 5px, arrow width is 9px to center and border is 1px
-		// 22px - 9px - 5px - 1px = 7px 
+		// 22px - 9px - 5px - 1px = 7px
 		right: 7px;
 		/* change this to adjust the arrow position */
 		border: solid transparent;
@@ -907,7 +920,7 @@ $popovericon-size: 16px;
 			align-items: flex-start;
 			height: auto;
 			margin: 0;
-			font-weight: 300;
+			font-weight: normal;
 			box-shadow: none;
 			width: 100%;
 			color: var(--color-main-text);
@@ -1043,9 +1056,30 @@ $popovericon-size: 16px;
 	}
 }
 
+/* "app-*" descendants use border-box sizing, so the height of the icon must be
+ * set to the height of the item (as well as its width to make it squared). */
+#content[class*='app-'] {
+	.bubble,
+	.app-navigation-entry-menu,
+	.popovermenu {
+		li {
+			> button,
+			> a,
+			> .menuitem {
+				/* DEPRECATED! old img in popover fallback
+				* TODO: to remove */
+				> img {
+					width: $popoveritem-height;
+					height: $popoveritem-height;
+				}
+			}
+		}
+	}
+}
+
 /* CONTENT LIST ------------------------------------------------------------ */
 .app-content-list {
-	width: 300px;
+	max-width: 300px;
 	@include position('sticky');
 	top: $header-height;
 	border-right: 1px solid var(--color-border);
@@ -1056,7 +1090,7 @@ $popovericon-size: 16px;
 	max-height: calc(100vh - #{$header-height});
 	overflow-y: auto;
 	overflow-x: hidden;
-	flex: 0 0 300px;
+	flex: 0 1 300px;
 
 	/* Default item */
 	.app-content-list-item {
@@ -1078,10 +1112,10 @@ $popovericon-size: 16px;
 				order: 4;
 				width: 24px;
 				height: 24px;
-				margin: -10px;
+				margin: -7px; // right padding of item
 				padding: 22px;
 				opacity: .3;
-					cursor: pointer;
+				cursor: pointer;
 				&:hover,
 				&:focus {
 					opacity: .7;
@@ -1196,7 +1230,7 @@ $popovericon-size: 16px;
 			opacity: .5;
 			order: 3;
 			flex: 1 0;
-			flex-basis: calc(100% - 24px);
+			flex-basis: calc(100% - 44px);
 		}
 
 		.app-content-list-item-details {

@@ -21,79 +21,15 @@ declare(strict_types=1);
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 namespace OCA\Files_Trashbin\Sabre;
 
-use OCP\Files\FileInfo;
-use Sabre\DAV\Exception\Forbidden;
-use Sabre\DAV\IFile;
-
-class TrashFile implements IFile, ITrash {
-	/** @var string */
-	private $userId;
-
-	/** @var FileInfo */
-	private $data;
-
-	public function __construct(string $userId, FileInfo $data) {
-		$this->userId = $userId;
-		$this->data = $data;
-	}
-
-	public function put($data) {
-		throw new Forbidden();
-	}
-
+class TrashFile extends AbstractTrashFile {
 	public function get() {
-		return $this->data->getStorage()->fopen($this->data->getInternalPath().'.d'.$this->getLastModified(), 'rb');
-	}
-
-	public function getContentType(): string {
-		return $this->data->getMimetype();
-	}
-
-	public function getETag(): string	 {
-		return $this->data->getEtag();
-	}
-
-	public function getSize(): int {
-		return $this->data->getSize();
-	}
-
-	public function delete() {
-		\OCA\Files_Trashbin\Trashbin::delete($this->data->getName(), $this->userId, $this->getLastModified());
+		return $this->data->getStorage()->fopen($this->data->getInternalPath() . '.d' . $this->getLastModified(), 'rb');
 	}
 
 	public function getName(): string {
 		return $this->data->getName() . '.d' . $this->getLastModified();
 	}
-
-	public function setName($name) {
-		throw new Forbidden();
-	}
-
-	public function getLastModified(): int {
-		return $this->data->getMtime();
-	}
-
-	public function restore(): bool {
-		return \OCA\Files_Trashbin\Trashbin::restore($this->getName(), $this->data->getName(), $this->getLastModified());
-	}
-
-	public function getFilename(): string {
-		return $this->data->getName();
-	}
-
-	public function getOriginalLocation(): string {
-		return $this->data['extraData'];
-	}
-
-	public function getDeletionTime(): int {
-		return $this->getLastModified();
-	}
-
-	public function getFileId(): int {
-		return $this->data->getId();
-	}
-
-
 }

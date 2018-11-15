@@ -31,7 +31,7 @@ describe('Core base tests', function() {
 	});
 	describe('Base values', function() {
 		it('Sets webroots', function() {
-			expect(OC.webroot).toBeDefined();
+			expect(OC.getRootPath()).toBeDefined();
 			expect(OC.appswebroots).toBeDefined();
 		});
 	});
@@ -256,7 +256,7 @@ describe('Core base tests', function() {
 	describe('filePath', function() {
 		beforeEach(function() {
 			OC.webroot = 'http://localhost';
-			OC.appswebroots.files = OC.webroot + '/apps3/files';
+			OC.appswebroots.files = OC.getRootPath() + '/apps3/files';
 		});
 		afterEach(function() {
 			delete OC.appswebroots.files;
@@ -273,9 +273,32 @@ describe('Core base tests', function() {
 			expect(OC.filePath('files', 'ajax', 'test.php')).toEqual('http://localhost/index.php/apps/files/ajax/test.php');
 		});
 	});
+	describe('getCanonicalLocale', function() {
+		var localeStub;
+
+		beforeEach(function() {
+			localeStub = sinon.stub(OC, 'getLocale');
+		});
+		afterEach(function() {
+			localeStub.restore();
+		});
+
+		it("Returns primary locales as is", function() {
+			localeStub.returns('de');
+			expect(OC.getCanonicalLocale()).toEqual('de');
+			localeStub.returns('zu');
+			expect(OC.getCanonicalLocale()).toEqual('zu');
+		});
+		it("Returns extended locales with hyphens", function() {
+			localeStub.returns('az_Cyrl_AZ');
+			expect(OC.getCanonicalLocale()).toEqual('az-Cyrl-AZ');
+			localeStub.returns('de_DE');
+			expect(OC.getCanonicalLocale()).toEqual('de-DE');
+		});
+	});
 	describe('Link functions', function() {
 		var TESTAPP = 'testapp';
-		var TESTAPP_ROOT = OC.webroot + '/appsx/testapp';
+		var TESTAPP_ROOT = OC.getRootPath() + '/appsx/testapp';
 
 		beforeEach(function() {
 			OC.appswebroots[TESTAPP] = TESTAPP_ROOT;
@@ -285,22 +308,22 @@ describe('Core base tests', function() {
 			delete OC.appswebroots[TESTAPP];
 		});
 		it('Generates correct links for core apps', function() {
-			expect(OC.linkTo('core', 'somefile.php')).toEqual(OC.webroot + '/core/somefile.php');
-			expect(OC.linkTo('admin', 'somefile.php')).toEqual(OC.webroot + '/admin/somefile.php');
+			expect(OC.linkTo('core', 'somefile.php')).toEqual(OC.getRootPath() + '/core/somefile.php');
+			expect(OC.linkTo('admin', 'somefile.php')).toEqual(OC.getRootPath() + '/admin/somefile.php');
 		});
 		it('Generates correct links for regular apps', function() {
-			expect(OC.linkTo(TESTAPP, 'somefile.php')).toEqual(OC.webroot + '/index.php/apps/' + TESTAPP + '/somefile.php');
+			expect(OC.linkTo(TESTAPP, 'somefile.php')).toEqual(OC.getRootPath() + '/index.php/apps/' + TESTAPP + '/somefile.php');
 		});
 		it('Generates correct remote links', function() {
-			expect(OC.linkToRemote('webdav')).toEqual(window.location.protocol + '//' + window.location.host + OC.webroot + '/remote.php/webdav');
+			expect(OC.linkToRemote('webdav')).toEqual(window.location.protocol + '//' + window.location.host + OC.getRootPath() + '/remote.php/webdav');
 		});
 		describe('Images', function() {
 			it('Generates image path with given extension', function() {
-				expect(OC.imagePath('core', 'somefile.jpg')).toEqual(OC.webroot + '/core/img/somefile.jpg');
+				expect(OC.imagePath('core', 'somefile.jpg')).toEqual(OC.getRootPath() + '/core/img/somefile.jpg');
 				expect(OC.imagePath(TESTAPP, 'somefile.jpg')).toEqual(TESTAPP_ROOT + '/img/somefile.jpg');
 			});
 			it('Generates image path with svg extension', function() {
-				expect(OC.imagePath('core', 'somefile')).toEqual(OC.webroot + '/core/img/somefile.svg');
+				expect(OC.imagePath('core', 'somefile')).toEqual(OC.getRootPath() + '/core/img/somefile.svg');
 				expect(OC.imagePath(TESTAPP, 'somefile')).toEqual(TESTAPP_ROOT + '/img/somefile.svg');
 			});
 		});
@@ -502,23 +525,23 @@ describe('Core base tests', function() {
 	});
 	describe('Generate Url', function() {
 		it('returns absolute urls', function() {
-			expect(OC.generateUrl('csrftoken')).toEqual(OC.webroot + '/index.php/csrftoken');
-			expect(OC.generateUrl('/csrftoken')).toEqual(OC.webroot + '/index.php/csrftoken');
+			expect(OC.generateUrl('csrftoken')).toEqual(OC.getRootPath() + '/index.php/csrftoken');
+			expect(OC.generateUrl('/csrftoken')).toEqual(OC.getRootPath() + '/index.php/csrftoken');
 		});
 		it('substitutes parameters which are escaped by default', function() {
-			expect(OC.generateUrl('apps/files/download/{file}', {file: '<">ImAnUnescapedString/!'})).toEqual(OC.webroot + '/index.php/apps/files/download/%3C%22%3EImAnUnescapedString%2F!');
+			expect(OC.generateUrl('apps/files/download/{file}', {file: '<">ImAnUnescapedString/!'})).toEqual(OC.getRootPath() + '/index.php/apps/files/download/%3C%22%3EImAnUnescapedString%2F!');
 		});
 		it('substitutes parameters which can also be unescaped via option flag', function() {
-			expect(OC.generateUrl('apps/files/download/{file}', {file: 'subfolder/Welcome.txt'}, {escape: false})).toEqual(OC.webroot + '/index.php/apps/files/download/subfolder/Welcome.txt');
+			expect(OC.generateUrl('apps/files/download/{file}', {file: 'subfolder/Welcome.txt'}, {escape: false})).toEqual(OC.getRootPath() + '/index.php/apps/files/download/subfolder/Welcome.txt');
 		});
 		it('substitutes multiple parameters which are escaped by default', function() {
-			expect(OC.generateUrl('apps/files/download/{file}/{id}', {file: '<">ImAnUnescapedString/!', id: 5})).toEqual(OC.webroot + '/index.php/apps/files/download/%3C%22%3EImAnUnescapedString%2F!/5');
+			expect(OC.generateUrl('apps/files/download/{file}/{id}', {file: '<">ImAnUnescapedString/!', id: 5})).toEqual(OC.getRootPath() + '/index.php/apps/files/download/%3C%22%3EImAnUnescapedString%2F!/5');
 		});
 		it('substitutes multiple parameters which can also be unescaped via option flag', function() {
-			expect(OC.generateUrl('apps/files/download/{file}/{id}', {file: 'subfolder/Welcome.txt', id: 5}, {escape: false})).toEqual(OC.webroot + '/index.php/apps/files/download/subfolder/Welcome.txt/5');
+			expect(OC.generateUrl('apps/files/download/{file}/{id}', {file: 'subfolder/Welcome.txt', id: 5}, {escape: false})).toEqual(OC.getRootPath() + '/index.php/apps/files/download/subfolder/Welcome.txt/5');
 		});
 		it('doesnt error out with no params provided', function  () {
-			expect(OC.generateUrl('apps/files/download{file}')).toEqual(OC.webroot + '/index.php/apps/files/download%7Bfile%7D');
+			expect(OC.generateUrl('apps/files/download{file}')).toEqual(OC.getRootPath() + '/index.php/apps/files/download%7Bfile%7D');
 		});
 	});
 	describe('Main menu mobile toggle', function() {
@@ -560,7 +583,26 @@ describe('Core base tests', function() {
 		});
 	});
 	describe('Util', function() {
+		var locale;
+		var localeStub;
+
+		beforeEach(function() {
+			locale = OC.getCanonicalLocale();
+			localeStub = sinon.stub(OC, 'getCanonicalLocale');
+			localeStub.returns(locale);
+		});
+
+		afterEach(function() {
+			localeStub.restore();
+		});
+
 		describe('humanFileSize', function() {
+			// cit() will skip tests if toLocaleString() is not supported.
+			// See https://github.com/ariya/phantomjs/issues/12581
+			//
+			// Please run these tests in Chrome/Firefox manually.
+			var cit = 4.2.toLocaleString("de") !== "4,2" ? xit : it;
+
 			it('renders file sizes with the correct unit', function() {
 				var data = [
 					[0, '0 B'],
@@ -587,6 +629,22 @@ describe('Core base tests', function() {
 				];
 				for (var i = 0; i < data.length; i++) {
 					expect(OC.Util.humanFileSize(data[i][0], true)).toEqual(data[i][1]);
+				}
+			});
+			cit('renders file sizes with the correct locale', function() {
+				localeStub.returns("de");
+				var data = [
+					[0, '0 B'],
+					["0", '0 B'],
+					["A", 'NaN B'],
+					[125, '125 B'],
+					[128000, '125 KB'],
+					[128000000, '122,1 MB'],
+					[128000000000, '119,2 GB'],
+					[128000000000000, '116,4 TB']
+				];
+				for (var i = 0; i < data.length; i++) {
+					expect(OC.Util.humanFileSize(data[i][0])).toEqual(data[i][1]);
 				}
 			});
 		});

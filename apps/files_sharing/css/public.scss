@@ -1,5 +1,4 @@
 #preview {
-	background: var(--color-main-background);
 	text-align: center;
 }
 
@@ -159,18 +158,38 @@ thead {
 	text-align: left;
 }
 
-#header .header-shared-by  {
-	display: inline-block;
-	color: var(--color-primary-text);
-	position: relative;
-	top: -10px;
-	font-weight: 300;
-	font-size: 11px;
-	opacity: .57;
-	margin-top: 10px;
+/* Needed to ellipsize long header text on share page */
+#body-login #header-left,
+#body-login .header-left {
+	overflow: hidden;
 }
 
-#note {
-	text-align: center;
-	padding: 10px;
+#header .header-shared-by  {
+	color: var(--color-primary-text);
+	position: relative;
+	font-weight: 300;
+	font-size: 11px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+#note-content {
+	padding: 5px;
+	display:inline-block;
+	width: 350px;
+	.content {
+		overflow: auto;
+		max-height: 200px;
+	}
+}
+
+// hide the primary on public share on mobile
+@media only screen and (max-width: 768px) {
+	#body-public {
+		.header-right {
+			#header-primary-action {
+				display: none;
+			}
+		}
+	}
 }

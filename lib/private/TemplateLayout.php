@@ -132,15 +132,19 @@ class TemplateLayout extends \OC_Template {
 			parent::__construct('core', 'layout.public');
 			$this->assign( 'appid', $appId );
 			$this->assign('bodyid', 'body-public');
+			$this->assign('showSimpleSignUpLink', $this->config->getSystemValue('simpleSignUpLink.shown', true) !== false);
 		} else {
 			parent::__construct('core', 'layout.base');
 
 		}
 		// Send the language and the locale to our layouts
 		$lang = \OC::$server->getL10NFactory()->findLanguage();
+		$locale = \OC::$server->getL10NFactory()->findLocale($lang);
+		$localeLang = \OC::$server->getL10NFactory()->findLanguageFromLocale('lib', $locale);
+
 		$lang = str_replace('_', '-', $lang);
 		$this->assign('language', $lang);
-		$this->assign('locale', \OC::$server->getL10NFactory()->findLocale($lang));
+		$this->assign('locale', $locale);
 
 		if(\OC::$server->getSystemConfig()->getValue('installed', false)) {
 			if (empty(self::$versionHash)) {
@@ -158,7 +162,7 @@ class TemplateLayout extends \OC_Template {
 		if ($this->config->getSystemValue('installed', false) && $renderAs != 'error') {
 			if (\OC::$server->getContentSecurityPolicyNonceManager()->browserSupportsCspV3()) {
 				$jsConfigHelper = new JSConfigHelper(
-					\OC::$server->getL10N('lib'),
+					\OC::$server->getL10N('lib', $localeLang ?: $lang),
 					\OC::$server->query(Defaults::class),
 					\OC::$server->getAppManager(),
 					\OC::$server->getSession(),

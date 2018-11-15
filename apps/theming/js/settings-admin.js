@@ -43,7 +43,7 @@ function preview(setting, value, serverCssUrl) {
 	var reloadStylesheets = function(cssFile) {
 		var queryString = '?reload=' + new Date().getTime();
 		var url = cssFile + queryString;
-		var old = $('link[href*="' + cssFile.replace("/","\/") + '"]');
+		var old = $('link[href*="' + cssFile + '"]');
 		var stylesheet = $("<link/>", {
 			rel: "stylesheet",
 			type: "text/css",
@@ -105,6 +105,10 @@ function hideUndoButton(setting, value) {
 
 $(document).ready(function () {
 	$('#theming [data-toggle="tooltip"]').tooltip();
+
+	// manually instantiate jscolor to work around new Function call which violates strict CSP
+	var colorElement = $('#theming-color')[0];
+	var jscolor = new window.jscolor(colorElement, {hash: true});
 
 	$('#theming .theme-undo').each(function() {
 		var setting = $(this).data('setting');

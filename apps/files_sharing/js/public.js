@@ -168,7 +168,7 @@ OCA.Sharing.PublicApp = {
 			img.attr('src', OC.generateUrl('/apps/files_sharing/publicpreview/' + token + '?' + OC.buildQueryString(params)));
 			imgcontainer.appendTo('#imgframe');
 		} else if (mimetype.substr(0, mimetype.indexOf('/')) !== 'video') {
-			img.attr('src', OC.Util.replaceSVGIcon(mimetypeIcon));
+			img.attr('src', mimetypeIcon);
 			img.attr('width', 128);
 			imgcontainer.appendTo('#imgframe');
 		}
@@ -229,10 +229,10 @@ OCA.Sharing.PublicApp = {
 			this.fileList.generatePreviewUrl = function (urlSpec) {
 				urlSpec = urlSpec || {};
 				if (!urlSpec.x) {
-					urlSpec.x = 32;
+					urlSpec.x = this.$table.data('preview-x') || 32;
 				}
 				if (!urlSpec.y) {
-					urlSpec.y = 32;
+					urlSpec.y = this.$table.data('preview-y') || 32;
 				}
 				urlSpec.x *= window.devicePixelRatio;
 				urlSpec.y *= window.devicePixelRatio;
@@ -343,7 +343,7 @@ OCA.Sharing.PublicApp = {
 	_legacyCreateFederatedShare: function (remote, token, owner, ownerDisplayName, name, isProtected) {
 
 		var self = this;
-		var location = window.location.protocol + '//' + window.location.host + OC.webroot;
+		var location = window.location.protocol + '//' + window.location.host + OC.getRootPath();
 
 		if(remote.substr(-1) !== '/') {
 			remote += '/'

@@ -187,7 +187,7 @@ class LostController extends Controller {
 			throw new \Exception($this->l10n->t('Couldn\'t reset password because the token is invalid'));
 		}
 
-		if ($splittedToken[0] < ($this->timeFactory->getTime() - 60*60*12) ||
+		if ($splittedToken[0] < ($this->timeFactory->getTime() - 60*60*24*7) ||
 			$user->getLastLogin() > $splittedToken[0]) {
 			throw new \Exception($this->l10n->t('Couldn\'t reset password because the token is expired'));
 		}
@@ -364,24 +364,27 @@ class LostController extends Controller {
 	 * @throws \InvalidArgumentException
 	 */
 	protected function findUserByIdOrMail($input) {
+		$userNotFound = new \InvalidArgumentException(
+			$this->l10n->t('Couldn\'t send reset email. Please make sure your username is correct.')
+		);
+
 		$user = $this->userManager->get($input);
 		if ($user instanceof IUser) {
 			if (!$user->isEnabled()) {
-				throw new \InvalidArgumentException($this->l10n->t('Couldn\'t send reset email. Please make sure your username is correct.'));
-			}
-
-			return $user;
-		}
-		$users = $this->userManager->getByEmail($input);
-		if (count($users) === 1) {
-			$user = $users[0];
-			if (!$user->isEnabled()) {
-				throw new \InvalidArgumentException($this->l10n->t('Couldn\'t send reset email. Please make sure your username is correct.'));
+				throw $userNotFound;
 			}
 
 			return $user;
 		}
 
-		throw new \InvalidArgumentException($this->l10n->t('Couldn\'t send reset email. Please make sure your username is correct.'));
+		$users = \array_filter($this->userManager->getByEmail($input), function (IUser $user) {
+			return $user->isEnabled();
+		});
+
+		if (\count($users) === 1) {
+			return $users[0];
+		}
+
+		throw $userNotFound;
 	}
 }

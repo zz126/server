@@ -28,6 +28,7 @@ use Leafo\ScssPhp\Formatter\Crunched;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDisplayResponse;
+use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\App\IAppManager;
 use OCP\IConfig;
@@ -149,8 +150,8 @@ class AccessibilityController extends Controller {
 			try {
 				$css .= $scss->compile(
 					$imports .
-					'@import "variables.scss";' .
 					$this->getInjectedVariables() .
+					'@import "variables.scss";' .
 					'@import "css-variables.scss";'
 				);
 			} catch (ParserException $e) {
@@ -165,8 +166,8 @@ class AccessibilityController extends Controller {
 		$appWebRoot = substr($this->appRoot, strlen($this->serverRoot) - strlen(\OC::$WEBROOT));
 		$css        = $this->rebaseUrls($css, $appWebRoot . '/css');
 
-		if (in_array('themedark', $userValues) && $this->iconsCacher->getCachedCSS() && $this->iconsCacher->getCachedCSS()->getSize() > 0) {
-			$iconsCss = $this->invertSvgIconsColor($this->iconsCacher->getCachedCSS()->getContent());
+		if (in_array('themedark', $userValues) && $this->iconsCacher->getCachedList() && $this->iconsCacher->getCachedList()->getSize() > 0) {
+			$iconsCss = $this->invertSvgIconsColor($this->iconsCacher->getCachedList()->getContent());
 			$css = $css . $iconsCss;
 		}
 
@@ -181,6 +182,35 @@ class AccessibilityController extends Controller {
 		$response->addHeader('Expires', $expires->format(\DateTime::RFC1123));
 		$response->addHeader('Pragma', 'cache');
 
+		// store current cache hash
+		$this->config->setUserValue($this->userSession->getUser()->getUID(), $this->appName, 'icons-css', md5($css));
+
+		return $response;
+	}
+
+	/**
+	 * @NoCSRFRequired
+	 * @PublicPage
+	 *
+	 * @return DataDownloadResponse
+	 */
+	public function getJavascript(): DataDownloadResponse {
+		$user = $this->userSession->getUser();
+
+		if ($user === null) {
+			$theme = false;
+		} else {
+			$theme = $this->config->getUserValue($user->getUID(), $this->appName, 'theme', false);
+		}
+
+		$responseJS = '(function() {
+	OCA.Accessibility = {
+		theme: ' . json_encode($theme) . ',
+		
+	};
+})();';
+		$response = new DataDownloadResponse($responseJS, 'javascript', 'text/javascript');
+		$response->cacheFor(3600);
 		return $response;
 	}
 

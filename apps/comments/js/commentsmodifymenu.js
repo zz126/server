@@ -10,25 +10,12 @@
 
 /* global Handlebars */
 (function() {
-	var TEMPLATE_MENU =
-		'<ul>' +
-		'{{#each items}}' +
-		'<li>' +
-		'<a href="#" class="menuitem action {{name}} permanent" data-action="{{name}}">' +
-			'{{#if iconClass}}' +
-				'<span class="icon {{iconClass}}"></span>' +
-			'{{else}}' +
-				'<span class="no-icon"></span>' +
-			'{{/if}}' +
-			'<span>{{displayName}}</span>' +
-		'</li>' +
-		'{{/each}}' +
-		'</ul>';
 
 	/**
 	 * Construct a new CommentsModifyMenuinstance
 	 * @constructs CommentsModifyMenu
 	 * @memberof OC.Comments
+	 * @private
 	 */
 	var CommentsModifyMenu = OC.Backbone.View.extend({
 		tagName: 'div',
@@ -52,8 +39,6 @@
 			'click a.action': '_onClickAction'
 		},
 
-		template: Handlebars.compile(TEMPLATE_MENU),
-
 		/**
 		 * Event handler whenever an action has been clicked within the menu
 		 *
@@ -74,7 +59,7 @@
 		 * Renders the menu with the currently set items
 		 */
 		render: function() {
-			this.$el.html(this.template({
+			this.$el.html(OCA.Comments.Templates['commentsmodifymenu']({
 				items: this._scopes
 			}));
 		},
