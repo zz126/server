@@ -2204,7 +2204,7 @@
 							targetPathAndName = targetPathAndName.replace(/(?=\.[^.]+$)/g, " (" + copyNameLocalized + " " + fileNumber + ")");
 						}
 						else {
-							// Check if we have other files with 'copy X' and the same name
+							// Check if we have files with 'copy X' and the same name
 							let maxNum = 1;
 							if (self.files !== null) {
 								leftPartOfName = leftPartOfName.replace("/", "");
