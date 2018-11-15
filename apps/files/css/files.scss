@@ -8,7 +8,12 @@
 }
 
 /* FILE MENU */
-.actions { padding:5px; height:32px; display: inline-block; float: left; }
+.actions {
+	padding: 5px;
+	height: 100%;
+	display: inline-block;
+	float: left;
+}
 .actions input, .actions button, .actions .button { margin:0; float:left; }
 .actions .button a { color: #555; }
 .actions .button a:hover,
@@ -50,6 +55,10 @@
 	position: relative;
 	width: 100%;
 	min-width: 250px;
+	// hide table if emptycontent is not hidden
+	#emptycontent:not(.hidden) ~ & {
+		display: none;
+	}
 }
 
 /* fit app list view heights */
@@ -144,6 +153,7 @@
 #filestable tbody tr.highlighted .name:focus,
 #filestable tbody tr.selected,
 #filestable tbody tr.searchresult,
+#filestable tbody tr:hover .filename form,
 table tr.mouseOver td {
 	transition: background-color 0.3s ease;
 	background-color: var(--color-background-dark);
@@ -316,15 +326,20 @@ table td.filename .thumbnail {
 	background-size: 32px;
 	margin-left: 9px;
 	margin-top: 9px;
+	border-radius: var(--border-radius);
 	cursor: pointer;
 	position: absolute;
 	z-index: 4;
 }
 table td.filename input.filename {
 	width: 70%;
-	margin-top: 9px;
 	margin-left: 48px;
 	cursor: text;
+}
+table td.filename form {
+	margin-top: -40px;
+	position: relative;
+	top: -6px;
 }
 
 table td.filename a, table td.login, table td.logout, table td.download, table td.upload, table td.create, table td.delete { padding:3px 8px 8px 3px; }
@@ -658,8 +673,14 @@ table.dragshadow td.size {
 	top: 100%;
 	margin-top: 4px;
 	min-width: 100px;
-	margin-left: 7px;
+	margin-left: 22px; /* Align left edge below center of + button … */
+	transform: translateX(-50%); /* … then center it below button */
 	z-index: 1001;
+
+	/* Center triangle */
+	&::after {
+		left: calc(50% - 8px) !important;
+	}
 }
 
 #filestable .filename .action .icon,
@@ -755,7 +776,8 @@ table.dragshadow td.size {
 		row-gap: 15px;
 		margin: 15px 0;
 
-		tr {
+		// ensure search still filters tr with .hidden
+		tr:not(.hidden) {
 			display: block;
 			position: relative;
 			height: $grid-size + 44px - $grid-pad;
@@ -891,6 +913,16 @@ table.dragshadow td.size {
 						}
 					}
 				}
+
+				form {
+					padding: 3px 14px;
+					border-radius: var(--border-radius);
+
+					input.filename {
+						width: 100%;
+						margin-left: 0;
+					}
+				}
 			}
 
 			/* No space for filesize and date in grid view */
@@ -969,6 +1001,9 @@ table.dragshadow td.size {
 	margin: 0;
 	padding: 22px;
 	opacity: .5;
+	position: fixed;
+	right: 0;
+	z-index: 100;
 
 	&:hover,
 	&:focus,

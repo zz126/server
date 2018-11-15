@@ -86,6 +86,7 @@
 			var shareType = this.model.getShareType(shareIndex);
 			var sharedBy = this.model.getSharedBy(shareIndex);
 			var sharedByDisplayName = this.model.getSharedByDisplayName(shareIndex);
+			var fileOwnerUid = this.model.getFileOwnerUid(shareIndex);
 
 			var hasPermissionOverride = {};
 			if (shareType === OC.Share.SHARE_TYPE_GROUP) {
@@ -134,6 +135,8 @@
 			var hasPassword = password !== null && password !== '';
 			var sendPasswordByTalk = share.send_password_by_talk;
 
+			var shareNote = this.model.getNote(shareIndex);
+
 			return _.extend(hasPermissionOverride, {
 				cid: this.cid,
 				hasSharePermission: this.model.hasSharePermission(shareIndex),
@@ -141,6 +144,8 @@
 				hasCreatePermission: this.model.hasCreatePermission(shareIndex),
 				hasUpdatePermission: this.model.hasUpdatePermission(shareIndex),
 				hasDeletePermission: this.model.hasDeletePermission(shareIndex),
+				sharedBy: sharedBy,
+				sharedByDisplayName: sharedByDisplayName,
 				shareWith: shareWith,
 				shareWithDisplayName: shareWithDisplayName,
 				shareWithAvatar: shareWithAvatar,
@@ -148,6 +153,9 @@
 				shareType: shareType,
 				shareId: this.model.get('shares')[shareIndex].id,
 				modSeed: shareWithAvatar || (shareType !== OC.Share.SHARE_TYPE_USER && shareType !== OC.Share.SHARE_TYPE_CIRCLE && shareType !== OC.Share.SHARE_TYPE_ROOM),
+				owner: fileOwnerUid,
+				isShareWithCurrentUser: (shareType === OC.Share.SHARE_TYPE_USER && shareWith === oc_current_user),
+				canUpdateShareSettings: (sharedBy === oc_current_user || fileOwnerUid === oc_current_user),
 				isRemoteShare: shareType === OC.Share.SHARE_TYPE_REMOTE,
 				isRemoteGroupShare: shareType === OC.Share.SHARE_TYPE_REMOTE_GROUP,
 				isNoteAvailable: shareType !== OC.Share.SHARE_TYPE_REMOTE && shareType !== OC.Share.SHARE_TYPE_REMOTE_GROUP,
@@ -159,7 +167,8 @@
 				isTalkEnabled: oc_appswebroots['spreed'] !== undefined,
 				secureDropMode: !this.model.hasReadPermission(shareIndex),
 				hasExpireDate: this.model.getExpireDate(shareIndex) !== null,
-				shareNote: this.model.getNote(shareIndex),
+				shareNote: shareNote,
+				hasNote: shareNote !== '',
 				expireDate: moment(this.model.getExpireDate(shareIndex), 'YYYY-MM-DD').format('DD-MM-YYYY'),
 				// The password placeholder does not take into account if
 				// sending the password by Talk is enabled or not; when
@@ -314,7 +323,9 @@
 				var $edit = _this.$('#canEdit-' + _this.cid + '-' + sharee.shareId);
 				if($edit.length === 1) {
 					$edit.prop('checked', sharee.editPermissionState === 'checked');
-					$edit.prop('indeterminate', sharee.editPermissionState === 'indeterminate');
+					if (sharee.isFolder) {
+						$edit.prop('indeterminate', sharee.editPermissionState === 'indeterminate');
+					}
 				}
 			});
 			this.$('.popovermenu').on('afterHide', function() {
@@ -384,7 +395,7 @@
 			var $form = $menu.next('li.share-note-form');
 
 			// show elements
-			$menu.find('.share-note-delete').toggle();
+			$menu.find('.share-note-delete').toggleClass('hidden');
 			$form.toggleClass('hidden');
 			$form.find('textarea').focus();
 		},
@@ -403,7 +414,7 @@
 			$form.find('.share-note').val('');
 			
 			$form.addClass('hidden');
-			$menu.find('.share-note-delete').hide();
+			$menu.find('.share-note-delete').addClass('hidden');
 
 			self.sendNote('', shareId, $menu);
 		},

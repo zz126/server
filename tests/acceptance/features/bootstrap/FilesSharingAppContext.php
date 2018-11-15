@@ -104,6 +104,14 @@ class FilesSharingAppContext implements Context, ActorAwareInterface {
 	}
 
 	/**
+	 * @return Locator
+	 */
+	public static function downloadButton() {
+		return Locator::forThe()->id("downloadFile")->
+				describedAs("Download button in Shared file page");
+	}
+
+	/**
 	 * @When I visit the shared link I wrote down
 	 */
 	public function iVisitTheSharedLinkIWroteDown() {
@@ -190,7 +198,10 @@ class FilesSharingAppContext implements Context, ActorAwareInterface {
 			PHPUnit_Framework_Assert::fail("The Share menu is not visible yet after $timeout seconds");
 		}
 
-		PHPUnit_Framework_Assert::assertTrue(
+		// The acceptance tests are run in a window wider than the mobile breakpoint, so the
+		// download item should not be shown in the menu (although it will be in
+		// the DOM).
+		PHPUnit_Framework_Assert::assertFalse(
 				$this->actor->find(self::downloadItemInShareMenu())->isVisible());
 		PHPUnit_Framework_Assert::assertTrue(
 				$this->actor->find(self::directLinkItemInShareMenu())->isVisible());
@@ -199,10 +210,42 @@ class FilesSharingAppContext implements Context, ActorAwareInterface {
 	}
 
 	/**
+	 * @Then I see that the Share menu button is not shown
+	 */
+	public function iSeeThatTheShareMenuButtonIsNotShown() {
+		try {
+			PHPUnit_Framework_Assert::assertFalse(
+					$this->actor->find(self::shareMenuButton())->isVisible());
+		} catch (NoSuchElementException $exception) {
+		}
+	}
+
+	/**
 	 * @Then I see that the shared file preview shows the text :text
 	 */
 	public function iSeeThatTheSharedFilePreviewShowsTheText($text) {
 		PHPUnit_Framework_Assert::assertContains($text, $this->actor->find(self::textPreview(), 10)->getText());
+	}
+
+	/**
+	 * @Then I see that the download button is shown
+	 */
+	public function iSeeThatTheDownloadButtonIsShown() {
+		if (!WaitFor::elementToBeEventuallyShown(
+				$this->actor, self::downloadButton(), $timeout = 10 * $this->actor->getFindTimeoutMultiplier())) {
+			PHPUnit_Framework_Assert::fail("The download button is not visible yet after $timeout seconds");
+		}
+	}
+
+	/**
+	 * @Then I see that the download button is not shown
+	 */
+	public function iSeeThatTheDownloadButtonIsNotShown() {
+		try {
+			PHPUnit_Framework_Assert::assertFalse(
+					$this->actor->find(self::downloadButton())->isVisible());
+		} catch (NoSuchElementException $exception) {
+		}
 	}
 
 }

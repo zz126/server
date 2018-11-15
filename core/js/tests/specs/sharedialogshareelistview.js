@@ -73,7 +73,7 @@ describe('OC.Share.ShareDialogShareeListView', function () {
 		$('#testArea').append(listView.$el);
 
 		shareModel.set({
-			linkShare: {isLinkShare: false}
+			linkShares: []
 		});
 
 		oldCurrentUser = OC.currentUser;
@@ -90,6 +90,37 @@ describe('OC.Share.ShareDialogShareeListView', function () {
 	});
 
 	describe('Sets correct initial checkbox state', function () {
+
+		it('marks edit box as unchecked for file shares without edit permissions', function () {
+			shareModel.set('shares', [{
+				id: 100,
+				item_source: 123,
+				permissions: 1,
+				share_type: OC.Share.SHARE_TYPE_USER,
+				share_with: 'user1',
+				share_with_displayname: 'User One',
+				uid_owner: oc_current_user,
+				itemType: 'file'
+			}]);
+			listView.render();
+			expect(listView.$el.find("input[name='edit']").is(':not(:checked)')).toEqual(true);
+		});
+
+		it('marks edit box as checked for file shares', function () {
+			shareModel.set('shares', [{
+				id: 100,
+				item_source: 123,
+				permissions: 1 | OC.PERMISSION_UPDATE,
+				share_type: OC.Share.SHARE_TYPE_USER,
+				share_with: 'user1',
+				share_with_displayname: 'User One',
+				uid_owner: oc_current_user,
+				itemType: 'file'
+			}]);
+			listView.render();
+			expect(listView.$el.find("input[name='edit']").is(':checked')).toEqual(true);
+		});
+
 		it('marks edit box as indeterminate when only some permissions are given', function () {
 			shareModel.set('shares', [{
 				id: 100,
@@ -98,6 +129,7 @@ describe('OC.Share.ShareDialogShareeListView', function () {
 				share_type: OC.Share.SHARE_TYPE_USER,
 				share_with: 'user1',
 				share_with_displayname: 'User One',
+				uid_owner: oc_current_user,
 				itemType: 'folder'
 			}]);
 			shareModel.set('itemType', 'folder');
@@ -113,6 +145,7 @@ describe('OC.Share.ShareDialogShareeListView', function () {
 				share_type: OC.Share.SHARE_TYPE_USER,
 				share_with: 'user _.@-\'',
 				share_with_displayname: 'User One',
+				uid_owner: oc_current_user,
 				itemType: 'folder'
 			}]);
 			shareModel.set('itemType', 'folder');
@@ -128,6 +161,7 @@ describe('OC.Share.ShareDialogShareeListView', function () {
 				share_type: OC.Share.SHARE_TYPE_USER,
 				share_with: 'user1',
 				share_with_displayname: 'User One',
+				uid_owner: oc_current_user,
 				itemType: 'folder'
 			}]);
 			shareModel.set('itemType', 'folder');
@@ -143,6 +177,7 @@ describe('OC.Share.ShareDialogShareeListView', function () {
 				share_type: OC.Share.SHARE_TYPE_USER,
 				share_with: 'user _.@-\'',
 				share_with_displayname: 'User One',
+				uid_owner: oc_current_user,
 				itemType: 'folder'
 			}]);
 			shareModel.set('itemType', 'folder');
@@ -158,7 +193,8 @@ describe('OC.Share.ShareDialogShareeListView', function () {
 				permissions: 1,
 				share_type: OC.Share.SHARE_TYPE_USER,
 				share_with: 'user1',
-				share_with_displayname: 'User One'
+				share_with_displayname: 'User One',
+				uid_owner: oc_current_user,
 			}]);
 			shareModel.set('itemType', 'folder');
 			listView.render();
@@ -175,6 +211,7 @@ describe('OC.Share.ShareDialogShareeListView', function () {
 				share_type: OC.Share.SHARE_TYPE_USER,
 				share_with: 'user1',
 				share_with_displayname: 'User One',
+				uid_owner: oc_current_user,
 				itemType: 'folder'
 			}]);
 			shareModel.set('itemType', 'folder');
@@ -192,6 +229,7 @@ describe('OC.Share.ShareDialogShareeListView', function () {
 				share_type: OC.Share.SHARE_TYPE_USER,
 				share_with: 'user1',
 				share_with_displayname: 'User One',
+				uid_owner: oc_current_user,
 				itemType: 'folder'
 			}]);
 			shareModel.set('itemType', 'folder');

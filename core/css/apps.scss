@@ -17,22 +17,23 @@
  */
 
 /* BASE STYLING ------------------------------------------------------------ */
-
-h2,
-h3,
-h4 {
-	font-weight: bold;
-}
-
+// no h1 allowed since h1 = logo
 h2 {
+	font-weight: bold;
 	font-size: 20px;
 	margin-bottom: 12px;
-	line-height: 140%;
+	line-height: 30px;
+	color: var(--color-text-light);
 }
 
 h3 {
-	font-size: 15px;
+	font-size: 16px;
 	margin: 12px 0;
+	color: var(--color-text-light);
+}
+
+h4 {
+	font-size: 14px;
 }
 
 /* do not use italic typeface style, instead lighter color */
@@ -598,6 +599,14 @@ kbd {
 
 /* APP-CONTENT AND WRAPPER ------------------------------------------ */
 /* Part where the content will be loaded into */
+
+/**
+ * !Important. We are defining the minimum requirement we want for flex
+ * Just before the mobile breakpoint we have $breakpoint-mobile (768px) - $navigation-width
+ * -> 468px. In that case we want 200px for the list and 268px for the content
+ */
+$min-content-width: $breakpoint-mobile - $navigation-width - $list-min-width;
+
 #app-content {
 	z-index: 1000;
 	background-color: var(--color-main-background);
@@ -625,7 +634,7 @@ kbd {
 		/* CONTENT DETAILS AFTER LIST*/
 		.app-content-details {
 			/* grow full width */
-			flex-grow: 1;
+			flex: 1 1 $min-content-width;
 			#app-navigation-toggle-back {
 				display: none;
 			}
@@ -780,27 +789,47 @@ kbd {
 
 /* TABS ------------------------------------------------------------ */
 .tabHeaders {
-	display: inline-block;
-	margin: 15px;
+	display: flex;
+	margin-bottom: 16px;
+
 	.tabHeader {
-		float: left;
-		padding: 12px;
+		display: flex;
+		flex-direction: column;
+		flex-grow: 1;
+		text-align: center;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 		cursor: pointer;
 		color: var(--color-text-lighter);
 		margin-bottom: 1px;
+		padding: 5px;
+
+		/* Use same amount as sidebar padding */
+		&:first-child {
+			padding-left: 15px;
+		}
+		&:last-child {
+			padding-right: 15px;
+		}
+
 		.icon {
 			display: inline-block;
-			width: 16px;
+			width: 100%;
 			height: 16px;
 			background-size: 16px;
 			vertical-align: middle;
 			margin-top: -2px;
 			margin-right: 3px;
 			opacity: .7;
+			cursor: pointer;
 		}
+
 		a {
 			color: var(--color-text-lighter);
 			margin-bottom: 1px;
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 		&.selected {
 			font-weight: bold;
@@ -1079,7 +1108,6 @@ $popovericon-size: 16px;
 
 /* CONTENT LIST ------------------------------------------------------------ */
 .app-content-list {
-	max-width: 300px;
 	@include position('sticky');
 	top: $header-height;
 	border-right: 1px solid var(--color-border);
@@ -1090,7 +1118,9 @@ $popovericon-size: 16px;
 	max-height: calc(100vh - #{$header-height});
 	overflow-y: auto;
 	overflow-x: hidden;
-	flex: 0 1 300px;
+	flex: 1 1 $list-min-width;
+	min-width: $list-min-width;
+	max-width: $list-max-width;
 
 	/* Default item */
 	.app-content-list-item {
@@ -1249,7 +1279,9 @@ $popovericon-size: 16px;
 			position: relative;
 			.popovermenu {
 				margin: 0;
-				right: -5px;
+				// action icon have -7px margin
+				// default popover is normally 5px
+				right: -2px;
 			}
 		}
 	}

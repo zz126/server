@@ -80,9 +80,15 @@ $border-radius-pill: 100px !default;
 
 $font-face: 'Nunito', 'Open Sans', Frutiger, Calibri, 'Myriad Pro', Myriad, sans-serif !default;
 
+$animation-quick: 100ms;
 
 // various structure data
 $header-height: 50px;
 $navigation-width: 300px;
 $sidebar-min-width: 300px;
 $sidebar-max-width: 500px;
+$list-min-width: 200px;
+$list-max-width: 300px;
+
+// mobile
+$breakpoint-mobile: 768px;
