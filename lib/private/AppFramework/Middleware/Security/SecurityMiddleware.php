@@ -52,6 +52,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCSController;
 use OCP\IL10N;
 use OCP\INavigationManager;
+use OCP\ISession;
 use OCP\IURLGenerator;
 use OCP\IRequest;
 use OCP\ILogger;
@@ -92,6 +93,8 @@ class SecurityMiddleware extends Middleware {
 	private $appManager;
 	/** @var IL10N */
 	private $l10n;
+	/** @var ISession */
+	private $session;
 
 	public function __construct(IRequest $request,
 								ControllerMethodReflector $reflector,
@@ -105,7 +108,8 @@ class SecurityMiddleware extends Middleware {
 								CsrfTokenManager $csrfTokenManager,
 								ContentSecurityPolicyNonceManager $cspNonceManager,
 								IAppManager $appManager,
-								IL10N $l10n
+								IL10N $l10n,
+								ISession $session
 	) {
 		$this->navigationManager = $navigationManager;
 		$this->request = $request;
@@ -120,6 +124,7 @@ class SecurityMiddleware extends Middleware {
 		$this->cspNonceManager = $cspNonceManager;
 		$this->appManager = $appManager;
 		$this->l10n = $l10n;
+		$this->session = $session;
 	}
 
 	/**
@@ -243,7 +248,7 @@ class SecurityMiddleware extends Middleware {
 			} else {
 				if($exception instanceof NotLoggedInException) {
 					$params = [];
-					if (isset($this->request->server['REQUEST_URI'])) {
+					if (isset($this->request->server['REQUEST_URI']) && !$this->session->exists('clearingExecutionContexts')) {
 						$params['redirect_url'] = $this->request->server['REQUEST_URI'];
 					}
 					$url = $this->urlGenerator->linkToRoute('core.login.showLoginForm', $params);
