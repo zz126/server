@@ -227,6 +227,38 @@
 				var list = quickAccessMenu.getElementsByTagName('li');
 				this.QuickSort(list, 0, list.length - 1);
 			}
+
+			var favListElement=$(quickAccessMenu).parent();
+			favListElement.append("<div class='nav-icon-favorites-starred'></div>")
+			favListElement.droppable({
+				over: function( event, ui ) {
+					favListElement.addClass('dropzone-background');
+				},
+				out: function( event, ui ) {
+					favListElement.removeClass('dropzone-background');
+				},
+				activate: function( event, ui ) {
+					var elem=favListElement.find("a").first();
+					elem.addClass('nav-icon-favorites-starred').removeClass('nav-icon-favorites');
+				},
+				deactivate: function( event, ui ) {
+					var elem=favListElement.find("a").first();
+					elem.addClass('nav-icon-favorites').removeClass('nav-icon-favorites-starred');
+				},
+				drop: function( event, ui ) {
+					favListElement.removeClass('dropzone-background');
+					var $selectedFiles = $(ui.draggable);
+					if (ui.helper.find("tr").size()===1) {
+						var $tr = $selectedFiles.closest('tr');
+						if($tr.attr("data-favorite")){
+							return;
+						}
+						$selectedFiles.trigger("droppedOnFavorites", $tr.attr("data-file"));
+					}else{
+						OC.Notification.showTemporary(t('files', 'You can only add single Folders to the Favorites'));
+					}
+				}
+			});
 		},
 
 		/**

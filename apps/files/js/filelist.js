@@ -356,10 +356,16 @@
 
 			$.event.trigger({type: "droppedOnTrash"});
 
-			var self=this;
+			var _self=this;
 			this.$fileList.on("droppedOnTrash", function (event, filename, directory) {
 				//self.fileActions.triggerAction('Favorite', self.getModelForFile(file), self);
-				self.do_delete(filename, directory)
+				_self.do_delete(filename, directory);
+			});
+
+			$.event.trigger({type: "droppedOnFavorites"});
+			_self=this;
+			this.$fileList.on("droppedOnFavorites", function (event, file) {
+				_self.fileActions.triggerAction('Favorite', _self.getModelForFile(file), _self);
 			});
 
 			this.$fileList.on('change', 'td.selection>.selectCheckBox', _.bind(this._onClickFileCheckbox, this));

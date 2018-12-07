@@ -120,6 +120,9 @@
 .nav-icon-deletedshares {
 	@include icon-color('unshare', 'files', $color-black);
 }
+.nav-icon-favorites-starred {
+	@include icon-color('star-dark', 'actions', $color-yellow, 2, true);
+}
 
 #app-navigation .nav-files a.nav-icon-files {
 	width: auto;
@@ -722,7 +725,13 @@ table.dragshadow td.size {
 
 .breadcrumb .canDrop > a,
 #filestable tbody tr.canDrop {
-	background-color: rgb(179, 230, 255);
+	background-color: rgba( $color-primary, .3 );
+}
+.dropzone-background {
+	background-color: rgba( $color-primary, .3 );
+	:hover{
+		box-shadow: none !important;
+	}
 }
 
 
