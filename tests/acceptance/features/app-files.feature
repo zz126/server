@@ -140,6 +140,26 @@ Feature: app-files
     Then I see that the current section is "Deleted files"
     Then I see that the file list contains a file named "welcome.txt"
 
+  Scenario: move a file to another folder
+    Given I am logged in
+    And I create a new folder named "Folder"
+    When I start the move or copy operation for "welcome.txt"
+    And I select "Folder" in the file picker
+    And I move to the last selected folder in the file picker
+    Then I see that the file list does not contain a file named "welcome.txt"
+    And I enter in the folder named "Folder"
+    And I see that the file list contains a file named "welcome.txt"
+
+  Scenario: copy a file to another folder
+    Given I am logged in
+    And I create a new folder named "Folder"
+    When I start the move or copy operation for "welcome.txt"
+    And I select "Folder" in the file picker
+    And I copy to the last selected folder in the file picker
+    Then I see that the file list contains a file named "welcome.txt"
+    And I enter in the folder named "Folder"
+    And I see that the file list contains a file named "welcome.txt"
+
   Scenario: rename a file with the details view open
     Given I am logged in
     And I open the details view for "welcome.txt"
