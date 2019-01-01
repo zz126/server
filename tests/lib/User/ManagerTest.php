@@ -8,6 +8,7 @@
  */
 
 namespace Test\User;
+use OC\AllConfig;
 use OC\User\Database;
 use OC\User\Manager;
 use OCP\IConfig;
@@ -667,5 +668,38 @@ class ManagerTest extends TestCase {
 		$this->assertTrue($manager->userExists('foo'));
 		$manager->get('foo')->delete();
 		$this->assertFalse($manager->userExists('foo'));
+	}
+
+	public function testGetByEmail() {
+		$config = $this->getMockBuilder(AllConfig::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$config
+			->expects($this->at(0))
+			->method('getUsersForUserValueCaseInsensitive')
+			->with('settings', 'email', 'test@example.com')
+			->will($this->returnValue(['uid1', 'uid99', 'uid2']));
+
+		$backend = $this->createMock(\Test\Util\User\Dummy::class);
+		$backend->expects($this->at(0))
+			->method('userExists')
+			->with($this->equalTo('uid1'))
+			->will($this->returnValue(true));
+		$backend->expects($this->at(1))
+			->method('userExists')
+			->with($this->equalTo('uid99'))
+			->will($this->returnValue(false));
+		$backend->expects($this->at(2))
+			->method('userExists')
+			->with($this->equalTo('uid2'))
+			->will($this->returnValue(true));
+
+		$manager = new \OC\User\Manager($config);
+		$manager->registerBackend($backend);
+
+		$users = $manager->getByEmail('test@example.com');
+		$this->assertCount(2, $users);
+		$this->assertEquals('uid1', $users[0]->getUID());
+		$this->assertEquals('uid2', $users[1]->getUID());
 	}
 }

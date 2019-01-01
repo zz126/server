@@ -65,6 +65,7 @@ OC.L10N.register(
     "Detect Port" : "Finna gátt",
     "User DN" : "DN notanda",
     "Password" : "Lykilorð",
+    "Save Credentials" : "Vista auðkenni",
     "Verify settings and count users" : "Sannprófa stillingar og telja notendur",
     "Saving" : "Vistun",
     "Back" : "Til baka",
@@ -91,13 +92,11 @@ OC.L10N.register(
     "Directory Settings" : "Stillingar möppu",
     "Nested Groups" : "Faldaðir hópar",
     "(New password is sent as plain text to LDAP)" : "(Nýtt lykilorð er sent sem hreinn texti til LDAP)",
+    "Default password policy DN" : "Sjálfgefin lykilorðastefna DN",
     "Special Attributes" : "Sérstök eigindi",
     "Quota Field" : "Gagnasvið fyrir kvóta",
     "Quota Default" : "Sjálfgefinn kvóti",
     "Email Field" : "Gagnasvið fyrir netfang",
-    "Internal Username" : "Innra notandanafn",
-    "1. Server" : "1. Þjónn",
-    "Wrong password. Reset it?" : "Rangt lykilorð. Endursetja?",
-    "LDAP" : "LDAP"
+    "Internal Username" : "Innra notandanafn"
 },
 "nplurals=2; plural=(n % 10 != 1 || n % 100 == 11);");

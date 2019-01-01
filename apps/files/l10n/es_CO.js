@@ -27,7 +27,6 @@ OC.L10N.register(
     "Actions" : "Acciones",
     "Rename" : "Renombrar",
     "Copy" : "Copiar",
-    "Target folder" : "Carpeta destino",
     "Disconnect storage" : "Desconectar almacenamiento",
     "Unshare" : "Dejar de compartir",
     "Could not load info for file \"{file}\"" : "No fue posible cargar información para el archivo \"{file}\"",
@@ -132,7 +131,6 @@ OC.L10N.register(
     "Save" : "Guardar",
     "With PHP-FPM it might take 5 minutes for changes to be applied." : "Con PHP-FPM podría tomar 5 minutos para que los cambios apliquen. ",
     "Missing permissions to edit from here." : "Faltan privilegios para editar desde aquí. ",
-    "%s of %s used" : "%s de %s usado",
     "%s used" : "%s usado",
     "Settings" : "Configuraciones ",
     "Show hidden files" : "Mostrar archivos ocultos",
@@ -154,9 +152,7 @@ OC.L10N.register(
     "Shared by link" : "Compartido por liga",
     "Text file" : "Archivo de texto",
     "New text file.txt" : "Nuevo ArchivoDeTexto.txt",
-    "Move" : "Mover",
-    "A new file or folder has been <strong>deleted</strong>" : "Un nuevo archivo o carpeta ha sido <strong>borrado</strong>",
-    "A new file or folder has been <strong>restored</strong>" : "Un nuevo archivo o carpeta ha sido <strong>restaurado</strong>",
-    "Use this address to <a href=\"%s\" target=\"_blank\" rel=\"noreferrer\">access your Files via WebDAV</a>" : "Usa esta dirección para <a href=\"%s\" target=\"_blank\" rel=\"noreferrer\">acceder tus Archivos vía WebDAV</a>"
+    "Target folder" : "Carpeta destino",
+    "%s of %s used" : "%s de %s usado"
 },
 "nplurals=2; plural=(n != 1);");

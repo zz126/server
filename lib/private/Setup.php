@@ -52,6 +52,7 @@ use OC\Preview\BackgroundCleanupJob;
 use OCP\Defaults;
 use OCP\IL10N;
 use OCP\ILogger;
+use OCP\IUser;
 use OCP\Security\ISecureRandom;
 
 class Setup {
@@ -412,6 +413,11 @@ class Setup {
 			$userSession->setTokenProvider($defaultTokenProvider);
 			$userSession->login($username, $password);
 			$userSession->createSessionToken($request, $userSession->getUser()->getUID(), $username, $password);
+
+			// Set email for admin
+			if (!empty($options['adminemail'])) {
+				$config->setUserValue($user->getUID(), 'settings', 'email', $options['adminemail']);
+			}
 		}
 
 		return $error;
@@ -445,11 +451,10 @@ class Setup {
 			if ($webRoot === '') {
 				throw new InvalidArgumentException('overwrite.cli.url is empty');
 			}
-			$webRoot = parse_url($webRoot, PHP_URL_PATH);
-			if ($webRoot === null) {
+			if (!filter_var($webRoot, FILTER_VALIDATE_URL)) {
 				throw new InvalidArgumentException('invalid value for overwrite.cli.url');
 			}
-			$webRoot = rtrim($webRoot, '/');
+			$webRoot = rtrim(parse_url($webRoot, PHP_URL_PATH), '/');
 		} else {
 			$webRoot = !empty(\OC::$WEBROOT) ? \OC::$WEBROOT : '/';
 		}
@@ -499,7 +504,7 @@ class Setup {
 			$content .= "\n  Options -MultiViews";
 			$content .= "\n  RewriteRule ^core/js/oc.js$ index.php [PT,E=PATH_INFO:$1]";
 			$content .= "\n  RewriteRule ^core/preview.png$ index.php [PT,E=PATH_INFO:$1]";
-			$content .= "\n  RewriteCond %{REQUEST_FILENAME} !\\.(css|js|svg|gif|png|html|ttf|woff|ico|jpg|jpeg)$";
+			$content .= "\n  RewriteCond %{REQUEST_FILENAME} !\\.(css|js|svg|gif|png|html|ttf|woff2?|ico|jpg|jpeg)$";
 			$content .= "\n  RewriteCond %{REQUEST_FILENAME} !core/img/favicon.ico$";
 			$content .= "\n  RewriteCond %{REQUEST_FILENAME} !core/img/manifest.json$";
 			$content .= "\n  RewriteCond %{REQUEST_FILENAME} !/remote.php";

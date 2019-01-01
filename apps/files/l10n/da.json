@@ -25,7 +25,6 @@
     "Actions" : "Handlinger",
     "Rename" : "Omdøb",
     "Copy" : "Kopier",
-    "Target folder" : "Destinations mappe",
     "Disconnect storage" : "Frakobl lager",
     "Unshare" : "Ophæv deling",
     "Could not load info for file \"{file}\"" : "Kunne ikke indlæse information for filen \"{file}\"",
@@ -130,7 +129,6 @@
     "Save" : "Gem",
     "With PHP-FPM it might take 5 minutes for changes to be applied." : "Med PHP-FPM kan det tage 5 minuter for ændringerne at blive udført.",
     "Missing permissions to edit from here." : "Rettighed mangler til at redigere på dette sted",
-    "%s of %s used" : "%s af %s brugt",
     "%s used" : "%s brugt",
     "Settings" : "Indstillinger",
     "Show hidden files" : "Vis skjulte filer",
@@ -152,9 +150,7 @@
     "Shared by link" : "Delt via link",
     "Text file" : "Tekstfil",
     "New text file.txt" : "Ny tekst file.txt",
-    "Move" : "Flyt",
-    "A new file or folder has been <strong>deleted</strong>" : "En ny fil eller mappe er blevet <strong>slettet</strong>",
-    "A new file or folder has been <strong>restored</strong>" : "En ny fil eller mappe er blevet <strong>gendannet</strong>",
-    "Use this address to <a href=\"%s\" target=\"_blank\" rel=\"noreferrer\">access your Files via WebDAV</a>" : "Brug denne adresse til at <a href=\"%s\" target=\"_blank\" rel=\"noreferrer\">tilgå dine filer gennem WebDAV</a>"
+    "Target folder" : "Destinations mappe",
+    "%s of %s used" : "%s af %s brugt"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

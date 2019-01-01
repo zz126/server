@@ -64,9 +64,11 @@ class Application extends \OCP\AppFramework\App {
 
 				script('workflowengine', [
 					'admin',
+					'templates',
 
 					// Check plugins
 					'filemimetypeplugin',
+					'filenameplugin',
 					'filesizeplugin',
 					'filesystemtagsplugin',
 					'requestremoteaddressplugin',

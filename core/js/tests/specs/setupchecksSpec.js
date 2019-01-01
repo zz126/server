@@ -61,22 +61,33 @@ describe('OC.SetupChecks tests', function() {
 	});
 
 	describe('checkWellKnownUrl', function() {
-		it('should fail with another response status code than 207', function(done) {
-			var async = OC.SetupChecks.checkWellKnownUrl('/.well-known/caldav/', 'http://example.org/PLACEHOLDER', true);
+		it('should fail with another response status code than the expected one', function(done) {
+			var async = OC.SetupChecks.checkWellKnownUrl('/.well-known/caldav', 'http://example.org/PLACEHOLDER', true, 207);
 
 			suite.server.requests[0].respond(200);
 
 			async.done(function( data, s, x ){
 				expect(data).toEqual([{
-					msg: 'Your web server is not properly set up to resolve "/.well-known/caldav/". Further information can be found in the <a href="http://example.org/admin-setup-well-known-URL" rel="noreferrer noopener">documentation</a>.',
+					msg: 'Your web server is not properly set up to resolve "/.well-known/caldav". Further information can be found in the <a href="http://example.org/admin-setup-well-known-URL" rel="noreferrer noopener">documentation</a>.',
 					type: OC.SetupChecks.MESSAGE_TYPE_INFO
 				}]);
 				done();
 			});
 		});
 
-		it('should return no error with a response status code of 207', function(done) {
-			var async = OC.SetupChecks.checkWellKnownUrl('/.well-known/caldav/', 'http://example.org/PLACEHOLDER', true);
+		it('should return no error with the expected response status code', function(done) {
+			var async = OC.SetupChecks.checkWellKnownUrl('/.well-known/caldav', 'http://example.org/PLACEHOLDER', true, 207);
+
+			suite.server.requests[0].respond(207);
+
+			async.done(function( data, s, x ){
+				expect(data).toEqual([]);
+				done();
+			});
+		});
+
+		it('should return no error with the default expected response status code', function(done) {
+			var async = OC.SetupChecks.checkWellKnownUrl('/.well-known/caldav', 'http://example.org/PLACEHOLDER', true);
 
 			suite.server.requests[0].respond(207);
 
@@ -87,7 +98,34 @@ describe('OC.SetupChecks tests', function() {
 		});
 
 		it('should return no error when no check should be run', function(done) {
-			var async = OC.SetupChecks.checkWellKnownUrl('/.well-known/caldav/', 'http://example.org/PLACEHOLDER', false);
+			var async = OC.SetupChecks.checkWellKnownUrl('/.well-known/caldav', 'http://example.org/PLACEHOLDER', false);
+
+			async.done(function( data, s, x ){
+				expect(data).toEqual([]);
+				done();
+			});
+		});
+	});
+
+	describe('checkWOFF2Loading', function() {
+		it('should fail with another response status code than the expected one', function(done) {
+			var async = OC.SetupChecks.checkWOFF2Loading(OC.filePath('core', '', 'fonts/Nunito-Regular.woff2'), 'http://example.org/PLACEHOLDER');
+
+			suite.server.requests[0].respond(302);
+
+			async.done(function( data, s, x ){
+				expect(data).toEqual([{
+					msg: 'Your web server is not properly set up to deliver .woff2 files. This is typically an issue with the Nginx configuration. For Nextcloud 15 it needs an adjustement to also deliver .woff2 files. Compare your Nginx configuration to the recommended configuration in our <a href="http://example.org/admin-nginx" rel="noreferrer noopener">documentation</a>.',
+					type: OC.SetupChecks.MESSAGE_TYPE_WARNING
+				}]);
+				done();
+			});
+		});
+
+		it('should return no error with the expected response status code', function(done) {
+			var async = OC.SetupChecks.checkWOFF2Loading(OC.filePath('core', '', 'fonts/Nunito-Regular.woff2'), 'http://example.org/PLACEHOLDER');
+
+			suite.server.requests[0].respond(200);
 
 			async.done(function( data, s, x ){
 				expect(data).toEqual([]);
@@ -172,7 +210,9 @@ describe('OC.SetupChecks tests', function() {
 						diffInSeconds: 0
 					},
 					isMemoryLimitSufficient: true,
-					appDirsWithDifferentOwner: []
+					appDirsWithDifferentOwner: [],
+					recommendedPHPModules: [],
+					pendingBigIntConversionColumns: []
 				})
 			);
 
@@ -221,7 +261,9 @@ describe('OC.SetupChecks tests', function() {
 						diffInSeconds: 0
 					},
 					isMemoryLimitSufficient: true,
-					appDirsWithDifferentOwner: []
+					appDirsWithDifferentOwner: [],
+					recommendedPHPModules: [],
+					pendingBigIntConversionColumns: []
 				})
 			);
 
@@ -271,7 +313,9 @@ describe('OC.SetupChecks tests', function() {
 						diffInSeconds: 0
 					},
 					isMemoryLimitSufficient: true,
-					appDirsWithDifferentOwner: []
+					appDirsWithDifferentOwner: [],
+					recommendedPHPModules: [],
+					pendingBigIntConversionColumns: []
 				})
 			);
 
@@ -319,7 +363,9 @@ describe('OC.SetupChecks tests', function() {
 						diffInSeconds: 0
 					},
 					isMemoryLimitSufficient: true,
-					appDirsWithDifferentOwner: []
+					appDirsWithDifferentOwner: [],
+					recommendedPHPModules: [],
+					pendingBigIntConversionColumns: []
 				})
 			);
 
@@ -365,7 +411,9 @@ describe('OC.SetupChecks tests', function() {
 						diffInSeconds: 0
 					},
 					isMemoryLimitSufficient: true,
-					appDirsWithDifferentOwner: []
+					appDirsWithDifferentOwner: [],
+					recommendedPHPModules: [],
+					pendingBigIntConversionColumns: []
 				})
 			);
 
@@ -413,7 +461,9 @@ describe('OC.SetupChecks tests', function() {
 					isMemoryLimitSufficient: true,
 					appDirsWithDifferentOwner: [
 						'/some/path'
-					]
+					],
+					recommendedPHPModules: [],
+					pendingBigIntConversionColumns: []
 				})
 			);
 
@@ -459,7 +509,9 @@ describe('OC.SetupChecks tests', function() {
 						diffInSeconds: 0
 					},
 					isMemoryLimitSufficient: true,
-					appDirsWithDifferentOwner: []
+					appDirsWithDifferentOwner: [],
+					recommendedPHPModules: [],
+					pendingBigIntConversionColumns: []
 				})
 			);
 
@@ -505,7 +557,9 @@ describe('OC.SetupChecks tests', function() {
 						diffInSeconds: 0
 					},
 					isMemoryLimitSufficient: true,
-					appDirsWithDifferentOwner: []
+					appDirsWithDifferentOwner: [],
+					recommendedPHPModules: [],
+					pendingBigIntConversionColumns: []
 				})
 			);
 
@@ -550,8 +604,10 @@ describe('OC.SetupChecks tests', function() {
 					cronInfo: {
 						diffInSeconds: 0
 					},
+					isMemoryLimitSufficient: false,
 					appDirsWithDifferentOwner: [],
-					isMemoryLimitSufficient: false
+					recommendedPHPModules: [],
+					pendingBigIntConversionColumns: []
 				})
 			);
 
@@ -618,7 +674,9 @@ describe('OC.SetupChecks tests', function() {
 						diffInSeconds: 0
 					},
 					isMemoryLimitSufficient: true,
-					appDirsWithDifferentOwner: []
+					appDirsWithDifferentOwner: [],
+					recommendedPHPModules: [],
+					pendingBigIntConversionColumns: []
 				})
 			);
 
@@ -665,7 +723,9 @@ describe('OC.SetupChecks tests', function() {
 						diffInSeconds: 0
 					},
 					isMemoryLimitSufficient: true,
-					appDirsWithDifferentOwner: []
+					appDirsWithDifferentOwner: [],
+					recommendedPHPModules: [],
+					pendingBigIntConversionColumns: []
 				})
 			);
 
@@ -712,7 +772,9 @@ describe('OC.SetupChecks tests', function() {
 						diffInSeconds: 0
 					},
 					isMemoryLimitSufficient: true,
-					appDirsWithDifferentOwner: []
+					appDirsWithDifferentOwner: [],
+					recommendedPHPModules: [],
+					pendingBigIntConversionColumns: []
 				})
 			);
 
@@ -759,7 +821,9 @@ describe('OC.SetupChecks tests', function() {
 						diffInSeconds: 0
 					},
 					isMemoryLimitSufficient: true,
-					appDirsWithDifferentOwner: []
+					appDirsWithDifferentOwner: [],
+					recommendedPHPModules: [],
+					pendingBigIntConversionColumns: []
 				})
 			);
 
@@ -811,9 +875,6 @@ describe('OC.SetupChecks tests', function() {
 			async.done(function( data, s, x ){
 				expect(data).toEqual([
 				{
-					msg: 'The "X-XSS-Protection" HTTP header is not set to "1; mode=block". This is a potential security or privacy risk, as it is recommended to adjust this setting accordingly.',
-					type: OC.SetupChecks.MESSAGE_TYPE_WARNING
-				}, {
 					msg: 'The "X-Content-Type-Options" HTTP header is not set to "nosniff". This is a potential security or privacy risk, as it is recommended to adjust this setting accordingly.',
 					type: OC.SetupChecks.MESSAGE_TYPE_WARNING
 				}, {
@@ -830,7 +891,10 @@ describe('OC.SetupChecks tests', function() {
 					msg: 'The "X-Permitted-Cross-Domain-Policies" HTTP header is not set to "none". This is a potential security or privacy risk, as it is recommended to adjust this setting accordingly.',
 					type: OC.SetupChecks.MESSAGE_TYPE_WARNING
 				}, {
-					msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin" or "strict-origin-when-cross-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation ↗</a>.',
+					msg: 'The "X-XSS-Protection" HTTP header doesn\'t contain "1; mode=block". This is a potential security or privacy risk, as it is recommended to adjust this setting accordingly.',
+					type: OC.SetupChecks.MESSAGE_TYPE_WARNING
+				}, {
+					msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin", "strict-origin-when-cross-origin" or "same-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation ↗</a>.',
 					type: OC.SetupChecks.MESSAGE_TYPE_INFO
 				}
 				]);
@@ -855,13 +919,15 @@ describe('OC.SetupChecks tests', function() {
 			);
 
 			async.done(function( data, s, x ){
-				expect(data).toEqual([{
-					msg: 'The "X-XSS-Protection" HTTP header is not set to "1; mode=block". This is a potential security or privacy risk, as it is recommended to adjust this setting accordingly.',
-					type: OC.SetupChecks.MESSAGE_TYPE_WARNING,
-				}, {
+				expect(data).toEqual([
+				{
 					msg: 'The "X-Content-Type-Options" HTTP header is not set to "nosniff". This is a potential security or privacy risk, as it is recommended to adjust this setting accordingly.',
 					type: OC.SetupChecks.MESSAGE_TYPE_WARNING
-				}]);
+				}, {
+					msg: 'The "X-XSS-Protection" HTTP header doesn\'t contain "1; mode=block". This is a potential security or privacy risk, as it is recommended to adjust this setting accordingly.',
+					type: OC.SetupChecks.MESSAGE_TYPE_WARNING,
+				}
+				]);
 				done();
 			});
 		});
@@ -887,6 +953,102 @@ describe('OC.SetupChecks tests', function() {
 			async.done(function( data, s, x ){
 				expect(data).toEqual([]);
 				done();
+			});
+		});
+
+		describe('check X-XSS-Protection header', function() {
+			it('should return no message if X-XSS-Protection is set to 1; mode=block; report=https://example.com', function(done) {
+				protocolStub.returns('https');
+				var result = OC.SetupChecks.checkGeneric();
+
+				suite.server.requests[0].respond(200, {
+					'Strict-Transport-Security': 'max-age=15768000',
+					'X-XSS-Protection': '1; mode=block; report=https://example.com',
+					'X-Content-Type-Options': 'nosniff',
+					'X-Robots-Tag': 'none',
+					'X-Frame-Options': 'SAMEORIGIN',
+					'X-Download-Options': 'noopen',
+					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'no-referrer',
+				});
+
+				result.done(function( data, s, x ){
+					expect(data).toEqual([]);
+					done();
+				});
+			});
+
+			it('should return no message if X-XSS-Protection is set to 1; mode=block', function(done) {
+				protocolStub.returns('https');
+				var result = OC.SetupChecks.checkGeneric();
+
+				suite.server.requests[0].respond(200, {
+					'Strict-Transport-Security': 'max-age=15768000',
+					'X-XSS-Protection': '1; mode=block',
+					'X-Content-Type-Options': 'nosniff',
+					'X-Robots-Tag': 'none',
+					'X-Frame-Options': 'SAMEORIGIN',
+					'X-Download-Options': 'noopen',
+					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'no-referrer',
+				});
+
+				result.done(function( data, s, x ){
+					expect(data).toEqual([]);
+					done();
+				});
+			});
+
+			it('should return a message if X-XSS-Protection is set to 1', function(done) {
+				protocolStub.returns('https');
+				var result = OC.SetupChecks.checkGeneric();
+
+				suite.server.requests[0].respond(200, {
+					'Strict-Transport-Security': 'max-age=15768000',
+					'X-XSS-Protection': '1',
+					'X-Content-Type-Options': 'nosniff',
+					'X-Robots-Tag': 'none',
+					'X-Frame-Options': 'SAMEORIGIN',
+					'X-Download-Options': 'noopen',
+					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'no-referrer',
+				});
+
+				result.done(function( data, s, x ){
+					expect(data).toEqual([
+						{
+							msg: 'The "X-XSS-Protection" HTTP header doesn\'t contain "1; mode=block". This is a potential security or privacy risk, as it is recommended to adjust this setting accordingly.',
+							type: OC.SetupChecks.MESSAGE_TYPE_WARNING
+						}
+					]);
+					done();
+				});
+			});
+
+			it('should return a message if X-XSS-Protection is set to 0', function(done) {
+				protocolStub.returns('https');
+				var result = OC.SetupChecks.checkGeneric();
+
+				suite.server.requests[0].respond(200, {
+					'Strict-Transport-Security': 'max-age=15768000',
+					'X-XSS-Protection': '0',
+					'X-Content-Type-Options': 'nosniff',
+					'X-Robots-Tag': 'none',
+					'X-Frame-Options': 'SAMEORIGIN',
+					'X-Download-Options': 'noopen',
+					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'no-referrer',
+				});
+
+				result.done(function( data, s, x ){
+					expect(data).toEqual([
+						{
+							msg: 'The "X-XSS-Protection" HTTP header doesn\'t contain "1; mode=block". This is a potential security or privacy risk, as it is recommended to adjust this setting accordingly.',
+							type: OC.SetupChecks.MESSAGE_TYPE_WARNING
+						}
+					]);
+					done();
+				});
 			});
 		});
 
@@ -975,7 +1137,7 @@ describe('OC.SetupChecks tests', function() {
 				});
 			});
 
-			it('should return a message if Referrer-Policy is set to same-origin', function(done) {
+			it('should return no message if Referrer-Policy is set to same-origin', function(done) {
 				protocolStub.returns('https');
 				var result = OC.SetupChecks.checkGeneric();
 
@@ -991,12 +1153,7 @@ describe('OC.SetupChecks tests', function() {
 				});
 
 				result.done(function( data, s, x ){
-					expect(data).toEqual([
-						{
-							msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin" or "strict-origin-when-cross-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation ↗</a>.',
-							type: OC.SetupChecks.MESSAGE_TYPE_INFO
-						}
-					]);
+					expect(data).toEqual([]);
 					done();
 				});
 			});
@@ -1019,7 +1176,7 @@ describe('OC.SetupChecks tests', function() {
 				result.done(function( data, s, x ){
 					expect(data).toEqual([
 						{
-							msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin" or "strict-origin-when-cross-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation ↗</a>.',
+							msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin", "strict-origin-when-cross-origin" or "same-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation ↗</a>.',
 							type: OC.SetupChecks.MESSAGE_TYPE_INFO
 						}
 					]);
@@ -1045,7 +1202,7 @@ describe('OC.SetupChecks tests', function() {
 				result.done(function( data, s, x ){
 					expect(data).toEqual([
 						{
-							msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin" or "strict-origin-when-cross-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation ↗</a>.',
+							msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin", "strict-origin-when-cross-origin" or "same-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation ↗</a>.',
 							type: OC.SetupChecks.MESSAGE_TYPE_INFO
 						}
 					]);
@@ -1071,7 +1228,7 @@ describe('OC.SetupChecks tests', function() {
 				result.done(function( data, s, x ){
 					expect(data).toEqual([
 						{
-							msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin" or "strict-origin-when-cross-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation ↗</a>.',
+							msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin", "strict-origin-when-cross-origin" or "same-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation ↗</a>.',
 							type: OC.SetupChecks.MESSAGE_TYPE_INFO
 						}
 					]);

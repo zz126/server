@@ -22,17 +22,17 @@
 
 namespace Test\Authentication\Token;
 
+use OC\Authentication\Exceptions\ExpiredTokenException;
 use OC\Authentication\Exceptions\InvalidTokenException;
 use OC\Authentication\Token\DefaultToken;
 use OC\Authentication\Token\DefaultTokenMapper;
 use OC\Authentication\Token\DefaultTokenProvider;
-use OC\Authentication\Token\ExpiredTokenException;
 use OC\Authentication\Token\IToken;
+use OC\Authentication\Token\PublicKeyToken;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IConfig;
 use OCP\ILogger;
-use OCP\IUser;
 use OCP\Security\ICrypto;
 use Test\TestCase;
 
@@ -531,5 +531,23 @@ class DefaultTokenProviderTest extends TestCase {
 			}));
 
 		$this->tokenProvider->rotate($token, 'oldtoken', 'newtoken');
+	}
+
+	public function testMarkPasswordInvalidInvalidToken() {
+		$token = $this->createMock(PublicKeyToken::class);
+
+		$this->expectException(InvalidTokenException::class);
+
+		$this->tokenProvider->markPasswordInvalid($token, 'tokenId');
+	}
+
+	public function testMarkPasswordInvalid() {
+		$token = $this->createMock(DefaultToken::class);
+
+		$this->mapper->expects($this->once())
+			->method('invalidate')
+			->with('0c7db0098fe8ddba6032b22719ec18867c69a1820fa36d71c28bf96d52843bdc44a112bd24093b049be5bb54769bcb72d67190a4a9690e51aac263cba38186fb');
+
+		$this->tokenProvider->markPasswordInvalid($token, 'tokenId');
 	}
 }

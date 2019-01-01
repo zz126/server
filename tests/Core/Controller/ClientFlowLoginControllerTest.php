@@ -162,6 +162,9 @@ class ClientFlowLoginControllerTest extends TestCase {
 			->expects($this->once())
 			->method('getServerHost')
 			->willReturn('example.com');
+		$this->request
+			->method('getServerProtocol')
+			->willReturn('https');
 
 		$expected = new TemplateResponse(
 			'core',
@@ -172,7 +175,7 @@ class ClientFlowLoginControllerTest extends TestCase {
 				'instanceName' => 'ExampleCloud',
 				'urlGenerator' => $this->urlGenerator,
 				'stateToken' => 'StateToken',
-				'serverHost' => 'example.com',
+				'serverHost' => 'https://example.com',
 				'oauthState' => 'OauthStateToken',
 			],
 			'guest'
@@ -218,6 +221,9 @@ class ClientFlowLoginControllerTest extends TestCase {
 			->expects($this->once())
 			->method('getServerHost')
 			->willReturn('example.com');
+		$this->request
+			->method('getServerProtocol')
+			->willReturn('https');
 
 		$expected = new TemplateResponse(
 			'core',
@@ -228,76 +234,12 @@ class ClientFlowLoginControllerTest extends TestCase {
 				'instanceName' => 'ExampleCloud',
 				'urlGenerator' => $this->urlGenerator,
 				'stateToken' => 'StateToken',
-				'serverHost' => 'example.com',
+				'serverHost' => 'https://example.com',
 				'oauthState' => 'OauthStateToken',
 			],
 			'guest'
 		);
 		$this->assertEquals($expected, $this->clientFlowLoginController->showAuthPickerPage('MyClientIdentifier'));
-	}
-
-	public function testRedirectPageWithInvalidToken() {
-		$this->session
-			->expects($this->once())
-			->method('get')
-			->with('client.flow.state.token')
-			->willReturn('OtherToken');
-
-		$expected = new TemplateResponse(
-			'core',
-			'403',
-			[
-				'file' => 'State token does not match',
-			],
-			'guest'
-		);
-		$expected->setStatus(Http::STATUS_FORBIDDEN);
-		$this->assertEquals($expected, $this->clientFlowLoginController->redirectPage('MyStateToken'));
-	}
-
-	public function testRedirectPageWithoutToken() {
-		$this->session
-			->expects($this->once())
-			->method('get')
-			->with('client.flow.state.token')
-			->willReturn(null);
-
-		$expected = new TemplateResponse(
-			'core',
-			'403',
-			[
-				'file' => 'State token does not match',
-			],
-			'guest'
-		);
-		$expected->setStatus(Http::STATUS_FORBIDDEN);
-		$this->assertEquals($expected, $this->clientFlowLoginController->redirectPage('MyStateToken'));
-	}
-
-	public function testRedirectPage() {
-		$this->session
-			->expects($this->at(0))
-			->method('get')
-			->with('client.flow.state.token')
-			->willReturn('MyStateToken');
-		$this->session
-			->expects($this->at(1))
-			->method('get')
-			->with('oauth.state')
-			->willReturn('MyOauthStateToken');
-
-		$expected = new TemplateResponse(
-			'core',
-			'loginflow/redirect',
-			[
-				'urlGenerator' => $this->urlGenerator,
-				'stateToken' => 'MyStateToken',
-				'clientIdentifier' => 'Identifier',
-				'oauthState' => 'MyOauthStateToken',
-			],
-			'guest'
-		);
-		$this->assertEquals($expected, $this->clientFlowLoginController->redirectPage('MyStateToken', 'Identifier'));
 	}
 
 	public function testGenerateAppPasswordWithInvalidToken() {

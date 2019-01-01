@@ -38,25 +38,22 @@ use OCA\FederatedFileSharing\AppInfo\Application;
 use OCA\FederatedFileSharing\FederatedShareProvider;
 use OCA\Provisioning_API\FederatedFileSharingFactory;
 use OCP\App\IAppManager;
-use OCP\AppFramework\OCS\OCSException;
 use OCP\Mail\IEMailTemplate;
 use OC\Settings\Mailer\NewUserMailHelper;
 use OC\SubAdmin;
 use OCA\Provisioning_API\Controller\UsersController;
 use OCP\AppFramework\Http\DataResponse;
-use OCP\Defaults;
 use OCP\IConfig;
 use OCP\IGroup;
 use OCP\ILogger;
 use OCP\IL10N;
 use OCP\IRequest;
-use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IUserManager;
 use OCP\IUserSession;
 use OCP\L10N\IFactory;
-use OCP\Mail\IMailer;
 use OCP\Security\ISecureRandom;
+use OCP\UserInterface;
 use PHPUnit_Framework_MockObject_MockObject;
 use Test\TestCase;
 
@@ -800,6 +797,12 @@ class UsersControllerTest extends TestCase {
 			->method('fillStorageInfo')
 			->with('UID')
 			->will($this->returnValue(['DummyValue']));
+
+		$backend = $this->createMock(UserInterface::class);
+		$backend->expects($this->any())
+			->method('implementsActions')
+			->willReturn(true);
+
 		$targetUser
 			->expects($this->once())
 			->method('getDisplayName')
@@ -816,6 +819,10 @@ class UsersControllerTest extends TestCase {
 			->expects($this->once())
 			->method('getBackendClassName')
 			->will($this->returnValue('Database'));
+		$targetUser
+			->expects($this->once())
+			->method('getBackend')
+			->willReturn($backend);
 		$targetUser
 			->expects($this->exactly(6))
 			->method('getUID')
@@ -838,6 +845,10 @@ class UsersControllerTest extends TestCase {
 			'groups' => ['group0', 'group1', 'group2'],
 			'language' => 'de',
 			'locale' => null,
+			'backendCapabilities' => [
+				'setDisplayName' => true,
+				'setPassword' => true,
+			]
 		];
 		$this->assertEquals($expected, $this->invokePrivate($this->api, 'getUserData', ['UID']));
 	}
@@ -906,6 +917,12 @@ class UsersControllerTest extends TestCase {
 			->method('fillStorageInfo')
 			->with('UID')
 			->will($this->returnValue(['DummyValue']));
+
+		$backend = $this->createMock(UserInterface::class);
+		$backend->expects($this->any())
+			->method('implementsActions')
+			->willReturn(true);
+
 		$targetUser
 			->expects($this->once())
 			->method('getDisplayName')
@@ -922,6 +939,10 @@ class UsersControllerTest extends TestCase {
 			->expects($this->once())
 			->method('getBackendClassName')
 			->will($this->returnValue('Database'));
+		$targetUser
+			->expects($this->once())
+			->method('getBackend')
+			->willReturn($backend);
 		$targetUser
 			->expects($this->exactly(6))
 			->method('getUID')
@@ -954,6 +975,10 @@ class UsersControllerTest extends TestCase {
 			'groups' => [],
 			'language' => 'da',
 			'locale' => null,
+			'backendCapabilities' => [
+				'setDisplayName' => true,
+				'setPassword' => true,
+			]
 		];
 		$this->assertEquals($expected, $this->invokePrivate($this->api, 'getUserData', ['UID']));
 	}
@@ -1054,6 +1079,12 @@ class UsersControllerTest extends TestCase {
 			->method('fillStorageInfo')
 			->with('UID')
 			->will($this->returnValue(['DummyValue']));
+
+		$backend = $this->createMock(UserInterface::class);
+		$backend->expects($this->atLeastOnce())
+			->method('implementsActions')
+			->willReturn(false);
+
 		$targetUser
 			->expects($this->once())
 			->method('getDisplayName')
@@ -1078,6 +1109,10 @@ class UsersControllerTest extends TestCase {
 			->expects($this->once())
 			->method('getBackendClassName')
 			->will($this->returnValue('Database'));
+		$targetUser
+			->expects($this->once())
+			->method('getBackend')
+			->willReturn($backend);
 		$this->config
 			->expects($this->at(0))
 			->method('getUserValue')
@@ -1110,6 +1145,10 @@ class UsersControllerTest extends TestCase {
 			'groups' => [],
 			'language' => 'ru',
 			'locale' => null,
+			'backendCapabilities' => [
+				'setDisplayName' => false,
+				'setPassword' => false,
+			]
 		];
 		$this->assertEquals($expected, $this->invokePrivate($this->api, 'getUserData', ['UID']));
 	}
@@ -3257,35 +3296,13 @@ class UsersControllerTest extends TestCase {
 			->expects($this->once())
 			->method('getEmailAddress')
 			->will($this->returnValue('abc@example.org'));
-		$this->config
-			->expects($this->at(0))
-			->method('getUserValue')
-			->with('user-id', 'core', 'lang')
-			->willReturn('es');
-		$l10n = $this->getMockBuilder(IL10N::class)
-			->disableOriginalConstructor()
-			->getMock();
-		$this->l10nFactory
-			->expects($this->at(0))
-			->method('languageExists')
-			->with('settings', 'es')
-			->willReturn(true);
-		$this->l10nFactory
-			->expects($this->at(1))
-			->method('get')
-			->with('settings', 'es')
-			->willReturn($l10n);
 		$emailTemplate = $this->createMock(IEMailTemplate::class);
 		$this->newUserMailHelper
 			->expects($this->at(0))
-			->method('setL10N')
-			->willReturn($l10n);
-		$this->newUserMailHelper
-			->expects($this->at(1))
 			->method('generateTemplate')
 			->willReturn($emailTemplate);
 		$this->newUserMailHelper
-			->expects($this->at(2))
+			->expects($this->at(1))
 			->method('sendMail')
 			->with($targetUser, $emailTemplate);
 
@@ -3327,35 +3344,16 @@ class UsersControllerTest extends TestCase {
 			->expects($this->once())
 			->method('getEmailAddress')
 			->will($this->returnValue('abc@example.org'));
-		$this->config
-			->expects($this->at(0))
-			->method('getUserValue')
-			->with('user-id', 'core', 'lang')
-			->willReturn('es');
 		$l10n = $this->getMockBuilder(IL10N::class)
 			->disableOriginalConstructor()
 			->getMock();
-		$this->l10nFactory
-			->expects($this->at(0))
-			->method('languageExists')
-			->with('settings', 'es')
-			->willReturn(false);
-		$this->l10nFactory
-			->expects($this->at(1))
-			->method('get')
-			->with('settings', 'en')
-			->willReturn($l10n);
 		$emailTemplate = $this->createMock(IEMailTemplate::class);
 		$this->newUserMailHelper
 			->expects($this->at(0))
-			->method('setL10N')
-			->willReturn($l10n);
-		$this->newUserMailHelper
-			->expects($this->at(1))
 			->method('generateTemplate')
 			->willReturn($emailTemplate);
 		$this->newUserMailHelper
-			->expects($this->at(2))
+			->expects($this->at(1))
 			->method('sendMail')
 			->with($targetUser, $emailTemplate);
 
@@ -3402,35 +3400,13 @@ class UsersControllerTest extends TestCase {
 			->expects($this->once())
 			->method('getEmailAddress')
 			->will($this->returnValue('abc@example.org'));
-		$this->config
-			->expects($this->at(0))
-			->method('getUserValue')
-			->with('user-id', 'core', 'lang')
-			->willReturn('es');
-		$l10n = $this->getMockBuilder(IL10N::class)
-			->disableOriginalConstructor()
-			->getMock();
-		$this->l10nFactory
-			->expects($this->at(0))
-			->method('languageExists')
-			->with('settings', 'es')
-			->willReturn(true);
-		$this->l10nFactory
-			->expects($this->at(1))
-			->method('get')
-			->with('settings', 'es')
-			->willReturn($l10n);
 		$emailTemplate = $this->createMock(IEMailTemplate::class);
 		$this->newUserMailHelper
 			->expects($this->at(0))
-			->method('setL10N')
-			->willReturn($l10n);
-		$this->newUserMailHelper
-			->expects($this->at(1))
 			->method('generateTemplate')
 			->willReturn($emailTemplate);
 		$this->newUserMailHelper
-			->expects($this->at(2))
+			->expects($this->at(1))
 			->method('sendMail')
 			->with($targetUser, $emailTemplate)
 			->willThrowException(new \Exception());

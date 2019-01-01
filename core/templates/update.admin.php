@@ -3,7 +3,7 @@
 		<?php if ($_['isAppsOnlyUpgrade']) { ?>
 		<h2 class="title"><?php p($l->t('App update required')); ?></h2>
 		<?php } else { ?>
-		<h2 class="title"><?php p($l->t('%s will be updated to version %s',
+		<h2 class="title"><?php p($l->t('%1$s will be updated to version %2$s',
 			array($_['productName'], $_['version']))); ?></h2>
 		<?php } ?>
 		<?php if (!empty($_['appsToUpgrade'])) { ?>
@@ -34,7 +34,7 @@
 		<div class="infogroup bold">
 			<?php p($l->t('Please make sure that the database, the config folder and the data folder have been backed up before proceeding.')) ?>
 		</div>
-		<input class="updateButton" type="button" value="<?php p($l->t('Start update')) ?>">
+		<input class="updateButton primary" type="button" value="<?php p($l->t('Start update')) ?>">
 		<div class="infogroup">
 			<em>
 			<?php p($l->t('To avoid timeouts with larger installations, you can instead run the following command from your installation directory:')) ?>

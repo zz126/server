@@ -2,25 +2,27 @@ const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader');
 
 module.exports = {
-  entry: './src/main.js',
+  entry: {
+	  'settings-vue': './src/main.js',
+	  'settings-admin-security': './src/main-admin-security'
+  },
   output: {
     path: path.resolve(__dirname, './js'),
     publicPath: '/',
-    filename: 'settings-vue.js'
+    filename: '[name].js'
   },
   module: {
     rules: [
       {
         test: /\.css$/,
         use: [
-          'css-loader'
+          'vue-style-loader', 'css-loader'
         ],
       },
       {
         test: /\.scss$/,
         use: [
-					'css-loader',
-					'sass-loader'
+					'vue-style-loader', 'css-loader', 'sass-loader'
         ],
       },
       {
@@ -38,9 +40,6 @@ module.exports = {
     new VueLoaderPlugin()
   ],
   resolve: {
-    alias: {
-      'vue$': 'vue/dist/vue.esm.js'
-    },
     extensions: ['*', '.js', '.vue', '.json']
   }
 }

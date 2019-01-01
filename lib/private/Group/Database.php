@@ -41,6 +41,7 @@
 
 namespace OC\Group;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Group\Backend\ABackend;
 use OCP\Group\Backend\IAddToGroupBackend;
@@ -97,10 +98,15 @@ class Database extends ABackend
 	public function createGroup(string $gid): bool {
 		$this->fixDI();
 
-		// Add group
-		$result = $this->dbConn->insertIfNotExist('*PREFIX*groups', [
-			'gid' => $gid,
-		]);
+		try {
+			// Add group
+			$builder = $this->dbConn->getQueryBuilder();
+			$result = $builder->insert('groups')
+				->setValue('gid', $builder->createNamedParameter($gid))
+				->execute();
+		} catch(UniqueConstraintViolationException $e) {
+			$result = 0;
+		}
 
 		// Add to cache
 		$this->groupCache[$gid] = $gid;
@@ -354,7 +360,7 @@ class Database extends ABackend
 		$this->fixDI();
 
 		$query = $this->dbConn->getQueryBuilder();
-		$query->selectAlias($query->createFunction('COUNT(*)'), 'num_users')
+		$query->select($query->func()->count('*', 'num_users'))
 			->from('group_user')
 			->where($query->expr()->eq('gid', $query->createNamedParameter($gid)));
 
@@ -387,9 +393,9 @@ class Database extends ABackend
 		$this->fixDI();
 		
 		$query = $this->dbConn->getQueryBuilder();
-		$query->select($query->createFunction('COUNT(Distinct uid)'))
+		$query->select($query->createFunction('COUNT(DISTINCT ' . $query->getColumnName('uid') . ')'))
 			->from('preferences', 'p')
-			->innerJoin('p', 'group_user', 'g', 'p.userid = g.uid')
+			->innerJoin('p', 'group_user', 'g', $query->expr()->eq('p.userid', 'g.uid'))
 			->where($query->expr()->eq('appid', $query->createNamedParameter('core')))
 			->andWhere($query->expr()->eq('configkey', $query->createNamedParameter('enabled')))
 			->andWhere($query->expr()->eq('configvalue', $query->createNamedParameter('false'), IQueryBuilder::PARAM_STR))

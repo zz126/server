@@ -9,14 +9,7 @@
  */
 
 (function ($) {
-	var TEMPLATE =
-		'<li data-toggle="tooltip" title="{{name}}" data-name="{{name}}">' +
-		'{{#if isUploading}}' +
-		'<span class="icon-loading-small"></span> {{name}}' +
-		'{{else}}' +
-		'<img src="{{iconSrc}}"/> {{name}}' +
-		'{{/if}}' +
-		'</li>';
+
 	var Drop = {
 		/** @type {Function} **/
 		_template: undefined,
@@ -35,7 +28,11 @@
 				useHTTPS: OC.getProtocol() === 'https'
 			});
 			
+			// We only process one file at a time 🤷‍♀️
 			var name = data.files[0].name;
+			// removing unwanted characters
+			name = name.replace(/["'#%`]/gm, '');
+
 			try {
 				// FIXME: not so elegant... need to refactor that method to return a value
 				Files.isFileNameValid(name);
@@ -130,10 +127,7 @@
 		 * @private
 		 */
 		template: function () {
-			if (!this._template) {
-				this._template = Handlebars.compile(TEMPLATE);
-			}
-			return this._template;
+			return OCA.Sharing.Templates['files_drop'];
 		}
 	};
 

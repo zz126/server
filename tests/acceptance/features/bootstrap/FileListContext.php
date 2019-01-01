@@ -90,6 +90,15 @@ class FileListContext implements Context, ActorAwareInterface {
 	/**
 	 * @return Locator
 	 */
+	public static function breadcrumbs($fileListAncestor) {
+		return Locator::forThe()->css("#controls .breadcrumb")->
+				descendantOf($fileListAncestor)->
+				describedAs("Breadcrumbs in file list");
+	}
+
+	/**
+	 * @return Locator
+	 */
 	public static function createMenuButton($fileListAncestor) {
 		return Locator::forThe()->css("#controls .button.new")->
 				descendantOf($fileListAncestor)->
@@ -187,6 +196,15 @@ class FileListContext implements Context, ActorAwareInterface {
 	/**
 	 * @return Locator
 	 */
+	public static function commentActionForFile($fileListAncestor, $fileName) {
+		return Locator::forThe()->css(".action-comment")->
+				descendantOf(self::rowForFile($fileListAncestor, $fileName))->
+				describedAs("Comment action for file $fileName in file list");
+	}
+
+	/**
+	 * @return Locator
+	 */
 	public static function shareActionForFile($fileListAncestor, $fileName) {
 		return Locator::forThe()->css(".action-share")->
 				descendantOf(self::rowForFile($fileListAncestor, $fileName))->
@@ -255,6 +273,13 @@ class FileListContext implements Context, ActorAwareInterface {
 	}
 
 	/**
+	 * @return Locator
+	 */
+	public static function deleteMenuItem() {
+		return self::fileActionsMenuItemFor("Delete");
+	}
+
+	/**
 	 * @Given I create a new folder named :folderName
 	 */
 	public function iCreateANewFolderNamed($folderName) {
@@ -288,6 +313,15 @@ class FileListContext implements Context, ActorAwareInterface {
 
 		$this->actor->find(self::renameMenuItem(), 2)->click();
 
+		// For reference, due to a bug in the Firefox driver of Selenium and/or
+		// maybe in Firefox itself, as a range is selected in the rename input
+		// (the name of the file, without its extension) when the value is set
+		// the window must be in the foreground. Otherwise, if the window is in
+		// the background, instead of setting the value in the whole field it
+		// would be set only in the selected range.
+		// This should not be a problem, though, as the default behaviour is to
+		// bring the browser window to the foreground when switching to a
+		// different actor.
 		$this->actor->find(self::renameInputForFile($this->fileListAncestor, $fileName1), 10)->setValue($fileName2 . "\r");
 	}
 
@@ -323,6 +357,22 @@ class FileListContext implements Context, ActorAwareInterface {
 	}
 
 	/**
+	 * @When I delete :fileName
+	 */
+	public function iDelete($fileName) {
+		$this->actor->find(self::fileActionsMenuButtonForFile($this->fileListAncestor, $fileName), 10)->click();
+
+		$this->actor->find(self::deleteMenuItem(), 2)->click();
+	}
+
+	/**
+	 * @When I open the unread comments for :fileName
+	 */
+	public function iOpenTheUnreadCommentsFor($fileName) {
+		$this->actor->find(self::commentActionForFile($this->fileListAncestor, $fileName), 10)->click();
+	}
+
+	/**
 	 * @Then I see that the file list is eventually loaded
 	 */
 	public function iSeeThatTheFileListIsEventuallyLoaded() {
@@ -332,6 +382,16 @@ class FileListContext implements Context, ActorAwareInterface {
 				$timeout = 10 * $this->actor->getFindTimeoutMultiplier())) {
 			PHPUnit_Framework_Assert::fail("The main working icon for the file list is still shown after $timeout seconds");
 		}
+	}
+
+	/**
+	 * @Then I see that the file list is currently in :path
+	 */
+	public function iSeeThatTheFileListIsCurrentlyIn($path) {
+		// The text of the breadcrumbs is the text of all the crumbs separated
+		// by white spaces.
+		PHPUnit_Framework_Assert::assertEquals(
+			str_replace('/', ' ', $path), $this->actor->find(self::breadcrumbs($this->fileListAncestor), 10)->getText());
 	}
 
 	/**
@@ -369,6 +429,13 @@ class FileListContext implements Context, ActorAwareInterface {
 	 */
 	public function iSeeThatIsNotMarkedAsFavorite($fileName) {
 		PHPUnit_Framework_Assert::assertNotNull($this->actor->find(self::notFavoritedStateIconForFile($this->fileListAncestor, $fileName), 10));
+	}
+
+	/**
+	 * @Then I see that :fileName has unread comments
+	 */
+	public function iSeeThatHasUnreadComments($fileName) {
+		PHPUnit_Framework_Assert::assertTrue($this->actor->find(self::commentActionForFile($this->fileListAncestor, $fileName), 10)->isVisible());
 	}
 
 }

@@ -35,6 +35,7 @@
 
 namespace OCA\Files_Sharing\Controller;
 
+use OC\Security\CSP\ContentSecurityPolicy;
 use OC_Files;
 use OC_Util;
 use OCA\FederatedFileSharing\FederatedShareProvider;
@@ -157,7 +158,16 @@ class ShareController extends AuthPublicShareController {
 		$event = new GenericEvent(null, $templateParameters);
 		$this->eventDispatcher->dispatch('OCA\Files_Sharing::loadAdditionalScripts::publicShareAuth', $event);
 
-		return new TemplateResponse('core', 'publicshareauth', $templateParameters, 'guest');
+		$response = new TemplateResponse('core', 'publicshareauth', $templateParameters, 'guest');
+		if ($this->share->getSendPasswordByTalk()) {
+			$csp = new ContentSecurityPolicy();
+			$csp->addAllowedConnectDomain('*');
+			$csp->addAllowedMediaDomain('blob:');
+			$csp->allowEvalScript(true);
+			$response->setContentSecurityPolicy($csp);
+		}
+
+		return $response;
 	}
 
 	/**
@@ -169,7 +179,16 @@ class ShareController extends AuthPublicShareController {
 		$event = new GenericEvent(null, $templateParameters);
 		$this->eventDispatcher->dispatch('OCA\Files_Sharing::loadAdditionalScripts::publicShareAuth', $event);
 
-		return new TemplateResponse('core', 'publicshareauth', $templateParameters, 'guest');
+		$response = new TemplateResponse('core', 'publicshareauth', $templateParameters, 'guest');
+		if ($this->share->getSendPasswordByTalk()) {
+			$csp = new ContentSecurityPolicy();
+			$csp->addAllowedConnectDomain('*');
+			$csp->addAllowedMediaDomain('blob:');
+			$csp->allowEvalScript(true);
+			$response->setContentSecurityPolicy($csp);
+		}
+
+		return $response;
 	}
 
 	protected function verifyPassword(string $password): bool {
@@ -275,9 +294,12 @@ class ShareController extends AuthPublicShareController {
 		if (!$this->validateShare($share)) {
 			throw new NotFoundException();
 		}
+
+		$shareNode = $share->getNode();
+
 		// We can't get the path of a file share
 		try {
-			if ($share->getNode() instanceof \OCP\Files\File && $path !== '') {
+			if ($shareNode instanceof \OCP\Files\File && $path !== '') {
 				$this->emitAccessShareHook($share, 404, 'Share not found');
 				throw new NotFoundException();
 			}
@@ -289,33 +311,34 @@ class ShareController extends AuthPublicShareController {
 		$shareTmpl = [];
 		$shareTmpl['displayName'] = $this->userManager->get($share->getShareOwner())->getDisplayName();
 		$shareTmpl['owner'] = $share->getShareOwner();
-		$shareTmpl['filename'] = $share->getNode()->getName();
+		$shareTmpl['filename'] = $shareNode->getName();
 		$shareTmpl['directory_path'] = $share->getTarget();
 		$shareTmpl['note'] = $share->getNote();
-		$shareTmpl['mimetype'] = $share->getNode()->getMimetype();
-		$shareTmpl['previewSupported'] = $this->previewManager->isMimeSupported($share->getNode()->getMimetype());
+		$shareTmpl['mimetype'] = $shareNode->getMimetype();
+		$shareTmpl['previewSupported'] = $this->previewManager->isMimeSupported($shareNode->getMimetype());
 		$shareTmpl['dirToken'] = $this->getToken();
 		$shareTmpl['sharingToken'] = $this->getToken();
 		$shareTmpl['server2serversharing'] = $this->federatedShareProvider->isOutgoingServer2serverShareEnabled();
 		$shareTmpl['protected'] = $share->getPassword() !== null ? 'true' : 'false';
 		$shareTmpl['dir'] = '';
-		$shareTmpl['nonHumanFileSize'] = $share->getNode()->getSize();
-		$shareTmpl['fileSize'] = \OCP\Util::humanFileSize($share->getNode()->getSize());
+		$shareTmpl['nonHumanFileSize'] = $shareNode->getSize();
+		$shareTmpl['fileSize'] = \OCP\Util::humanFileSize($shareNode->getSize());
+		$shareTmpl['hideDownload'] = $share->getHideDownload();
 
-		// Show file list
 		$hideFileList = false;
-		if ($share->getNode() instanceof \OCP\Files\Folder) {
-			/** @var \OCP\Files\Folder $rootFolder */
-			$rootFolder = $share->getNode();
+
+		if ($shareNode instanceof \OCP\Files\Folder) {
+
+			$shareIsFolder = true;
 
 			try {
-				$folderNode = $rootFolder->get($path);
+				$folderNode = $shareNode->get($path);
 			} catch (\OCP\Files\NotFoundException $e) {
 				$this->emitAccessShareHook($share, 404, 'Share not found');
 				throw new NotFoundException();
 			}
 
-			$shareTmpl['dir'] = $rootFolder->getRelativePath($folderNode->getPath());
+			$shareTmpl['dir'] = $shareNode->getRelativePath($folderNode->getPath());
 
 			/*
 			 * The OC_Util methods require a view. This just uses the node API
@@ -331,19 +354,24 @@ class ShareController extends AuthPublicShareController {
 			$maxUploadFilesize = $freeSpace;
 
 			$folder = new Template('files', 'list', '');
-			$folder->assign('dir', $rootFolder->getRelativePath($folderNode->getPath()));
+			$folder->assign('dir', $shareNode->getRelativePath($folderNode->getPath()));
 			$folder->assign('dirToken', $this->getToken());
 			$folder->assign('permissions', \OCP\Constants::PERMISSION_READ);
 			$folder->assign('isPublic', true);
 			$folder->assign('hideFileList', $hideFileList);
 			$folder->assign('publicUploadEnabled', 'no');
+			$folder->assign('showgridview', false);
 			$folder->assign('uploadMaxFilesize', $maxUploadFilesize);
 			$folder->assign('uploadMaxHumanFilesize', \OCP\Util::humanFileSize($maxUploadFilesize));
 			$folder->assign('freeSpace', $freeSpace);
 			$folder->assign('usedSpacePercent', 0);
 			$folder->assign('trash', false);
 			$shareTmpl['folder'] = $folder->fetchPage();
+		} else {
+			$shareIsFolder = false;
 		}
+
+		$shareTmpl['showgridview'] = false;
 
 		$shareTmpl['hideFileList'] = $hideFileList;
 		$shareTmpl['shareOwner'] = $this->userManager->get($share->getShareOwner())->getDisplayName();
@@ -355,14 +383,14 @@ class ShareController extends AuthPublicShareController {
 		$shareTmpl['previewMaxY'] = $this->config->getSystemValue('preview_max_y', 1024);
 		$shareTmpl['disclaimer'] = $this->config->getAppValue('core', 'shareapi_public_link_disclaimertext', null);
 		$shareTmpl['previewURL'] = $shareTmpl['downloadURL'];
-		$ogPreview = '';
+
 		if ($shareTmpl['previewSupported']) {
 			$shareTmpl['previewImage'] = $this->urlGenerator->linkToRouteAbsolute( 'files_sharing.PublicPreview.getPreview',
 				['x' => 200, 'y' => 200, 'file' => $shareTmpl['directory_path'], 'token' => $shareTmpl['dirToken']]);
 			$ogPreview = $shareTmpl['previewImage'];
 
 			// We just have direct previews for image files
-			if ($share->getNode()->getMimePart() === 'image') {
+			if ($shareNode->getMimePart() === 'image') {
 				$shareTmpl['previewURL'] = $this->urlGenerator->linkToRouteAbsolute('files_sharing.publicpreview.directLink', ['token' => $this->getToken()]);
 
 				$ogPreview = $shareTmpl['previewURL'];
@@ -386,7 +414,7 @@ class ShareController extends AuthPublicShareController {
 		\OCP\Util::addScript('files', 'file-upload');
 		\OCP\Util::addStyle('files_sharing', 'publicView');
 		\OCP\Util::addScript('files_sharing', 'public');
-		\OCP\Util::addScript('files_sharing', 'public_note');
+		\OCP\Util::addScript('files_sharing', 'templates');
 		\OCP\Util::addScript('files', 'fileactions');
 		\OCP\Util::addScript('files', 'fileactionsmenu');
 		\OCP\Util::addScript('files', 'jquery.fileupload');
@@ -396,6 +424,7 @@ class ShareController extends AuthPublicShareController {
 			// JS required for folders
 			\OCP\Util::addStyle('files', 'merged');
 			\OCP\Util::addScript('files', 'filesummary');
+			\OCP\Util::addScript('files', 'templates');
 			\OCP\Util::addScript('files', 'breadcrumb');
 			\OCP\Util::addScript('files', 'fileinfomodel');
 			\OCP\Util::addScript('files', 'newfilemenu');
@@ -421,12 +450,27 @@ class ShareController extends AuthPublicShareController {
 		$response = new PublicTemplateResponse($this->appName, 'public', $shareTmpl);
 		$response->setHeaderTitle($shareTmpl['filename']);
 		$response->setHeaderDetails($this->l10n->t('shared by %s', [$shareTmpl['displayName']]));
-		$response->setHeaderActions([
-			new SimpleMenuAction('download', $this->l10n->t('Download'), 'icon-download-white', $shareTmpl['downloadURL'], 0),
-			new SimpleMenuAction('download', $this->l10n->t('Download'), 'icon-download', $shareTmpl['downloadURL'], 10, $shareTmpl['fileSize']),
-			new LinkMenuAction($this->l10n->t('Direct link'), 'icon-public', $shareTmpl['previewURL']),
-			new ExternalShareMenuAction($this->l10n->t('Add to your Nextcloud'), 'icon-external', $shareTmpl['owner'], $shareTmpl['displayName'], $shareTmpl['filename']),
-		]);
+
+		$isNoneFileDropFolder = $shareIsFolder === false || $share->getPermissions() !== \OCP\Constants::PERMISSION_CREATE;
+
+		if ($isNoneFileDropFolder && !$share->getHideDownload()) {
+			\OCP\Util::addScript('files_sharing', 'public_note');
+			if ($shareIsFolder) {
+				$response->setHeaderActions([
+					new SimpleMenuAction('download', $this->l10n->t('Download all files'), 'icon-download-white', $shareTmpl['downloadURL'], 0),
+					new SimpleMenuAction('download', $this->l10n->t('Download all files'), 'icon-download', $shareTmpl['downloadURL'], 10, $shareTmpl['fileSize']),
+					new LinkMenuAction($this->l10n->t('Direct link'), 'icon-public', $shareTmpl['previewURL']),
+					new ExternalShareMenuAction($this->l10n->t('Add to your Nextcloud'), 'icon-external', $shareTmpl['owner'], $shareTmpl['displayName'], $shareTmpl['filename']),
+				]);
+			} else {
+				$response->setHeaderActions([
+					new SimpleMenuAction('download', $this->l10n->t('Download'), 'icon-download-white', $shareTmpl['downloadURL'], 0),
+					new SimpleMenuAction('download', $this->l10n->t('Download'), 'icon-download', $shareTmpl['downloadURL'], 10, $shareTmpl['fileSize']),
+					new LinkMenuAction($this->l10n->t('Direct link'), 'icon-public', $shareTmpl['previewURL']),
+					new ExternalShareMenuAction($this->l10n->t('Add to your Nextcloud'), 'icon-external', $shareTmpl['owner'], $shareTmpl['displayName'], $shareTmpl['filename']),
+				]);
+			}
+		}
 
 		$response->setContentSecurityPolicy($csp);
 

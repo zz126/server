@@ -64,6 +64,41 @@
 		_setupEvents: function () {
 			this.$el.on('click', 'li a', _.bind(this._onClickItem, this))
 			this.$el.on('click', 'li button', _.bind(this._onClickMenuButton, this));
+
+			var trashElement=$(".nav-trashbin");
+
+			//this div is required to prefetch the icon, otherwise it takes a second to show up
+			trashElement.append("<div class='nav-icon-trashbin-starred'></div>")
+			trashElement.droppable({
+				over: function( event, ui ) {
+					trashElement.addClass('dropzone-background')
+				},
+				out: function( event, ui ) {
+					trashElement.removeClass('dropzone-background');
+				},
+				activate: function( event, ui ) {
+					var elem=trashElement.find("a").first();
+					elem.addClass('nav-icon-trashbin-starred').removeClass('nav-icon-trashbin');
+				},
+				deactivate: function( event, ui ) {
+					var elem=trashElement.find("a").first();
+					elem.addClass('nav-icon-trashbin').removeClass('nav-icon-trashbin-starred');
+				},
+				drop: function( event, ui ) {
+
+					var $selectedFiles = $(ui.draggable);
+
+					if (ui.helper.find("tr").size()===1) {
+						var $tr = $selectedFiles.closest('tr');
+						$selectedFiles.trigger("droppedOnTrash", $tr.attr("data-file"), $tr.attr('data-dir'));
+					}else{
+						var item = ui.helper.find("tr");
+						for(var i=0; i<item.length;i++){
+							$selectedFiles.trigger("droppedOnTrash", item[i].getAttribute("data-file"), item[i].getAttribute("data-dir"));
+						}
+					}
+				}
+			});
 		},
 
 		/**
@@ -119,7 +154,12 @@
 			this.$currentContent = $('#app-content-' + (typeof itemView === 'string' && itemView !== '' ? itemView : itemId));
 			this.$currentContent.removeClass('hidden');
 			if (!options || !options.silent) {
-				this.$currentContent.trigger(jQuery.Event('show'));
+				this.$currentContent.trigger(jQuery.Event('show', {
+					itemId: itemId,
+					previousItemId: oldItemId,
+					dir: itemDir,
+					view: itemView
+				}));
 				this.$el.trigger(
 					new $.Event('itemChanged', {
 						itemId: itemId,
@@ -243,8 +283,11 @@
 		 * This method allows easy swapping of elements.
 		 */
 		swap: function (list, j, i) {
-			list[i].before(list[j]);
-			list[j].before(list[i]);
+			var before = function(node, insertNode) {
+				node.parentNode.insertBefore(insertNode, node);
+			}
+			before(list[i], list[j]);
+			before(list[j], list[i]);
 		}
 
 	};

@@ -62,7 +62,7 @@ style('theming', 'settings-admin');
 	<div>
 		<label>
 			<span><?php p($l->t('Color')) ?></span>
-			<input id="theming-color" type="text" class="jscolor" data-jscolor="{hash:true}" maxlength="7" value="<?php p($_['color']) ?>" />
+			<input id="theming-color" type="text" maxlength="7" value="<?php p($_['color']) ?>" />
 			<div data-setting="color" data-toggle="tooltip" data-original-title="<?php p($l->t('Reset to default')); ?>" class="theme-undo icon icon-history"></div>
 		</label>
 	</div>
@@ -91,7 +91,7 @@ style('theming', 'settings-admin');
 		<div id="theming-preview-logo"></div>
 	</div>
 
-	<h2 class="inlineblock"><?php p($l->t('Advanced options')); ?></h2>
+	<h3 class="inlineblock"><?php p($l->t('Advanced options')); ?></h3>
 
 	<div class="advanced-options">
 		<div>

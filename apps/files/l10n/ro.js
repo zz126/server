@@ -25,7 +25,6 @@ OC.L10N.register(
     "Target folder does not exist any more" : "Directorul destinație nu mai există",
     "Actions" : "Acțiuni",
     "Rename" : "Redenumește",
-    "Target folder" : "Directorul destinație",
     "Disconnect storage" : "Deconectează stocarea",
     "Unshare" : "Nu mai partaja",
     "Files" : "Fișiere",
@@ -112,7 +111,6 @@ OC.L10N.register(
     "Save" : "Salvează",
     "With PHP-FPM it might take 5 minutes for changes to be applied." : "Cu PHP-FPM poate dura 5 minute pentru a aplica schimbările..",
     "Missing permissions to edit from here." : "Nu ai permisiuni pentru a edita aici.",
-    "%s of %s used" : "%s din %s folosiți",
     "%s used" : "%s folosiți",
     "Settings" : "Setări",
     "Show hidden files" : "Arată fișierele ascunse",
@@ -133,6 +131,8 @@ OC.L10N.register(
     "Shared with you" : "Partajat cu tine",
     "Shared by link" : "Partajat prin link",
     "Text file" : "Fișier text",
-    "New text file.txt" : "New text file.txt"
+    "New text file.txt" : "New text file.txt",
+    "Target folder" : "Directorul destinație",
+    "%s of %s used" : "%s din %s folosiți"
 },
 "nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?2:1));");

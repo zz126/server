@@ -26,7 +26,6 @@ OC.L10N.register(
     "Error when assembling chunks, status code {status}" : "Tükkide kokkupanemise viga, staatus kood {status}",
     "Actions" : "Tegevused",
     "Rename" : "Nimeta ümber",
-    "Target folder" : "Sihtkaust",
     "Disconnect storage" : "Ühenda andmehoidla lahti.",
     "Unshare" : "Lõpeta jagamine",
     "Could not load info for file \"{file}\"" : "Faili \"{file}\" info laadimine ebaõnnestus",
@@ -125,7 +124,6 @@ OC.L10N.register(
     "Save" : "Salvesta",
     "With PHP-FPM it might take 5 minutes for changes to be applied." : "PHP-FPM-ga võib selle väärtuse mõju rakendamine võtta aega kuni 5 minutit pärast salvestamist.",
     "Missing permissions to edit from here." : "Puuduvad õigused siit muuta.",
-    "%s of %s used" : "Kasutatud %s/%s",
     "%s used" : "Kasutatud %s",
     "Settings" : "Seaded",
     "Show hidden files" : "Näita peidetud faile",
@@ -147,9 +145,7 @@ OC.L10N.register(
     "Shared by link" : "Jagatud lingiga",
     "Text file" : "Tekstifail",
     "New text file.txt" : "Uus tekstifail.txt",
-    "Move" : "Liiguta",
-    "A new file or folder has been <strong>deleted</strong>" : "Uus fail või kaust on <strong>kustutatud</strong>",
-    "A new file or folder has been <strong>restored</strong>" : "Uus fail või kaust on <strong>taastatud</strong>",
-    "Use this address to <a href=\"%s\" target=\"_blank\" rel=\"noreferrer\">access your Files via WebDAV</a>" : "Kasuta seda aadressi, et <a href=\"%s\" target=\"_blank\" rel=\"noreferrer\">oma failidele WebDAVi kaudu ligi pääseda</a>"
+    "Target folder" : "Sihtkaust",
+    "%s of %s used" : "Kasutatud %s/%s"
 },
 "nplurals=2; plural=(n != 1);");

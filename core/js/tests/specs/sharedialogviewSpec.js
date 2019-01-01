@@ -89,7 +89,7 @@ describe('OC.Share.ShareDialogView', function() {
 		// triggers rendering
 		shareModel.set({
 			shares: [],
-			linkShare: {isLinkShare: false}
+			linkShares: []
 		});
 
 		autocompleteStub = sinon.stub($.fn, 'autocomplete').callsFake(function() {
@@ -127,35 +127,15 @@ describe('OC.Share.ShareDialogView', function() {
 	describe('Share with link', function() {
 		// TODO: test ajax calls
 		// TODO: test password field visibility (whenever enforced or not)
-		it('update password on focus out', function() {
-			$('#allowShareWithLink').val('yes');
-
-			dialog.model.set('linkShare', {
-				isLinkShare: true
-			});
-			dialog.render();
-
-			// Enable password, enter password and focusout
-			dialog.$el.find('[name=showPassword]').click();
-			dialog.$el.find('.linkPassText').focus();
-			dialog.$el.find('.linkPassText').val('foo');
-			dialog.$el.find('.linkPassText').focusout();
-
-			expect(saveLinkShareStub.calledOnce).toEqual(true);
-			expect(saveLinkShareStub.firstCall.args[0]).toEqual({
-				password: 'foo'
-			});
-		});
 		it('update password on enter', function() {
 			$('#allowShareWithLink').val('yes');
 
-			dialog.model.set('linkShare', {
-				isLinkShare: true
+			dialog.model.set({
+				linkShares: [{
+					id: 123
+				}]
 			});
 			dialog.render();
-
-			// Toggle linkshare
-			dialog.$el.find('.linkCheckbox').click();
 
 			// Enable password and enter password
 			dialog.$el.find('[name=showPassword]').click();
@@ -165,47 +145,70 @@ describe('OC.Share.ShareDialogView', function() {
 
 			expect(saveLinkShareStub.calledOnce).toEqual(true);
 			expect(saveLinkShareStub.firstCall.args[0]).toEqual({
+				cid: 123,
 				password: 'foo'
 			});
 		});
-		it('shows share with link checkbox when allowed', function() {
+		it('update password on submit', function() {
+			$('#allowShareWithLink').val('yes');
+
+			dialog.model.set({
+				linkShares: [{
+					id: 123
+				}]
+			});
+			dialog.render();
+
+			// Enable password and enter password
+			dialog.$el.find('[name=showPassword]').click();
+			dialog.$el.find('.linkPassText').focus();
+			dialog.$el.find('.linkPassText').val('foo');
+			dialog.$el.find('.linkPassText + .icon-confirm').click();
+
+			expect(saveLinkShareStub.calledOnce).toEqual(true);
+			expect(saveLinkShareStub.firstCall.args[0]).toEqual({
+				cid: 123,
+				password: 'foo'
+			});
+		});
+		it('shows add share with link button when allowed', function() {
 			$('#allowShareWithLink').val('yes');
 
 			dialog.render();
 
-			expect(dialog.$el.find('.linkCheckbox').length).toEqual(1);
+			expect(dialog.$el.find('.new-share').length).toEqual(1);
 		});
-		it('does not show share with link checkbox when not allowed', function() {
+		it('does not show add share with link button when not allowed', function() {
 			$('#allowShareWithLink').val('no');
 
 			dialog.render();
 
-			expect(dialog.$el.find('.linkCheckbox').length).toEqual(0);
+			expect(dialog.$el.find('.new-share').length).toEqual(0);
 			expect(dialog.$el.find('.shareWithField').length).toEqual(1);
 		});
 		it('shows populated link share when a link share exists', function() {
 			// this is how the OC.Share class does it...
 			var link = parent.location.protocol + '//' + location.host +
-				OC.generateUrl('/s/') + 'tehtoken';
-			shareModel.set('linkShare', {
-				isLinkShare: true,
-				token: 'tehtoken',
-				link: link,
-				expiration: '',
-				permissions: OC.PERMISSION_READ,
-				stime: 1403884258,
+				OC.generateUrl('/s/') + 'thetoken';
+			shareModel.set({
+				linkShares: [{
+					id: 123,
+					url: link
+				}]
 			});
 
 			dialog.render();
 
-			expect(dialog.$el.find('.linkCheckbox').prop('checked')).toEqual(true);
+			expect(dialog.$el.find('.share-menu .icon-more').length).toEqual(1);
 			expect(dialog.$el.find('.linkText').val()).toEqual(link);
 		});
 		it('autofocus link text when clicked', function() {
 			$('#allowShareWithLink').val('yes');
 
-			dialog.model.set('linkShare', {
-				isLinkShare: true
+			dialog.model.set({
+				linkShares: [{
+					id: 123
+				}]
 			});
 			dialog.render();
 

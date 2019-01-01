@@ -422,6 +422,26 @@ $CONFIG = array(
 'mail_send_plaintext_only' => false,
 
 /**
+ * This depends on ``mail_smtpmode``. Array of additional streams options that
+ * will be passed to underlying Swift mailer implementation.
+ * Defaults to an empty array.
+ */
+'mail_smtpstreamoptions' => array(),
+
+/**
+ * Which mode is used for sendmail/qmail: ``smtp`` or ``pipe``.
+ *
+ * For ``smtp`` the sendmail binary is started with the parameter ``-bs``:
+ *   - Use the SMTP protocol on standard input and output.
+ *
+ * For ``pipe`` the binary is started with the parameters ``-t``:
+ *   - Read message from STDIN and extract recipients.
+ *
+ * Defaults to ``smtp``
+ */
+'mail_sendmailmode' => 'smtp',
+
+/**
  * Proxy Configurations
  */
 
@@ -657,6 +677,26 @@ $CONFIG = array(
 'has_internet_connection' => true,
 
 /**
+ * Which domains to request to determine the availability of an Internet
+ * connection. If none of these hosts are reachable, the administration panel
+ * will show a warning. Set to an empty list to not do any such checks (warning
+ * will still be shown).
+ *
+ * Defaults to the following domains:
+ *
+ *  - www.nextcloud.com
+ *  - www.startpage.com
+ *  - www.eff.org
+ *  - www.edri.org
+ */
+'connectivity_check_domains' => array(
+	'www.nextcloud.com',
+	'www.startpage.com',
+	'www.eff.org',
+	'www.edri.org'
+),
+
+/**
  * Allows Nextcloud to verify a working .well-known URL redirects. This is done
  * by attempting to make a request from JS to
  * https://your-domain.com/.well-known/caldav/
@@ -727,6 +767,13 @@ $CONFIG = array(
  * Defaults to ``[datadirectory]/nextcloud.log``
  */
 'logfile' => '/var/log/nextcloud.log',
+
+/**
+ * Log file mode for the Nextcloud loggin type in octal notation.
+ *
+ * Defaults to 0640 (writeable by user, readable by group).
+ */
+'logfilemode' => 0640,
 
 /**
  * Loglevel to start logging at. Valid values are: 0 = Debug, 1 = Info, 2 =
@@ -1492,11 +1539,26 @@ $CONFIG = array(
 /**
  * List of trusted proxy servers
  *
- * If you configure these also consider setting `forwarded_for_headers` which
- * otherwise defaults to `HTTP_X_FORWARDED_FOR` (the `X-Forwarded-For` header).
+ * You may set this to an array containing a combination of
+ * - IPv4 addresses, e.g. `192.168.2.123`
+ * - IPv4 ranges in CIDR notation, e.g. `192.168.2.0/24`
+ * - IPv6 addresses, e.g. `fd9e:21a7:a92c:2323::1`
+ *
+ * _(CIDR notation for IPv6 is currently work in progress and thus not
+ * available as of yet)_
+ *
+ * When an incoming request's `REMOTE_ADDR` matches any of the IP addresses
+ * specified here, it is assumed to be a proxy instead of a client. Thus, the
+ * client IP will be read from the HTTP header specified in
+ * `forwarded_for_headers` instead of from `REMOTE_ADDR`.
+ *
+ * So if you configure `trusted_proxies`, also consider setting
+ * `forwarded_for_headers` which otherwise defaults to `HTTP_X_FORWARDED_FOR`
+ * (the `X-Forwarded-For` header).
+ *
  * Defaults to an empty array.
  */
-'trusted_proxies' => array('203.0.113.45', '198.51.100.128'),
+'trusted_proxies' => array('203.0.113.45', '198.51.100.128', '192.168.2.0/24'),
 
 /**
  * Headers that should be trusted as client IP address in combination with
@@ -1641,4 +1703,14 @@ $CONFIG = array(
  * If this is set to "false" it will not show the link.
  */
 'simpleSignUpLink.shown' => true,
+
+/**
+ * By default autocompletion is enabled for the login form on Nextcloud's login page.
+ * While this is enabled, browsers are allowed to "remember" login names and such.
+ * Some companies require it to be disabled to comply with their security policy.
+ *
+ * Simply set this property to "false", if you want to turn this feature off.
+ */
+
+'login_form_autocomplete' => true,
 );

@@ -80,7 +80,9 @@ use OC\Files\Mount\ObjectHomeMountProvider;
 use OC\Files\Node\HookConnector;
 use OC\Files\Node\LazyRoot;
 use OC\Files\Node\Root;
+use OC\Files\Storage\StorageFactory;
 use OC\Files\View;
+use OC\FullTextSearch\FullTextSearchManager;
 use OC\Http\Client\ClientService;
 use OC\IntegrityCheck\Checker;
 use OC\IntegrityCheck\Helpers\AppLocator;
@@ -119,13 +121,16 @@ use OC\Tagging\TagMapper;
 use OC\Template\IconsCacher;
 use OC\Template\JSCombiner;
 use OC\Template\SCSSCacher;
+use OC\Dashboard\DashboardManager;
 use OCA\Theming\ImageManager;
 use OCA\Theming\ThemingDefaults;
 
+use OCP\Accounts\IAccountManager;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Collaboration\AutoComplete\IManager;
 use OCP\Contacts\ContactsMenu\IContactsStore;
+use OCP\Dashboard\IDashboardManager;
 use OCP\Defaults;
 use OCA\Theming\Util;
 use OCP\Federation\ICloudFederationFactory;
@@ -133,6 +138,8 @@ use OCP\Federation\ICloudFederationProviderManager;
 use OCP\Federation\ICloudIdManager;
 use OCP\Authentication\LoginCredentials\IStore;
 use OCP\Files\NotFoundException;
+use OCP\Files\Storage\IStorageFactory;
+use OCP\FullTextSearch\IFullTextSearchManager;
 use OCP\GlobalScale\IConfig;
 use OCP\ICacheFactory;
 use OCP\IDBConnection;
@@ -210,7 +217,7 @@ class Server extends ServerContainer implements IServerContainer {
 			);
 		});
 
-		$this->registerService('EncryptionManager', function (Server $c) {
+		$this->registerService(\OCP\Encryption\IManager::class, function (Server $c) {
 			$view = new View();
 			$util = new Encryption\Util(
 				$view,
@@ -227,6 +234,7 @@ class Server extends ServerContainer implements IServerContainer {
 				new ArrayCache()
 			);
 		});
+		$this->registerAlias('EncryptionManager', \OCP\Encryption\IManager::class);
 
 		$this->registerService('EncryptionFileHelper', function (Server $c) {
 			$util = new Encryption\Util(
@@ -354,7 +362,7 @@ class Server extends ServerContainer implements IServerContainer {
 		});
 		$this->registerAlias(IProvider::class, Authentication\Token\Manager::class);
 
-		$this->registerService(\OCP\IUserSession::class, function (Server $c) {
+		$this->registerService(\OC\User\Session::class, function (Server $c) {
 			$manager = $c->getUserManager();
 			$session = new \OC\Session\Memory('');
 			$timeFactory = new TimeFactory();
@@ -423,7 +431,8 @@ class Server extends ServerContainer implements IServerContainer {
 			});
 			return $userSession;
 		});
-		$this->registerAlias('UserSession', \OCP\IUserSession::class);
+		$this->registerAlias(\OCP\IUserSession::class, \OC\User\Session::class);
+		$this->registerAlias('UserSession', \OC\User\Session::class);
 
 		$this->registerAlias(\OCP\Authentication\TwoFactorAuth\IRegistry::class, \OC\Authentication\TwoFactorAuth\Registry::class);
 
@@ -530,7 +539,7 @@ class Server extends ServerContainer implements IServerContainer {
 		});
 		$this->registerAlias(IValidator::class, Validator::class);
 
-		$this->registerService(\OCP\IAvatarManager::class, function (Server $c) {
+		$this->registerService(AvatarManager::class, function(Server $c) {
 			return new AvatarManager(
 				$c->query(\OC\User\Manager::class),
 				$c->getAppDataDir('avatar'),
@@ -539,7 +548,8 @@ class Server extends ServerContainer implements IServerContainer {
 				$c->getConfig()
 			);
 		});
-		$this->registerAlias('AvatarManager', \OCP\IAvatarManager::class);
+		$this->registerAlias(\OCP\IAvatarManager::class, AvatarManager::class);
+		$this->registerAlias('AvatarManager', AvatarManager::class);
 
 		$this->registerAlias(\OCP\Support\CrashReport\IRegistry::class, \OC\Support\CrashReport\Registry::class);
 
@@ -753,7 +763,7 @@ class Server extends ServerContainer implements IServerContainer {
 		$this->registerService('TrustedDomainHelper', function ($c) {
 			return new TrustedDomainHelper($this->getConfig());
 		});
-		$this->registerService('Throttler', function (Server $c) {
+		$this->registerService(Throttler::class, function (Server $c) {
 			return new Throttler(
 				$c->getDatabaseConnection(),
 				new TimeFactory(),
@@ -761,6 +771,7 @@ class Server extends ServerContainer implements IServerContainer {
 				$c->getConfig()
 			);
 		});
+		$this->registerAlias('Throttler', Throttler::class);
 		$this->registerService('IntegrityCodeChecker', function (Server $c) {
 			// IConfig and IAppManager requires a working database. This code
 			// might however be called when ownCloud is not yet setup.
@@ -1075,6 +1086,7 @@ class Server extends ServerContainer implements IServerContainer {
 			return $instance;
 		});
 		$this->registerAlias('CollaboratorSearch', \OCP\Collaboration\Collaborators\ISearch::class);
+		$this->registerAlias(\OCP\Collaboration\Collaborators\ISearchResult::class, \OC\Collaboration\Collaborators\SearchResult::class);
 
 		$this->registerAlias(\OCP\Collaboration\AutoComplete\IManager::class, \OC\Collaboration\AutoComplete\Manager::class);
 
@@ -1171,6 +1183,22 @@ class Server extends ServerContainer implements IServerContainer {
 			);
 		});
 		$this->registerAlias(IContactsStore::class, ContactsStore::class);
+		$this->registerAlias(IAccountManager::class, AccountManager::class);
+
+		$this->registerService(IStorageFactory::class, function() {
+			return new StorageFactory();
+		});
+
+		$this->registerAlias(IDashboardManager::class, DashboardManager::class);
+		$this->registerAlias(IFullTextSearchManager::class, FullTextSearchManager::class);
+
+		$this->registerService(\OC\Security\IdentityProof\Manager::class, function (Server $c) {
+			return new \OC\Security\IdentityProof\Manager(
+				$c->query(\OC\Files\AppData\Factory::class),
+				$c->getCrypto(),
+				$c->getConfig()
+			);
+		});
 
 		$this->connectDispatcher();
 	}
@@ -2019,5 +2047,12 @@ class Server extends ServerContainer implements IServerContainer {
 	 */
 	public function getRemoteInstanceFactory() {
 		return $this->query(IInstanceFactory::class);
+	}
+
+	/**
+	 * @return IStorageFactory
+	 */
+	public function getStorageFactory() {
+		return $this->query(IStorageFactory::class);
 	}
 }

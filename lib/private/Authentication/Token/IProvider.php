@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OC\Authentication\Token;
 
+use OC\Authentication\Exceptions\ExpiredTokenException;
 use OC\Authentication\Exceptions\InvalidTokenException;
 use OC\Authentication\Exceptions\PasswordlessTokenException;
 
@@ -156,4 +157,20 @@ interface IProvider {
 	 * @return IToken
 	 */
 	public function rotate(IToken $token, string $oldTokenId, string $newTokenId): IToken;
+
+	/**
+	 * Marks a token as having an invalid password.
+	 *
+	 * @param IToken $token
+	 * @param string $tokenId
+	 */
+	public function markPasswordInvalid(IToken $token, string $tokenId);
+
+	/**
+	 * Update all the passwords of $uid if required
+	 *
+	 * @param string $uid
+	 * @param string $password
+	 */
+	public function updatePasswords(string $uid, string $password);
 }

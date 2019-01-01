@@ -117,7 +117,7 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 	public function getAddressBooksForUserCount($principalUri) {
 		$principalUri = $this->convertPrincipal($principalUri, true);
 		$query = $this->db->getQueryBuilder();
-		$query->select($query->createFunction('COUNT(*)'))
+		$query->select($query->func()->count('*'))
 			->from('addressbooks')
 			->where($query->expr()->eq('principaluri', $query->createNamedParameter($principalUri)));
 
@@ -494,7 +494,7 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 	 */
 	function getCards($addressBookId) {
 		$query = $this->db->getQueryBuilder();
-		$query->select(['id', 'uri', 'lastmodified', 'etag', 'size', 'carddata'])
+		$query->select(['id', 'uri', 'lastmodified', 'etag', 'size', 'carddata', 'uid'])
 			->from('cards')
 			->where($query->expr()->eq('addressbookid', $query->createNamedParameter($addressBookId)));
 
@@ -525,7 +525,7 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 	 */
 	function getCard($addressBookId, $cardUri) {
 		$query = $this->db->getQueryBuilder();
-		$query->select(['id', 'uri', 'lastmodified', 'etag', 'size', 'carddata'])
+		$query->select(['id', 'uri', 'lastmodified', 'etag', 'size', 'carddata', 'uid'])
 			->from('cards')
 			->where($query->expr()->eq('addressbookid', $query->createNamedParameter($addressBookId)))
 			->andWhere($query->expr()->eq('uri', $query->createNamedParameter($cardUri)))
@@ -563,7 +563,7 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 		$cards = [];
 
 		$query = $this->db->getQueryBuilder();
-		$query->select(['id', 'uri', 'lastmodified', 'etag', 'size', 'carddata'])
+		$query->select(['id', 'uri', 'lastmodified', 'etag', 'size', 'carddata', 'uid'])
 			->from('cards')
 			->where($query->expr()->eq('addressbookid', $query->createNamedParameter($addressBookId)))
 			->andWhere($query->expr()->in('uri', $query->createParameter('uri')));
@@ -609,6 +609,20 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 	 */
 	function createCard($addressBookId, $cardUri, $cardData) {
 		$etag = md5($cardData);
+		$uid = $this->getUID($cardData);
+
+		$q = $this->db->getQueryBuilder();
+		$q->select('uid')
+			->from('cards')
+			->where($q->expr()->eq('addressbookid', $q->createNamedParameter($addressBookId)))
+			->andWhere($q->expr()->eq('uid', $q->createNamedParameter($uid)))
+			->setMaxResults(1);
+		$result = $q->execute();
+		$count = (bool) $result->fetchColumn();
+		$result->closeCursor();
+		if ($count) {
+			throw new \Sabre\DAV\Exception\BadRequest('VCard object with uid already exists in this addressbook collection.');
+		}
 
 		$query = $this->db->getQueryBuilder();
 		$query->insert('cards')
@@ -619,6 +633,7 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 				'addressbookid' => $query->createNamedParameter($addressBookId),
 				'size' => $query->createNamedParameter(strlen($cardData)),
 				'etag' => $query->createNamedParameter($etag),
+				'uid' => $query->createNamedParameter($uid),
 			])
 			->execute();
 
@@ -661,6 +676,7 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 	 */
 	function updateCard($addressBookId, $cardUri, $cardData) {
 
+		$uid = $this->getUID($cardData);
 		$etag = md5($cardData);
 		$query = $this->db->getQueryBuilder();
 		$query->update('cards')
@@ -668,6 +684,7 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 			->set('lastmodified', $query->createNamedParameter(time()))
 			->set('size', $query->createNamedParameter(strlen($cardData)))
 			->set('etag', $query->createNamedParameter($etag))
+			->set('uid', $query->createNamedParameter($uid))
 			->where($query->expr()->eq('uri', $query->createNamedParameter($cardUri)))
 			->andWhere($query->expr()->eq('addressbookid', $query->createNamedParameter($addressBookId)))
 			->execute();
@@ -1124,5 +1141,26 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 		if (isset($principalInformation['{DAV:}displayname'])) {
 			$addressbookInfo[$displaynameKey] = $principalInformation['{DAV:}displayname'];
 		}
+	}
+
+	/**
+	 * Extract UID from vcard
+	 *
+	 * @param string $cardData the vcard raw data
+	 * @return string the uid
+	 * @throws BadRequest if no UID is available
+	 */
+	private function getUID($cardData) {
+		if ($cardData != '') {
+			$vCard = Reader::read($cardData);
+			if ($vCard->UID) {
+				$uid = $vCard->UID->getValue();
+				return $uid;
+			}
+			// should already be handled, but just in case
+			throw new BadRequest('vCards on CardDAV servers MUST have a UID property');
+		}
+		// should already be handled, but just in case
+		throw new BadRequest('vCard can not be empty');
 	}
 }

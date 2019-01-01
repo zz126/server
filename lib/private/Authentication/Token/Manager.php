@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OC\Authentication\Token;
 
+use OC\Authentication\Exceptions\ExpiredTokenException;
 use OC\Authentication\Exceptions\InvalidTokenException;
 use OC\Authentication\Exceptions\PasswordlessTokenException;
 
@@ -112,7 +113,9 @@ class Manager implements IProvider {
 	public function getToken(string $tokenId): IToken {
 		try {
 			return $this->publicKeyTokenProvider->getToken($tokenId);
-		} catch (InvalidTokenException $e) {
+		} catch (ExpiredTokenException $e) {
+			throw $e;
+		} catch(InvalidTokenException $e) {
 			// No worries we try to convert it to a PublicKey Token
 		}
 
@@ -138,6 +141,8 @@ class Manager implements IProvider {
 	public function getTokenById(int $tokenId): IToken {
 		try {
 			return $this->publicKeyTokenProvider->getTokenById($tokenId);
+		} catch (ExpiredTokenException $e) {
+			throw $e;
 		} catch (InvalidTokenException $e) {
 			return $this->defaultTokenProvider->getTokenById($tokenId);
 		}
@@ -151,6 +156,8 @@ class Manager implements IProvider {
 	public function renewSessionToken(string $oldSessionId, string $sessionId) {
 		try {
 			$this->publicKeyTokenProvider->renewSessionToken($oldSessionId, $sessionId);
+		} catch (ExpiredTokenException $e) {
+			throw $e;
 		} catch (InvalidTokenException $e) {
 			$this->defaultTokenProvider->renewSessionToken($oldSessionId, $sessionId);
 		}
@@ -227,4 +234,16 @@ class Manager implements IProvider {
 		}
 		throw new InvalidTokenException();
 	}
+
+
+	public function markPasswordInvalid(IToken $token, string $tokenId) {
+		$this->getProvider($token)->markPasswordInvalid($token, $tokenId);
+	}
+
+	public function updatePasswords(string $uid, string $password) {
+		$this->defaultTokenProvider->updatePasswords($uid, $password);
+		$this->publicKeyTokenProvider->updatePasswords($uid, $password);
+	}
+
+
 }

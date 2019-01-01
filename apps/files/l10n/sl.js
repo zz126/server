@@ -27,7 +27,6 @@ OC.L10N.register(
     "Actions" : "Dejanja",
     "Rename" : "Preimenuj",
     "Copy" : "Kopiraj",
-    "Target folder" : "Ciljna mapa",
     "Disconnect storage" : "Odklopi shrambo",
     "Unshare" : "Prekini souporabo",
     "Could not load info for file \"{file}\"" : "Ni bilo mogoče naložiti podatke za datoteko \"{file}\"",
@@ -75,7 +74,7 @@ OC.L10N.register(
     "_matches '{filter}'_::_match '{filter}'_" : ["se sklada s filtrom '{filter}'","se skladata s filtrom '{filter}'","se skladajo s filtrom '{filter}'","se skladajo s filtrom '{filter}'"],
     "View in folder" : "Prikaži v mapi",
     "Copied!" : "Kopirano!",
-    "Copy direct link (only works for users who have access to this file/folder)" : "Kopiraj direktno povezavo (deluje sa mo za uporabnike, ki imajo dostop do datoteke ali mape)",
+    "Copy direct link (only works for users who have access to this file/folder)" : "Kopiraj neposredno povezavo (za uporabnike, ki imajo dostop do datoteke ali mape)",
     "Path" : "Pot",
     "_%n byte_::_%n bytes_" : ["%n bajt","%n bajta","%n bajti","%n bajtov"],
     "Favorited" : "Označeno kot priljubljeno",
@@ -128,7 +127,6 @@ OC.L10N.register(
     "Save" : "Shrani",
     "With PHP-FPM it might take 5 minutes for changes to be applied." : "Uveljavljanje sprememb prek PHP-FPM lahko traja tudi 5  minut.",
     "Missing permissions to edit from here." : "Ni ustreznih dovoljenj za urejanje na tej ravni.",
-    "%s of %s used" : "%s od %s uporabljeno",
     "%s used" : "%s uporabljeno",
     "Settings" : "Nastavitve",
     "Show hidden files" : "Pokaži skrite datoteke",
@@ -152,9 +150,7 @@ OC.L10N.register(
     "Deleted shares" : "Izbrisane povezave za souporabo",
     "Text file" : "Besedilna datoteka",
     "New text file.txt" : "Nova datoteka.txt",
-    "Move" : "Premakni",
-    "A new file or folder has been <strong>deleted</strong>" : "Nova datoteka ali mapa je bila <strong>izbrisana</strong>",
-    "A new file or folder has been <strong>restored</strong>" : "Nova datoteka ali mapa je bila <strong>obnovljena</strong>",
-    "Use this address to <a href=\"%s\" target=\"_blank\" rel=\"noreferrer\">access your Files via WebDAV</a>" : "Naslov omogoča dostop do datotek prek<a href=\"%s\" target=\"_blank\" rel=\"noreferrer\">WebDAV</a>."
+    "Target folder" : "Ciljna mapa",
+    "%s of %s used" : "%s od %s uporabljeno"
 },
 "nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);");

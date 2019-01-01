@@ -70,6 +70,12 @@ class Application extends App {
 					if (!$table->hasIndex('parent_index')) {
 						$subject->addHintForMissingSubject($table->getName(), 'parent_index');
 					}
+					if (!$table->hasIndex('owner_index')) {
+						$subject->addHintForMissingSubject($table->getName(), 'owner_index');
+					}
+					if (!$table->hasIndex('initiator_index')) {
+						$subject->addHintForMissingSubject($table->getName(), 'initiator_index');
+					}
 				}
 
 				if ($schema->hasTable('filecache')) {

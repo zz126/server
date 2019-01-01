@@ -25,44 +25,17 @@
 
 	OC.Settings = OC.Settings || {};
 
-	var TEMPLATE_TOKEN =
-		'<tr data-id="{{id}}">'
-		+ '<td class="client">'
-		+ '<div class="{{icon}}" />'
-		+ '</td>'
-		+ '<td class="has-tooltip" title="{{title}}">'
-		+ '<span class="token-name">{{name}}</span>'
-		+ '</td>'
-		+ '<td><span class="last-activity has-tooltip" title="{{lastActivityTime}}">{{lastActivity}}</span></td>'
-		+ '<td class="more">'
-		+ '{{#if showMore}}<a class="icon icon-more"/>{{/if}}'
-		+ '<div class="popovermenu menu">'
-		+ '{{#if canScope}}'
-		+ '<li><span class="menuitem">'
-		+ '<input class="filesystem checkbox" type="checkbox" id="{{id}}_filesystem" {{#if scope.filesystem}}checked{{/if}}/>'
-		+ '<label for="{{id}}_filesystem">' + t('settings', 'Allow filesystem access') + '</label><br/>'
-		+ '</span></li>'
-		+ '{{/if}}'
-		+ '{{#if canDelete}}'
-		+ '<li>'
-		+ '<a class="icon icon-delete has-tooltip" title="' + t('settings', 'Disconnect') + '">' + t('settings', 'Revoke') +'</a>'
-		+ '</li>'
-		+ '{{/if}}'
-		+ '</div>'
-		+ '</td>'
-		+ '<tr>';
-
 	var SubView = OC.Backbone.View.extend({
 		collection: null,
 
 		_template: undefined,
 
 		template: function (data) {
-			if (_.isUndefined(this._template)) {
-				this._template = Handlebars.compile(TEMPLATE_TOKEN);
-			}
-
-			return this._template(data);
+			data.disconnectText = t('settings', 'Disconnect');
+			data.revokeText = t('settings', 'Revoke');
+			data.settingsTitle = t('settings', 'Device settings');
+			data.allowFSAccess = t('settings', 'Allow filesystem access');
+			return OC.Settings.Templates['authtoken'](data);
 		},
 
 		initialize: function (options) {
@@ -130,6 +103,8 @@
 				ipad: /\(iPad\; *CPU +OS +([0-9]+)_(?:[0-9_])+ +like +Mac +OS +X */,
 				iosClient: /^Mozilla\/5\.0 \(iOS\) (ownCloud|Nextcloud)\-iOS.*$/,
 				androidClient:/^Mozilla\/5\.0 \(Android\) ownCloud\-android.*$/,
+				iosTalkClient: /^Mozilla\/5\.0 \(iOS\) Nextcloud\-Talk.*$/,
+				androidTalkClient:/^Mozilla\/5\.0 \(Android\) Nextcloud\-Talk.*$/,
 				// DAVdroid/1.2 (2016/07/03; dav4android; okhttp3) Android/6.0.1
 				davDroid: /DAVdroid\/([0-9.]+)/,
 				// Mozilla/5.0 (U; Linux; Maemo; Jolla; Sailfish; like Android 4.3) AppleWebKit/538.1 (KHTML, like Gecko) WebPirate/2.0 like Mobile Safari/538.1 (compatible)
@@ -144,10 +119,12 @@
 				chrome: t('setting', 'Google Chrome'),
 				safari: t('setting', 'Safari'),
 				androidChrome: t('setting', 'Google Chrome for Android'),
-				iphone: t('setting', 'iPhone iOS'),
-				ipad: t('setting', 'iPad iOS'),
-				iosClient: t('setting', 'iOS Client'),
-				androidClient: t('setting', 'Android Client'),
+				iphone: t('setting', 'iPhone'),
+				ipad: t('setting', 'iPad'),
+				iosClient: t('setting', 'Nextcloud iOS app'),
+				androidClient: t('setting', 'Nextcloud Android app'),
+				iosTalkClient: t('setting', 'Nextcloud Talk for iOS'),
+				androidTalkClient: t('setting', 'Nextcloud Talk for Android'),
 				davDroid: 'DAVdroid',
 				webPirate: 'WebPirate',
 				sailfishBrowser: 'SailfishBrowser'
@@ -164,6 +141,8 @@
 				ipad: 'icon-tablet',
 				iosClient: 'icon-phone',
 				androidClient: 'icon-phone',
+				iosTalkClient: 'icon-phone',
+				androidTalkClient: 'icon-phone',
 				davDroid: 'icon-phone',
 				webPirate: 'icon-link',
 				sailfishBrowser: 'icon-link'

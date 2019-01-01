@@ -19,10 +19,10 @@ OC.L10N.register(
     "Federated Share request sent, you will receive an invitation. Check your notifications." : "Požadavek na spojené sdílení byl odeslán, obdržíte pozvánku. Zkontrolujte vaše upozornění.",
     "Couldn't establish a federated share, it looks like the server to federate with is too old (Nextcloud <= 9)." : "Nepodařilo se ustavit federované sdílení, vypadá to, že server, se kterým má být federováno je příliš starý (Nextcloud <= 9).",
     "It is not allowed to send federated group shares from this server." : "Z tohoto serveru není povoleno posílat federovaná skupinová sdílení.",
-    "Sharing %s failed, because this item is already shared with %s" : "Sdílení položky %s se nezdařilo, protože položka už je s uživatelem %s sdílena",
+    "Sharing %1$s failed, because this item is already shared with %2$s" : "Sdílení %1$s se nezdařilo, protože tato položka už je sdílena s %2$s",
     "Not allowed to create a federated share with the same user" : "Není povoleno vytvořit propojené sdílení s tím samým uživatelem",
     "File is already shared with %s" : "Soubor je už sdílen s %s",
-    "Sharing %s failed, could not find %s, maybe the server is currently unreachable or uses a self-signed certificate." : "Sdílení %s selhalo, %s se nepodařilo nalézt, server pravděpodobně právě není dostupný nebo používá self-signed certifikát.",
+    "Sharing %1$s failed, could not find %2$s, maybe the server is currently unreachable or uses a self-signed certificate." : "Sdílení %1$s se nezdařilo, %2$s se nepodařilo nalézt, server pravděpodobně právě není dostupný nebo používá self-signed certifikát.",
     "Could not find share" : "Nedaří se nalézt sdílení",
     "You received \"%3$s\" as a remote share from %1$s (on behalf of %2$s)" : "Obdržel(a) jste %3$s jako vzdálené sdílení od %1$s (jménem %2$s)",
     "You received {share} as a remote share from {user} (on behalf of {behalf})" : "Obdržel(a) jste {share} jako vzdálené sdílení od {user} (jménem {behalf})",
@@ -58,6 +58,7 @@ OC.L10N.register(
     "Storage not valid" : "Úložiště není platné",
     "Federated share added" : "Propojené sdílení bylo přidáno",
     "Couldn't add remote share" : "Nepodařilo se přidat propojené sdílení",
-    "Search global and public address book for users and let local users publish their data" : "Hledat uživatele v globálním a veřejném adresáři a dovolit místním uživatelům publikovat jejich údaje"
+    "Sharing %s failed, because this item is already shared with %s" : "Sdílení položky %s se nezdařilo, protože položka už je s uživatelem %s sdílena",
+    "Sharing %s failed, could not find %s, maybe the server is currently unreachable or uses a self-signed certificate." : "Sdílení %s selhalo, %s se nepodařilo nalézt, server pravděpodobně právě není dostupný nebo používá self-signed certifikát."
 },
 "nplurals=4; plural=(n == 1 && n % 1 == 0) ? 0 : (n >= 2 && n <= 4 && n % 1 == 0) ? 1: (n % 1 != 0 ) ? 2 : 3;");

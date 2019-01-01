@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OC\Authentication\Token;
 
+use OC\Authentication\Exceptions\ExpiredTokenException;
 use OC\Authentication\Exceptions\InvalidTokenException;
 use OC\Authentication\Exceptions\PasswordlessTokenException;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -294,6 +295,10 @@ class PublicKeyTokenProvider implements IProvider {
 
 		// Generate new key
 		$res = openssl_pkey_new($config);
+		if ($res === false) {
+			$this->logOpensslError();
+		}
+
 		openssl_pkey_export($res, $privateKey);
 
 		// Extract the public key from $res to $pubKey
@@ -316,5 +321,37 @@ class PublicKeyTokenProvider implements IProvider {
 		$dbToken->setVersion(PublicKeyToken::VERSION);
 
 		return $dbToken;
+	}
+
+	public function markPasswordInvalid(IToken $token, string $tokenId) {
+		if (!($token instanceof PublicKeyToken)) {
+			throw new InvalidTokenException();
+		}
+
+		$token->setPasswordInvalid(true);
+		$this->mapper->update($token);
+	}
+
+	public function updatePasswords(string $uid, string $password) {
+		if (!$this->mapper->hasExpiredTokens($uid)) {
+			// Nothing to do here
+			return;
+		}
+
+		// Update the password for all tokens
+		$tokens = $this->mapper->getTokenByUser($uid);
+		foreach ($tokens as $t) {
+			$publicKey = $t->getPublicKey();
+			$t->setPassword($this->encryptPassword($password, $publicKey));
+			$this->updateToken($t);
+		}
+	}
+
+	private function logOpensslError() {
+		$errors = [];
+		while ($error = openssl_error_string()) {
+			$errors[] = $error;
+		}
+		$this->logger->critical('Something is wrong with your openssl setup: ' . implode(', ', $errors));
 	}
 }

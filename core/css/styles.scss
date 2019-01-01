@@ -84,7 +84,7 @@ ul {
 
 body {
 	background-color: var(--color-main-background);
-	font-weight: 300;
+	font-weight: normal;
 	font-size: .8em;
 	line-height: 1.6em;
 	font-family: var(--font-face);
@@ -146,7 +146,7 @@ body {
 /* SCROLLING */
 
 ::-webkit-scrollbar {
-	width: 5px;
+	width: 9px;
 	height: 5px;
 }
 
@@ -167,7 +167,7 @@ body {
 	height: 44px;
 	padding: 0;
 	margin: 0;
-	background-color: var(--color-main-background);
+	background-color: var(--color-main-background-translucent);
 	z-index: 60;
 	-webkit-user-select: none;
 	-moz-user-select: none;
@@ -196,6 +196,7 @@ body {
 			display: flex;
 			height: 36px;
 			width: 36px;
+			padding: 9px; // width - border - icon width = 18px
 			align-items: center;
 			justify-content: center;
 		}
@@ -221,7 +222,6 @@ body {
 	}
 	h2 {
 		margin-bottom: 10px;
-		line-height: 150%;
 	}
 	[class^='icon-'],
 	[class*='icon-'] {
@@ -327,14 +327,14 @@ label.infield {
 .warning {
 	legend, a {
 		color: var(--color-primary-text) !important;
-		font-weight: 600 !important;
+		font-weight: bold !important;
 	}
 }
 
 .error {
 	a {
 		color: var(--color-primary-text) !important;
-		font-weight: 600 !important;
+		font-weight: bold !important;
 		&.button {
 			color: var(--color-text-lighter) !important;
 			display: inline-block;
@@ -541,7 +541,7 @@ code {
 
 		.ui-datepicker-title {
 			line-height: 1;
-			font-weight: 300;
+			font-weight: normal;
 		}
 		.ui-icon {
 			opacity: .5;
@@ -622,7 +622,7 @@ code {
 
 		.ui-timepicker-title {
 			line-height: 1;
-			font-weight: 300;
+			font-weight: normal;
 		}
 	}
 	/* AM/PM fix */
@@ -697,11 +697,16 @@ code {
 }
 
 /* ---- DIALOGS ---- */
-
 #oc-dialog-filepicker-content {
+	position: relative;
+
 	.dirtree {
-		width: 92%;
+		width: 100%;
 		flex-wrap: wrap;
+		padding-left: 12px;
+		padding-right: 44px;
+		box-sizing: border-box;
+
 		div:first-child a {
 			background-image: url('../img/places/home.svg?v=1');
 			background-repeat: no-repeat;
@@ -720,13 +725,36 @@ code {
 			}
 		}
 	}
+
+	/* Grid view toggle */
+	#picker-view-toggle {
+		position: absolute;
+		background-color: transparent;
+		border: none;
+		margin: 0;
+		padding: 22px;
+		opacity: .5;
+		right: 0;
+		top: 0;
+
+		&:hover,
+		&:focus {
+			opacity: 1;
+		}
+	}
+	// keyboard focus
+	#picker-showgridview:focus + #picker-view-toggle {
+		opacity: 1;
+	}
+
 	.filelist-container {
 		box-sizing: border-box;
 		display: inline-block;
 		overflow-y: auto;
 		height: 100%;
-		/** overflow under the button row */
+		/* overflow under the button row */
 		width: 100%;
+		overflow-x: hidden;
 	}
 	.emptycontent {
 		color: var(--color-text-details);
@@ -739,12 +767,51 @@ code {
 		background-color: var(--color-main-background);
 		width: 100%;
 	}
-	#filestable.filelist {
+	#picker-filestable.filelist {
 		/* prevent the filepicker to overflow */
 		min-width: initial;
 		margin-bottom: 50px;
-	}
-	.filelist {
+		thead {
+			tr {
+				border-bottom: 1px solid var(--color-border);
+				background-color: var(--color-main-background);
+				th {
+					width: 80%;
+					border: none;
+				}
+			}
+		}
+		th .columntitle {
+			display: block;
+			padding: 15px;
+			height: 50px;
+			box-sizing: border-box;
+			-moz-box-sizing: border-box;
+			vertical-align: middle;
+		}
+		th .columntitle.name {
+			padding-left: 5px;
+			margin-left: 50px;
+		}
+
+		th .sort-indicator {
+			width: 10px;
+			height: 8px;
+			margin-left: 5px;
+			display: inline-block;
+			vertical-align: text-bottom;
+			opacity: .3;
+		}
+		.sort-indicator.hidden,
+		th:hover .sort-indicator.hidden,
+		th:focus .sort-indicator.hidden {
+			visibility: hidden;
+		}
+		th:hover .sort-indicator.hidden,
+		th:focus .sort-indicator.hidden {
+			visibility: visible;
+		}
+
 		td {
 			padding: 14px;
 			border-bottom: 1px solid var(--color-border);
@@ -768,9 +835,57 @@ code {
 		.filesize {
 			text-align: right;
 		}
+		&.view-grid {
+			$grid-size: 120px;
+			$grid-pad: 10px;
+			$name-height: 30px;
+			display: flex;
+			flex-direction: column;
+
+			tbody {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, $grid-size);
+				justify-content: space-around;
+				row-gap: 15px;
+				margin: 15px 0;
+
+				tr {
+					display: block;
+					position: relative;
+					border-radius: var(--border-radius);
+					padding: $grid-pad;
+					display: flex;
+					flex-direction: column;
+					width: $grid-size - 2 * $grid-pad;
+
+
+					td {
+						border: none;
+						padding: 0;
+						text-align: center;
+						border-radius: var(--border-radius);
+
+						&.filename {
+							padding: #{$grid-size - 2 * $grid-pad} 0 0 0;
+							background-position: center top;
+							background-size: contain;
+							line-height: $name-height;
+							max-width: none;
+						}
+						&.filesize {
+							line-height: $name-height / 3;
+							width: 100%;
+						}
+						&.date {
+							display: none;
+						}
+					}
+				}
+			}
+		}
 	}
 	.filepicker_element_selected {
-		background-color: lightblue;
+		background-color: var(--color-background-darker);
 	}
 }
 
@@ -1007,6 +1122,9 @@ div.crumb {
 		white-space: nowrap;
 		overflow: hidden;
 		flex: 0 0 auto;
+		// Some sane max-width for each folder name
+		max-width: 200px;
+
 		&.icon-home {
 			// Hide home text
 			text-indent: -9999px;
@@ -1019,7 +1137,7 @@ div.crumb {
 	&:not(:first-child) a {
 	}
 	&:last-child {
-		font-weight: 600;
+		font-weight: bold;
 		margin-right: 10px;
 		// Allow multiple span next to the main 'a'
 		a ~ span {

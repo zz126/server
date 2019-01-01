@@ -63,10 +63,14 @@ class AmazonS3 extends \OC\Files\Storage\Common {
 	/** @var CappedMemoryCache|bool[] */
 	private $directoryCache;
 
+	/** @var CappedMemoryCache|array */
+	private $filesCache;
+
 	public function __construct($parameters) {
 		parent::__construct($parameters);
 		$this->parseParams($parameters);
 		$this->objectCache = new CappedMemoryCache();
+		$this->filesCache = new CappedMemoryCache();
 		$this->directoryCache = new CappedMemoryCache();
 	}
 
@@ -97,6 +101,7 @@ class AmazonS3 extends \OC\Files\Storage\Common {
 
 	private function clearCache() {
 		$this->objectCache = new CappedMemoryCache();
+		$this->filesCache = new CappedMemoryCache();
 		$this->directoryCache = new CappedMemoryCache();
 	}
 
@@ -109,6 +114,7 @@ class AmazonS3 extends \OC\Files\Storage\Common {
 				unset($this->objectCache[$existingKey]);
 			}
 		}
+		unset($this->filesCache[$key]);
 	}
 
 	/**
@@ -340,6 +346,12 @@ class AmazonS3 extends \OC\Files\Storage\Common {
 							isset($object['Key']) ? $object['Key'] : $object['Prefix']
 						);
 						$files[] = $file;
+
+						// store this information for later usage
+						$this->filesCache[$file] = [
+							'ContentLength' => $object['Size'],
+							'LastModified' => (string)$object['LastModified'],
+						];
 					}
 				}
 			}
@@ -355,20 +367,14 @@ class AmazonS3 extends \OC\Files\Storage\Common {
 		$path = $this->normalizePath($path);
 
 		try {
-			$stat = array();
+			$stat = [];
 			if ($this->is_dir($path)) {
 				//folders don't really exist
 				$stat['size'] = -1; //unknown
 				$stat['mtime'] = time() - $this->rescanDelay * 1000;
 			} else {
-				$result = $this->headObject($path);
-
-				$stat['size'] = $result['ContentLength'] ? $result['ContentLength'] : 0;
-				if (isset($result['Metadata']['lastmodified'])) {
-					$stat['mtime'] = strtotime($result['Metadata']['lastmodified']);
-				} else {
-					$stat['mtime'] = strtotime($result['LastModified']);
-				}
+				$stat['size'] = $this->getContentLength($path);
+				$stat['mtime'] = strtotime($this->getLastModified($path));
 			}
 			$stat['atime'] = time();
 
@@ -377,6 +383,50 @@ class AmazonS3 extends \OC\Files\Storage\Common {
 			\OC::$server->getLogger()->logException($e, ['app' => 'files_external']);
 			return false;
 		}
+	}
+
+	/**
+	 * Return content length for object
+	 *
+	 * When the information is already present (e.g. opendir has been called before)
+	 * this value is return. Otherwise a headObject is emitted.
+	 *
+	 * @param $path
+	 * @return int|mixed
+	 */
+	private function getContentLength($path) {
+		if (isset($this->filesCache[$path])) {
+			return $this->filesCache[$path]['ContentLength'];
+		}
+
+		$result = $this->headObject($path);
+		if (isset($result['ContentLength'])) {
+			return $result['ContentLength'];
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Return last modified for object
+	 *
+	 * When the information is already present (e.g. opendir has been called before)
+	 * this value is return. Otherwise a headObject is emitted.
+	 *
+	 * @param $path
+	 * @return mixed|string
+	 */
+	private function getLastModified($path) {
+		if (isset($this->filesCache[$path])) {
+			return $this->filesCache[$path]['LastModified'];
+		}
+
+		$result = $this->headObject($path);
+		if (isset($result['LastModified'])) {
+			return $result['LastModified'];
+		}
+
+		return 'now';
 	}
 
 	public function is_dir($path) {

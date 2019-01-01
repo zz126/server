@@ -26,7 +26,6 @@ OC.L10N.register(
     "Actions" : "Aksies",
     "Rename" : "Hernoem",
     "Copy" : "Kopieer",
-    "Target folder" : "Teikengids",
     "Disconnect storage" : "Ontkoppel berging",
     "Unshare" : "Ontdeel",
     "Could not load info for file \"{file}\"" : "Kon nie inligting vir lêer: \"{file}\" laai nie ",
@@ -105,7 +104,6 @@ OC.L10N.register(
     "Maximum upload size" : "Maksimum oplaai grootte",
     "max. possible: " : "maks. moontlik:",
     "Save" : "Stoor",
-    "%s of %s used" : "%s van %s gebruik",
     "%s used" : "%s gebruik",
     "Settings" : "Instellings",
     "Show hidden files" : "Vertoon verborge lêers ",
@@ -125,8 +123,7 @@ OC.L10N.register(
     "Shared by link" : "Gedeel per skakel",
     "Text file" : "Tekslêer",
     "New text file.txt" : "Nuwe tekslêer.txt",
-    "Move" : "Skuif",
-    "A new file or folder has been <strong>deleted</strong>" : "'n Nuwe lêer of gids is <strong>geskrap</strong>",
-    "A new file or folder has been <strong>restored</strong>" : "'n Nuwe lêer of gids is <strong>herstel</strong>"
+    "Target folder" : "Teikengids",
+    "%s of %s used" : "%s van %s gebruik"
 },
 "nplurals=2; plural=(n != 1);");

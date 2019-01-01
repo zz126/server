@@ -1,13 +1,15 @@
 OC.L10N.register(
     "files_trashbin",
     {
-    "Couldn't delete %s permanently" : "Kon %s niet permanent verwijderen",
-    "Couldn't restore %s" : "Kon %s niet herstellen",
     "Deleted files" : "Verwijderde bestanden",
     "Restore" : "Herstellen",
     "Delete" : "Verwijder",
+    "Error while restoring file from trashbin" : "Fout bij terugzetten bestanden uit de prullenbak",
     "Delete permanently" : "Definitief verwijderen",
-    "Error" : "Fout",
+    "Error while removing file from trashbin" : "Fout bij verwijderen van bestanden uit de prullenbak",
+    "Error while restoring files from trashbin" : "Fout bij terugzetten bestanden uit de prullenbak",
+    "Error while emptying trashbin" : "Fout bij leegmaken prullenbak",
+    "Error while removing files from trashbin" : "Fout bij verwijderen van bestanden uit de prullenbak",
     "This operation is forbidden" : "Deze taak is verboden",
     "This directory is unavailable, please check the logs or contact the administrator" : "Deze map is niet beschikbaar. Verifieer de logs of neem contact op met de beheerder",
     "restored" : "hersteld",
@@ -19,6 +21,9 @@ OC.L10N.register(
     "Select all" : "Alles selecteren",
     "Name" : "Naam",
     "Actions" : "Acties",
-    "Deleted" : "Verwijderd"
+    "Deleted" : "Verwijderd",
+    "Couldn't delete %s permanently" : "Kon %s niet permanent verwijderen",
+    "Couldn't restore %s" : "Kon %s niet herstellen",
+    "Error" : "Fout"
 },
 "nplurals=2; plural=(n != 1);");

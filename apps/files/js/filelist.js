@@ -10,11 +10,6 @@
 
 (function() {
 
-	var TEMPLATE_ADDBUTTON = '<a href="#" class="button new">' +
-		'<span class="icon {{iconClass}}"></span>' +
-		'<span class="hidden-visually">{{addText}}</span>' +
-		'</a>';
-
 	/**
 	 * @class OCA.Files.FileList
 	 * @classdesc
@@ -104,7 +99,14 @@
 		 * @return {int} page size
 		 */
 		pageSize: function() {
-			return Math.max(Math.ceil(this.$container.height() / 50), 1);
+			var isGridView = this.$showGridView.is(':checked');
+			var columns = 1;
+			var rows = Math.ceil(this.$container.height() / 50);
+			if (isGridView) {
+				columns = Math.ceil(this.$container.width() / 160);
+				rows = Math.ceil(this.$container.height() / 160);
+			}
+			return Math.max(columns*rows, columns);
 		},
 
 		/**
@@ -226,6 +228,10 @@
 				return;
 			}
 
+			if (options.shown) {
+				this.shown = options.shown;
+			}
+
 			if (options.config) {
 				this._filesConfig = options.config;
 			} else if (!_.isUndefined(OCA.Files) && !_.isUndefined(OCA.Files.App)) {
@@ -315,10 +321,10 @@
 				breadcrumbOptions.onDrop = _.bind(this._onDropOnBreadCrumb, this);
 				breadcrumbOptions.onOver = function() {
 					self.$el.find('td.filename.ui-droppable').droppable('disable');
-				}
+				};
 				breadcrumbOptions.onOut = function() {
 					self.$el.find('td.filename.ui-droppable').droppable('enable');
-				}
+				};
 			}
 			this.breadcrumb = new OCA.Files.BreadCrumb(breadcrumbOptions);
 
@@ -332,6 +338,12 @@
 
 			this.$el.find('thead th .columntitle').click(_.bind(this._onClickHeader, this));
 
+			// Toggle for grid view, only register once
+			this.$showGridView = $('input#showgridview:not(.registered)');
+			this.$showGridView.on('change', _.bind(this._onGridviewChange, this));
+			this.$showGridView.addClass('registered');
+			$('#view-toggle').tooltip({placement: 'bottom', trigger: 'hover'});
+
 			this._onResize = _.debounce(_.bind(this._onResize, this), 250);
 			$('#app-content').on('appresized', this._onResize);
 			$(window).resize(this._onResize);
@@ -341,6 +353,14 @@
 			this.updateSearch();
 
 			this.$fileList.on('click','td.filename>a.name, td.filesize, td.date', _.bind(this._onClickFile, this));
+
+			$.event.trigger({type: "droppedOnTrash"});
+
+			var self=this;
+			this.$fileList.on("droppedOnTrash", function (event, filename, directory) {
+				//self.fileActions.triggerAction('Favorite', self.getModelForFile(file), self);
+				self.do_delete(filename, directory)
+			});
 
 			this.$fileList.on('change', 'td.selection>.selectCheckBox', _.bind(this._onClickFileCheckbox, this));
 			this.$el.on('show', _.bind(this._onShow, this));
@@ -564,9 +584,33 @@
 			}
 
 			this._currentFileModel = model;
-			this._detailsView.render();
+
+			this._replaceDetailsViewElementIfNeeded();
+
 			this._detailsView.setFileInfo(model);
 			this._detailsView.$el.scrollTop(0);
+		},
+
+		/**
+		 * Replaces the current details view element with the details view
+		 * element of this file list.
+		 *
+		 * Each file list has its own DetailsView object, and each one has its
+		 * own root element, but there can be just one details view/sidebar
+		 * element in the document. This helper method replaces the current
+		 * details view/sidebar element in the document with the element from
+		 * the DetailsView object of this file list.
+		 */
+		_replaceDetailsViewElementIfNeeded: function() {
+			var $appSidebar = $('#app-sidebar');
+			if ($appSidebar.length === 0) {
+				this._detailsView.$el.insertAfter($('#app-content'));
+			} else if ($appSidebar[0] !== this._detailsView.el) {
+				// "replaceWith()" can not be used here, as it removes the old
+				// element instead of just detaching it.
+				this._detailsView.$el.insertBefore($appSidebar);
+				$appSidebar.detach();
+			}
 		},
 
 		/**
@@ -585,12 +629,37 @@
 		},
 
 		/**
+		 * Toggle showing gridview by default or not
+		 *
+		 * @returns {undefined}
+		 */
+		_onGridviewChange: function() {
+			var show = this.$showGridView.is(':checked');
+			// only save state if user is logged in
+			if (OC.currentUser) {
+				$.post(OC.generateUrl('/apps/files/api/v1/showgridview'), {
+					show: show
+				});
+			}
+			this.$showGridView.next('#view-toggle')
+				.removeClass('icon-toggle-filelist icon-toggle-pictures')
+				.addClass(show ? 'icon-toggle-filelist' : 'icon-toggle-pictures')
+				
+			$('.list-container').toggleClass('view-grid', show);
+		},
+
+		/**
 		 * Event handler when leaving previously hidden state
 		 */
 		_onShow: function(e) {
 			if (this.shown) {
-				this._setCurrentDir('/', false);
-				this.reload();
+				if (e.itemId === this.id) {
+					this._setCurrentDir('/', false);
+				}
+				// Only reload if we don't navigate to a different directory
+				if (typeof e.dir === 'undefined' || e.dir === this.getCurrentDirectory()) {
+					this.reload();
+				}
 			}
 			this.shown = true;
 		},
@@ -849,7 +918,7 @@
 			};
 
 			var actions = this.isSelectedMovable() ? OC.dialogs.FILEPICKER_TYPE_COPY_MOVE : OC.dialogs.FILEPICKER_TYPE_COPY;
-			OC.dialogs.filepicker(t('files', 'Target folder'), function(targetPath, type) {
+			OC.dialogs.filepicker(t('files', 'Choose target folder'), function(targetPath, type) {
 				self.fileMultiSelectMenu.toggleLoading('copyMove', true);
 				if (type === OC.dialogs.FILEPICKER_TYPE_COPY) {
 					self.copy(files, targetPath, disableLoadingState);
@@ -957,7 +1026,7 @@
 				});
 			}
 
-			this.move(_.pluck(files, 'name'), targetPath);
+			var movePromise = this.move(_.pluck(files, 'name'), targetPath);
 
 			// re-enable td elements to be droppable
 			// sometimes the filename drop handler is still called after re-enable,
@@ -965,6 +1034,8 @@
 			setTimeout(function() {
 				self.$el.find('td.filename.ui-droppable').droppable('enable');
 			}, 10);
+
+			return movePromise;
 		},
 
 		/**
@@ -1381,6 +1452,10 @@
 				// rgb(118, 118, 118) / #767676
 				// min. color contrast for normal text on white background according to WCAG AA
 				sizeColor = Math.round(118-Math.pow((fileData.size/(1024*1024)),2));
+
+				if (OCA.Accessibility && OCA.Accessibility.theme === 'themedark') {
+					sizeColor = Math.abs(sizeColor);
+				}
 			} else {
 				simpleSize = t('files', 'Pending');
 			}
@@ -1399,6 +1474,16 @@
 			// min. color contrast for normal text on white background according to WCAG AA
 			if (modifiedColor >= '118') {
 				modifiedColor = 118;
+			}
+			if (OCA.Accessibility && OCA.Accessibility.theme === 'themedark') {
+				modifiedColor = Math.abs(modifiedColor);
+
+				// ensure that the dimmest color is still readable
+				// rgb(130, 130, 130) / #828282
+				// min. color contrast for normal text on black background according to WCAG AA
+				if (modifiedColor < 130) {
+					modifiedColor = 130;
+				}
 			}
 			var formatted;
 			var text;
@@ -1904,10 +1989,10 @@
 		generatePreviewUrl: function(urlSpec) {
 			urlSpec = urlSpec || {};
 			if (!urlSpec.x) {
-				urlSpec.x = this.$table.data('preview-x') || 32;
+				urlSpec.x = this.$table.data('preview-x') || 250;
 			}
 			if (!urlSpec.y) {
-				urlSpec.y = this.$table.data('preview-y') || 32;
+				urlSpec.y = this.$table.data('preview-y') || 250;
 			}
 			urlSpec.x *= window.devicePixelRatio;
 			urlSpec.y *= window.devicePixelRatio;
@@ -2116,7 +2201,31 @@
 			if (!_.isArray(fileNames)) {
 				fileNames = [fileNames];
 			}
-			_.each(fileNames, function(fileName) {
+
+			function Semaphore(max) {
+				var counter = 0;
+				var waiting = [];
+
+				this.acquire = function() {
+					if(counter < max) {
+						counter++;
+						return new Promise(function(resolve) { resolve(); });
+					} else {
+						return new Promise(function(resolve) { waiting.push(resolve); });
+					}
+				};
+
+				this.release = function() {
+					counter--;
+					if (waiting.length > 0 && counter < max) {
+						counter++;
+						var promise = waiting.shift();
+						promise();
+					}
+				};
+			}
+
+			var moveFileFunction = function(fileName) {
 				var $tr = self.findFileEl(fileName);
 				self.showFileBusyState($tr, true);
 				if (targetPath.charAt(targetPath.length - 1) !== '/') {
@@ -2124,7 +2233,7 @@
 					// not overwrite it
 					targetPath = targetPath + '/';
 				}
-				self.filesClient.move(dir + fileName, targetPath + fileName)
+				return self.filesClient.move(dir + fileName, targetPath + fileName)
 					.done(function() {
 						// if still viewing the same directory
 						if (OC.joinPaths(self.getCurrentDirectory(), '/') === dir) {
@@ -2155,11 +2264,24 @@
 					.always(function() {
 						self.showFileBusyState($tr, false);
 					});
+			};
+
+			var mcSemaphore = new Semaphore(10);
+			var counter = 0;
+			var promises = _.map(fileNames, function(arg) {
+				return mcSemaphore.acquire().then(function(){
+					moveFileFunction(arg).then(function(){
+						mcSemaphore.release();
+						counter++;
+					});
+				});
+			});
+
+			return Promise.all(promises).then(function(){
 				if (callback) {
 					callback();
 				}
 			});
-
 		},
 
 		/**
@@ -2191,7 +2313,55 @@
 					// not overwrite it
 					targetPath = targetPath + '/';
 				}
-				self.filesClient.copy(dir + fileName, targetPath + fileName)
+				var targetPathAndName = targetPath + fileName;
+				if ((dir + fileName) === targetPathAndName) {
+					var dotIndex = targetPathAndName.indexOf(".");
+					if ( dotIndex > 1) {
+						var leftPartOfName = targetPathAndName.substr(0, dotIndex);
+						var fileNumber = leftPartOfName.match(/\d+/);
+						// TRANSLATORS name that is appended to copied files with the same name, will be put in parenthesis and appened with a number if it is the second+ copy
+						var copyNameLocalized = t('files', 'copy');
+						if (isNaN(fileNumber) ) {
+							fileNumber++;
+							targetPathAndName = targetPathAndName.replace(/(?=\.[^.]+$)/g, " (" + copyNameLocalized + " " + fileNumber + ")");
+						}
+						else {
+							// Check if we have other files with 'copy X' and the same name
+							var maxNum = 1;
+							if (self.files !== null) {
+								leftPartOfName = leftPartOfName.replace("/", "");
+								leftPartOfName = leftPartOfName.replace(new RegExp("\\(" + copyNameLocalized + "( \\d+)?\\)"),"");
+								// find the last file with the number extension and add one to the new name
+								for (var j = 0; j < self.files.length; j++) {
+									var cName = self.files[j].name;
+									if (cName.indexOf(leftPartOfName) > -1) {
+										if (cName.indexOf("(" + copyNameLocalized + ")") > 0) {
+											targetPathAndName = targetPathAndName.replace(new RegExp(" \\(" + copyNameLocalized + "\\)"),"");
+											if (maxNum == 1) {
+												maxNum = 2;
+											}
+										}
+										else {
+											var cFileNumber = cName.match(new RegExp("\\(" + copyNameLocalized + " (\\d+)\\)"));
+											if (cFileNumber && parseInt(cFileNumber[1]) >= maxNum) {
+												maxNum = parseInt(cFileNumber[1]) + 1;
+											}
+										}
+									}
+								}
+								targetPathAndName = targetPathAndName.replace(new RegExp(" \\(" + copyNameLocalized + " \\d+\\)"),"");
+							}
+							// Create the new file name with _x at the end
+							// Start from 2 per a special request of the 'standard'
+							var extensionName = " (" + copyNameLocalized + " " + maxNum +")";
+							if (maxNum == 1) {
+								extensionName = " (" + copyNameLocalized + ")";
+							}
+							targetPathAndName = targetPathAndName.replace(/(?=\.[^.]+$)/g, extensionName);
+						}
+					}
+				}
+				self.filesClient.copy(dir + fileName, targetPathAndName)
 					.done(function () {
 						filesToNotify.push(fileName);
 
@@ -2205,6 +2375,7 @@
 							oldFile.data('size', newSize);
 							oldFile.find('td.filesize').text(OC.Util.humanFileSize(newSize));
 						}
+						self.reload();
 					})
 					.fail(function(status) {
 						if (status === 412) {
@@ -2304,7 +2475,7 @@
 			input = $('<input type="text" class="filename"/>').val(oldName);
 			form = $('<form></form>');
 			form.append(input);
-			td.children('a.name').hide();
+			td.children('a.name').children(':not(.thumbnail-wrapper)').hide();
 			td.append(form);
 			input.focus();
 			//preselect input
@@ -2332,7 +2503,7 @@
 				input.tooltip('hide');
 				tr.data('renaming',false);
 				form.remove();
-				td.children('a.name').show();
+				td.children('a.name').children(':not(.thumbnail-wrapper)').show();
 			}
 
 			function updateInList(fileInfo) {
@@ -2363,7 +2534,7 @@
 							basename = newName.substr(0, newName.lastIndexOf('.'));
 						}
 						td.find('a.name span.nametext').text(basename);
-						td.children('a.name').show();
+						td.children('a.name').children(':not(.thumbnail-wrapper)').show();
 
 						var path = tr.attr('data-path') || self.getCurrentDirectory();
 						self.filesClient.move(OC.joinPaths(path, oldName), OC.joinPaths(path, newName))
@@ -2755,7 +2926,9 @@
 			var permissions = this.getDirectoryPermissions();
 			var isCreatable = (permissions & OC.PERMISSION_CREATE) !== 0;
 			this.$el.find('#emptycontent').toggleClass('hidden', !this.isEmpty);
+			this.$el.find('#emptycontent').toggleClass('hidden', !this.isEmpty);
 			this.$el.find('#emptycontent .uploadmessage').toggleClass('hidden', !isCreatable || !this.isEmpty);
+			this.$el.find('#filestable').toggleClass('hidden', this.isEmpty);
 			this.$el.find('#filestable thead th').toggleClass('hidden', this.isEmpty);
 		},
 		/**
@@ -3155,9 +3328,9 @@
 			 * update counter when uploading to sub folder
 			 */
 			uploader.on('done', function(e, upload) {
+				var data = upload.data;
 				self._uploader.log('filelist handle fileuploaddone', e, data);
 
-				var data = upload.data;
 				var status = data.jqXHR.status;
 				if (status < 200 || status >= 300) {
 					// error was handled in OC.Uploads already
@@ -3287,10 +3460,7 @@
 			if (!$actionsContainer.length || this.$el.find('.button.upload').length) {
 				return;
 			}
-			if (!this._addButtonTemplate) {
-				this._addButtonTemplate = Handlebars.compile(TEMPLATE_ADDBUTTON);
-			}
-			var $newButton = $(this._addButtonTemplate({
+			var $newButton = $(OCA.Files.Templates['template_addbutton']({
 				addText: t('files', 'New'),
 				iconClass: 'icon-add'
 			}));
@@ -3432,7 +3602,7 @@
 $(document).ready(function() {
 	// FIXME: unused ?
 	OCA.Files.FileList.useUndo = (window.onbeforeunload)?true:false;
-	$(window).bind('beforeunload', function () {
+	$(window).on('beforeunload', function () {
 		if (OCA.Files.FileList.lastAction) {
 			OCA.Files.FileList.lastAction();
 		}

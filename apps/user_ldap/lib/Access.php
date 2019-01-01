@@ -46,7 +46,6 @@ namespace OCA\User_LDAP;
 use OC\HintException;
 use OC\Hooks\PublicEmitter;
 use OCA\User_LDAP\Exceptions\ConstraintViolationException;
-use OCA\User_LDAP\User\IUserTools;
 use OCA\User_LDAP\User\Manager;
 use OCA\User_LDAP\User\OfflineUser;
 use OCA\User_LDAP\Mapping\AbstractMapping;
@@ -59,7 +58,7 @@ use OCP\IUserManager;
  * Class Access
  * @package OCA\User_LDAP
  */
-class Access extends LDAPUtility implements IUserTools {
+class Access extends LDAPUtility {
 	const UUID_ATTRIBUTES = ['entryuuid', 'nsuniqueid', 'objectguid', 'guid', 'ipauniqueid'];
 
 	/** @var \OCA\User_LDAP\Connection */
@@ -610,30 +609,46 @@ class Access extends LDAPUtility implements IUserTools {
 		// outside of core user management will still cache the user as non-existing.
 		$originalTTL = $this->connection->ldapCacheTTL;
 		$this->connection->setConfiguration(['ldapCacheTTL' => 0]);
-		if(($isUser && $intName !== '' && !$this->ncUserManager->userExists($intName))
-			|| (!$isUser && !\OC::$server->getGroupManager()->groupExists($intName))) {
-			if($mapper->map($fdn, $intName, $uuid)) {
-				$this->connection->setConfiguration(['ldapCacheTTL' => $originalTTL]);
-				if($this->ncUserManager instanceof PublicEmitter && $isUser) {
-					$this->ncUserManager->emit('\OC\User', 'assignedUserId', [$intName]);
-				}
-				$newlyMapped = true;
+		if( $intName !== ''
+			&& (($isUser && !$this->ncUserManager->userExists($intName))
+				|| (!$isUser && !\OC::$server->getGroupManager()->groupExists($intName))
+			)
+		) {
+			$this->connection->setConfiguration(['ldapCacheTTL' => $originalTTL]);
+			$newlyMapped = $this->mapAndAnnounceIfApplicable($mapper, $fdn, $intName, $uuid, $isUser);
+			if($newlyMapped) {
 				return $intName;
 			}
 		}
-		$this->connection->setConfiguration(['ldapCacheTTL' => $originalTTL]);
 
+		$this->connection->setConfiguration(['ldapCacheTTL' => $originalTTL]);
 		$altName = $this->createAltInternalOwnCloudName($intName, $isUser);
-		if(is_string($altName) && $mapper->map($fdn, $altName, $uuid)) {
-			if($this->ncUserManager instanceof PublicEmitter && $isUser) {
-				$this->ncUserManager->emit('\OC\User', 'assignedUserId', [$intName]);
+		if (is_string($altName)) {
+			if($this->mapAndAnnounceIfApplicable($mapper, $fdn, $altName, $uuid, $isUser)) {
+				$newlyMapped = true;
+				return $altName;
 			}
-			$newlyMapped = true;
-			return $altName;
 		}
 
 		//if everything else did not help..
 		\OCP\Util::writeLog('user_ldap', 'Could not create unique name for '.$fdn.'.', ILogger::INFO);
+		return false;
+	}
+
+	protected function mapAndAnnounceIfApplicable(
+		AbstractMapping $mapper,
+		string $fdn,
+		string $name,
+		string $uuid,
+		bool $isUser
+	) :bool {
+		if($mapper->map($fdn, $name, $uuid)) {
+			if ($this->ncUserManager instanceof PublicEmitter && $isUser) {
+				$this->cacheUserExists($name);
+				$this->ncUserManager->emit('\OC\User', 'assignedUserId', [$name]);
+			}
+			return true;
+		}
 		return false;
 	}
 
@@ -880,7 +895,7 @@ class Access extends LDAPUtility implements IUserTools {
 			});
 		}
 		$this->batchApplyUserAttributes($recordsToUpdate);
-		return $this->fetchList($ldapRecords, count($attr) > 1);
+		return $this->fetchList($ldapRecords, $this->manyAttributes($attr));
 	}
 
 	/**
@@ -923,7 +938,7 @@ class Access extends LDAPUtility implements IUserTools {
 	 * @return array
 	 */
 	public function fetchListOfGroups($filter, $attr, $limit = null, $offset = null) {
-		return $this->fetchList($this->searchGroups($filter, $attr, $limit, $offset), count($attr) > 1);
+		return $this->fetchList($this->searchGroups($filter, $attr, $limit, $offset), $this->manyAttributes($attr));
 	}
 
 	/**
@@ -1855,15 +1870,15 @@ class Access extends LDAPUtility implements IUserTools {
 
 	/**
 	 * resets a running Paged Search operation
+	 *
+	 * @throws ServerNotAvailableException
 	 */
 	private function abandonPagedSearch() {
-		if($this->connection->hasPagedResultSupport) {
-			$cr = $this->connection->getConnectionResource();
-			$this->invokeLDAPMethod('controlPagedResult', $cr, 0, false, $this->lastCookie);
-			$this->getPagedSearchResultState();
-			$this->lastCookie = '';
-			$this->cookies = array();
-		}
+		$cr = $this->connection->getConnectionResource();
+		$this->invokeLDAPMethod('controlPagedResult', $cr, 0, false, $this->lastCookie);
+		$this->getPagedSearchResultState();
+		$this->lastCookie = '';
+		$this->cookies = [];
 	}
 
 	/**
@@ -1902,10 +1917,6 @@ class Access extends LDAPUtility implements IUserTools {
 	 * @return bool
 	 */
 	public function hasMoreResults() {
-		if(!$this->connection->hasPagedResultSupport) {
-			return false;
-		}
-
 		if(empty($this->lastCookie) && $this->lastCookie !== '0') {
 			// as in RFC 2696, when all results are returned, the cookie will
 			// be empty.
@@ -1954,7 +1965,7 @@ class Access extends LDAPUtility implements IUserTools {
 	 */
 	private function initPagedSearch($filter, $bases, $attr, $limit, $offset) {
 		$pagedSearchOK = false;
-		if($this->connection->hasPagedResultSupport && ($limit !== 0)) {
+		if ($limit !== 0) {
 			$offset = (int)$offset; //can be null
 			\OCP\Util::writeLog('user_ldap',
 				'initializing paged search for  Filter '.$filter.' base '.print_r($bases, true)
@@ -2000,7 +2011,7 @@ class Access extends LDAPUtility implements IUserTools {
 		 * So we added "&& !empty($this->lastCookie)" to this test to ignore pagination
 		 * if we don't have a previous paged search.
 		 */
-		} else if($this->connection->hasPagedResultSupport && $limit === 0 && !empty($this->lastCookie)) {
+		} else if ($limit === 0 && !empty($this->lastCookie)) {
 			// a search without limit was requested. However, if we do use
 			// Paged Search once, we always must do it. This requires us to
 			// initialize it with the configured page size.
@@ -2014,6 +2025,19 @@ class Access extends LDAPUtility implements IUserTools {
 		}
 
 		return $pagedSearchOK;
+	}
+
+	/**
+	 * Is more than one $attr used for search?
+	 *
+	 * @param string|string[]|null $attr
+	 * @return bool
+	 */
+	private function manyAttributes($attr): bool {
+		if (\is_array($attr)) {
+			return \count($attr) > 1;
+		}
+		return false;
 	}
 
 }

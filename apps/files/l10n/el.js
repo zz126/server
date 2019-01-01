@@ -26,7 +26,6 @@ OC.L10N.register(
     "Actions" : "Ενέργειες",
     "Rename" : "Μετονομασία",
     "Copy" : "Αντιγραφή",
-    "Target folder" : "Φάκελος προορισμού",
     "Disconnect storage" : "Αποσυνδεδεμένος αποθηκευτικός χώρος",
     "Unshare" : "Διακοπή διαμοιρασμού",
     "Could not load info for file \"{file}\"" : "Δεν μπορέσαμε να φορτώσουμε πληροφορίες για το αρχείο \"{file}\"",
@@ -122,7 +121,6 @@ OC.L10N.register(
     "Save" : "Αποθήκευση",
     "With PHP-FPM it might take 5 minutes for changes to be applied." : "Με PHP-FPM μπορεί να χρειαστούν μέχρι και 5 λεπτά για να ενεργοποιηθούν οι αλλαγές.",
     "Missing permissions to edit from here." : "Δεν υπάρχουν τα απαραίτητα δικαιώματα για να γίνει τροποποιήση σε αυτό το σημείο.",
-    "%s of %s used" : "%s από %s σε χρήση",
     "%s used" : "%sσε χρήση",
     "Settings" : "Ρυθμίσεις",
     "Show hidden files" : "Εμφάνιση κρυφών αρχείων",
@@ -139,11 +137,13 @@ OC.L10N.register(
     "Files and folders you mark as favorite will show up here" : "Τα αρχεία και οι φάκελοι που σημειώνονται ως αγαπημένα  θα εμφανιστούν εδώ ",
     "Tags" : "Ετικέτες",
     "Deleted files" : "Διεγραμμένα αρχεία",
+    "Shares" : "Κοινόχρηστα",
     "Shared with others" : "Διαμοιρασμένα με άλλους",
     "Shared with you" : "Διαμοιρασμένα με εσάς",
     "Shared by link" : "Διαμοιρασμένα μέσω συνδέσμου",
     "Text file" : "Αρχείο κειμένου",
     "New text file.txt" : "Νέο αρχείο κειμένου.txt",
-    "Move" : "Μετακίνηση"
+    "Target folder" : "Φάκελος προορισμού",
+    "%s of %s used" : "%s από %s σε χρήση"
 },
 "nplurals=2; plural=(n != 1);");

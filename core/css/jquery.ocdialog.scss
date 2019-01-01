@@ -1,8 +1,8 @@
 .oc-dialog {
 	background: var(--color-main-background);
 	color: var(--color-text-light);
-	border-radius: var(--border-radius);
-	box-shadow: 0 0 7px var(--color-box-shadow);
+	border-radius: var(--border-radius-large);
+	box-shadow: 0 0 30px var(--color-box-shadow);
 	padding: 15px;
 	z-index: 10000;
 	font-size: 100%;
@@ -17,7 +17,6 @@
 }
 .oc-dialog-title {
 	background: var(--color-main-background);
-	margin-left: 12px;
 }
 .oc-dialog-buttonrow {
 	position: relative;
@@ -25,21 +24,25 @@
 	background: transparent;
 	right: 0;
 	bottom: 0;
-	padding: 10px;
-	padding-bottom: 0;
+	padding: 0;
+	padding-top: 10px;
 	box-sizing: border-box;
 	width: 100%;
 	background-image: linear-gradient(rgba(255, 255, 255, 0.0), var(--color-main-background));
-	border-bottom-left-radius: 3px;
-	border-bottom-right-radius: 3px;
 
 	&.twobuttons {
-		justify-content: space-between;
-	}
+        justify-content: space-between;
+    }
 
 	&.onebutton,
 	&.twobuttons.aside {
 		justify-content: flex-end;
+	}
+
+	button {
+	    white-space: nowrap;
+	    overflow: hidden;
+	    text-overflow: ellipsis;
 	}
 }
 
@@ -49,15 +52,24 @@
 	right: 0;
 	padding: 25px;
 	background: url('../img/actions/close.svg') no-repeat center;
+	opacity: .5;
+
+	&:hover,
+	&:focus,
+	&:active {
+		opacity: 1;
+	}
 }
 
 .oc-dialog-dim {
 	background-color: #000;
-	opacity: .20;
+	opacity: .2;
 	z-index: 9999;
 	position: fixed;
-	top: 0; left: 0;
-	width: 100%; height: 100%;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
 }
 
 .oc-dialog-content {
@@ -67,7 +79,6 @@
 .oc-dialog.password-confirmation {
 	.oc-dialog-content {
 		width: auto;
-		margin: 12px;
 
 		input[type=password] {
 			width: 100%;

@@ -131,7 +131,7 @@ class LoginController extends Controller {
 		$this->userSession->logout();
 
 		$response = new RedirectResponse($this->urlGenerator->linkToRouteAbsolute('core.login.showLoginForm'));
-		$response->addHeader('Clear-Site-Data', '"cache", "cookies", "storage", "executionContexts"');
+		$response->addHeader('Clear-Site-Data', '"cache", "storage", "executionContexts"');
 		return $response;
 	}
 
@@ -171,6 +171,14 @@ class LoginController extends Controller {
 			$parameters['loginName'] = '';
 			$parameters['user_autofocus'] = true;
 		}
+
+		$autocomplete = $this->config->getSystemValue('login_form_autocomplete', true);
+		if ($autocomplete){
+			$parameters['login_form_autocomplete'] = 'on';
+		} else {
+			$parameters['login_form_autocomplete'] = 'off';
+		}
+
 		if (!empty($redirect_url)) {
 			$parameters['redirect_url'] = $redirect_url;
 		}
@@ -194,7 +202,7 @@ class LoginController extends Controller {
 		Util::addHeader('meta', ['property' => 'og:site_name', 'content' => Util::sanitizeHTML($this->defaults->getName())]);
 		Util::addHeader('meta', ['property' => 'og:url', 'content' => $this->urlGenerator->getAbsoluteURL('/')]);
 		Util::addHeader('meta', ['property' => 'og:type', 'content' => 'website']);
-		Util::addHeader('meta', ['property' => 'og:image', 'content' => $this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath('core','favicon-touch.png'))]);
+		Util::addHeader('meta', ['property' => 'og:image', 'content' => $this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath('core', 'favicon-touch.png'))]);
 
 		return new TemplateResponse(
 			$this->appName, 'login', $parameters, 'guest'
@@ -224,7 +232,9 @@ class LoginController extends Controller {
 		$parameters['resetPasswordLink'] = $this->config
 			->getSystemValue('lost_password_link', '');
 
-		if (!$parameters['resetPasswordLink'] && $userObj !== null) {
+		if ($parameters['resetPasswordLink'] === 'disabled') {
+			$parameters['canResetPassword'] = false;
+		} else if (!$parameters['resetPasswordLink'] && $userObj !== null) {
 			$parameters['canResetPassword'] = $userObj->canChangePassword();
 		} else if ($userObj !== null && $userObj->isEnabled() === false) {
 			$parameters['canResetPassword'] = false;
@@ -320,6 +330,7 @@ class LoginController extends Controller {
 		// requires https://github.com/owncloud/core/pull/24616
 		$this->userSession->completeLogin($loginResult, ['loginName' => $user, 'password' => $password]);
 		$this->userSession->createSessionToken($this->request, $loginResult->getUID(), $user, $password, IToken::REMEMBER);
+		$this->userSession->updateTokens($loginResult->getUID(), $password);
 
 		// User has successfully logged in, now remove the password reset link, when it is available
 		$this->config->deleteUserValue($loginResult->getUID(), 'core', 'lostpassword');

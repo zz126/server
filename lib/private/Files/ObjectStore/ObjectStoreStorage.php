@@ -28,6 +28,8 @@ namespace OC\Files\ObjectStore;
 use Icewind\Streams\CallbackWrapper;
 use Icewind\Streams\IteratorDirectory;
 use OC\Files\Cache\CacheEntry;
+use OC\Files\Stream\CountReadStream;
+use OCP\Files\NotFoundException;
 use OCP\Files\ObjectStore\IObjectStore;
 
 class ObjectStoreStorage extends \OC\Files\Storage\Common {
@@ -274,10 +276,16 @@ class ObjectStoreStorage extends \OC\Files\Storage\Common {
 				if (is_array($stat)) {
 					try {
 						return $this->objectStore->readObject($this->getURN($stat['fileid']));
+					} catch (NotFoundException $e) {
+						$this->logger->logException($e, [
+							'app' => 'objectstore',
+							'message' => 'Could not get object ' . $this->getURN($stat['fileid']) . ' for file ' . $path,
+						]);
+						throw $e;
 					} catch (\Exception $ex) {
 						$this->logger->logException($ex, [
 							'app' => 'objectstore',
-							'message' => 'Count not get object ' . $this->getURN($stat['fileid']) . ' for file ' . $path,
+							'message' => 'Could not get object ' . $this->getURN($stat['fileid']) . ' for file ' . $path,
 						]);
 						return false;
 					}
@@ -382,41 +390,8 @@ class ObjectStoreStorage extends \OC\Files\Storage\Common {
 	}
 
 	public function writeBack($tmpFile, $path) {
-		$stat = $this->stat($path);
-		if (empty($stat)) {
-			// create new file
-			$stat = array(
-				'permissions' => \OCP\Constants::PERMISSION_ALL - \OCP\Constants::PERMISSION_CREATE,
-			);
-		}
-		// update stat with new data
-		$mTime = time();
-		$stat['size'] = filesize($tmpFile);
-		$stat['mtime'] = $mTime;
-		$stat['storage_mtime'] = $mTime;
-
-		// run path based detection first, to use file extension because $tmpFile is only a random string
-		$mimetypeDetector = \OC::$server->getMimeTypeDetector();
-		$mimetype = $mimetypeDetector->detectPath($path);
-		if ($mimetype === 'application/octet-stream') {
-			$mimetype = $mimetypeDetector->detect($tmpFile);
-		}
-
-		$stat['mimetype'] = $mimetype;
-		$stat['etag'] = $this->getETag($path);
-
-		$fileId = $this->getCache()->put($path, $stat);
-		try {
-			//upload to object storage
-			$this->objectStore->writeObject($this->getURN($fileId), fopen($tmpFile, 'r'));
-		} catch (\Exception $ex) {
-			$this->getCache()->remove($path);
-			$this->logger->logException($ex, [
-				'app' => 'objectstore',
-				'message' => 'Could not create object ' . $this->getURN($fileId) . ' for ' . $path,
-			]);
-			throw $ex; // make this bubble up
-		}
+		$size = filesize($tmpFile);
+		$this->writeStream($path, fopen($tmpFile, 'r'), $size);
 	}
 
 	/**
@@ -432,5 +407,61 @@ class ObjectStoreStorage extends \OC\Files\Storage\Common {
 
 	public function needsPartFile() {
 		return false;
+	}
+
+	public function file_put_contents($path, $data) {
+		$stream = fopen('php://temp', 'r+');
+		fwrite($stream, $data);
+		rewind($stream);
+		return $this->writeStream($path, $stream, strlen($data)) > 0;
+	}
+
+	public function writeStream(string $path, $stream, int $size = null): int {
+		$stat = $this->stat($path);
+		if (empty($stat)) {
+			// create new file
+			$stat = [
+				'permissions' => \OCP\Constants::PERMISSION_ALL - \OCP\Constants::PERMISSION_CREATE,
+			];
+		}
+		// update stat with new data
+		$mTime = time();
+		$stat['size'] = (int)$size;
+		$stat['mtime'] = $mTime;
+		$stat['storage_mtime'] = $mTime;
+
+		$mimetypeDetector = \OC::$server->getMimeTypeDetector();
+		$mimetype = $mimetypeDetector->detectPath($path);
+
+		$stat['mimetype'] = $mimetype;
+		$stat['etag'] = $this->getETag($path);
+
+		$fileId = $this->getCache()->put($path, $stat);
+		try {
+			//upload to object storage
+			if ($size === null) {
+				$countStream = CountReadStream::wrap($stream, function ($writtenSize) use ($fileId, &$size) {
+					$this->getCache()->update($fileId, [
+						'size' => $writtenSize
+					]);
+					$size = $writtenSize;
+				});
+				$this->objectStore->writeObject($this->getURN($fileId), $countStream);
+				if (is_resource($countStream)) {
+					fclose($countStream);
+				}
+			} else {
+				$this->objectStore->writeObject($this->getURN($fileId), $stream);
+			}
+		} catch (\Exception $ex) {
+			$this->getCache()->remove($path);
+			$this->logger->logException($ex, [
+				'app' => 'objectstore',
+				'message' => 'Could not create object ' . $this->getURN($fileId) . ' for ' . $path,
+			]);
+			throw $ex; // make this bubble up
+		}
+
+		return $size;
 	}
 }

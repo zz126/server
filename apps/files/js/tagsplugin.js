@@ -17,13 +17,6 @@
 		PROPERTY_FAVORITE: '{' + OC.Files.Client.NS_OWNCLOUD + '}favorite'
 	});
 
-	var TEMPLATE_FAVORITE_MARK =
-		'<div ' +
-		'class="favorite-mark {{#isFavorite}}permanent{{/isFavorite}}">' +
-		'<span class="icon {{iconClass}}" />' +
-		'<span class="hidden-visually">{{altText}}</span>' +
-		'</div>';
-
 	/**
 	 * Returns the icon class for the matching state
 	 *
@@ -41,10 +34,7 @@
 	 * @return {Object} jQuery object
 	 */
 	function renderStar (state) {
-		if (!this._template) {
-			this._template = Handlebars.compile(TEMPLATE_FAVORITE_MARK);
-		}
-		return this._template({
+		return OCA.Files.Templates['favorite_mark']({
 			isFavorite: state,
 			altText: state ? t('files', 'Favorited') : t('files', 'Not favorited'),
 			iconClass: getStarIconClass(state)
@@ -142,11 +132,11 @@
 	OCA.Files = OCA.Files || {};
 
 	/**
-	 * @namespace OCA.Files.TagsPlugin
-	 *
 	 * Extends the file actions and file list to include a favorite mark icon
 	 * and a favorite action in the file actions menu; it also adds "data-tags"
 	 * and "data-favorite" attributes to file elements.
+	 *
+	 * @namespace OCA.Files.TagsPlugin
 	 */
 	OCA.Files.TagsPlugin = {
 		name: 'Tags',

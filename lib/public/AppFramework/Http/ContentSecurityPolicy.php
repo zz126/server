@@ -39,17 +39,12 @@ namespace OCP\AppFramework\Http;
  *
  * @package OCP\AppFramework\Http
  * @since 8.1.0
- * @deprecated 14.0.0 Use one of our stricter CSP policies
  */
 class ContentSecurityPolicy extends EmptyContentSecurityPolicy {
 	/** @var bool Whether inline JS snippets are allowed */
 	protected $inlineScriptAllowed = false;
-	/**
-	 * @var bool Whether eval in JS scripts is allowed
-	 * TODO: Disallow per default
-	 * @link https://github.com/owncloud/core/issues/11925
-	 */
-	protected $evalScriptAllowed = true;
+	/** @var bool Whether eval in JS scripts is allowed */
+	protected $evalScriptAllowed = false;
 	/** @var array Domains from which scripts can get loaded */
 	protected $allowedScriptDomains = [
 		'\'self\'',
@@ -94,4 +89,7 @@ class ContentSecurityPolicy extends EmptyContentSecurityPolicy {
 
 	/** @var array Domains from which web-workers can be loaded */
 	protected $allowedWorkerSrcDomains = [];
+
+	/** @var array Locations to report violations to */
+	protected $reportTo = [];
 }
