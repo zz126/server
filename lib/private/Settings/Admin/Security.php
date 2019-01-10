@@ -25,6 +25,7 @@
 
 namespace OC\Settings\Admin;
 
+use OC\Authentication\TwoFactorAuth\MandatoryTwoFactor;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\Encryption\IManager;
 use OCP\IUserManager;
@@ -33,17 +34,17 @@ use OCP\Settings\ISettings;
 class Security implements ISettings {
 	/** @var IManager */
 	private $manager;
-
 	/** @var IUserManager */
 	private $userManager;
+	/** @var MandatoryTwoFactor */
+	private $mandatoryTwoFactor;
 
-	/**
-	 * @param IManager $manager
-	 * @param IUserManager $userManager
-	 */
-	public function __construct(IManager $manager, IUserManager $userManager) {
+	public function __construct(IManager $manager,
+								IUserManager $userManager,
+								MandatoryTwoFactor $mandatoryTwoFactor) {
 		$this->manager = $manager;
 		$this->userManager = $userManager;
+		$this->mandatoryTwoFactor = $mandatoryTwoFactor;
 	}
 
 	/**
@@ -68,6 +69,8 @@ class Security implements ISettings {
 			'externalBackendsEnabled' => count($this->userManager->getBackends()) > 1,
 			// Modules
 			'encryptionModules'       => $encryptionModuleList,
+			// 2FA settings
+			'mandatory2FAState'       => $this->mandatoryTwoFactor->getState(),
 		];
 
 		return new TemplateResponse('settings', 'settings/admin/security', $parameters, '');
