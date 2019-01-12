@@ -78,7 +78,7 @@ class AuthSettingsController extends Controller {
 								IProvider $tokenProvider,
 								ISession $session,
 								ISecureRandom $random,
-								string $userId,
+								$userId,
 								IManager $activityManager,
 								ILogger $logger) {
 		parent::__construct($appName, $request);
