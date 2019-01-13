@@ -363,7 +363,6 @@
 			});
 
 			$.event.trigger({type: "droppedOnFavorites"});
-			_self=this;
 			this.$fileList.on("droppedOnFavorites", function (event, file) {
 				_self.fileActions.triggerAction('Favorite', _self.getModelForFile(file), _self);
 			});
