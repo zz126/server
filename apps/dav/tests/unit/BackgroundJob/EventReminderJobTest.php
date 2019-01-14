@@ -68,9 +68,27 @@ class EventReminderJobTest extends TestCase {
 			->method('getRemindersToProcess')
 			->with()
 			->will($this->returnValue([
-				'notificationdate' => new \DateTime(),
-				'id' => 1,
-				'type' => 'EMAIL',
+				[
+					'notificationdate' => new \DateTime(),
+					'id' => 1,
+					'type' => 'EMAIL',
+					'calendardata' => <<<'EOD'
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:ownCloud Calendar
+BEGIN:VEVENT
+CREATED;VALUE=DATE-TIME:20130910T125139Z
+UID:47d15e3ec8
+LAST-MODIFIED;VALUE=DATE-TIME:20130910T125139Z
+DTSTAMP;VALUE=DATE-TIME:20130910T125139Z
+SUMMARY:Test Event
+DTSTART;VALUE=DATE-TIME:20130912T130000Z
+DTEND;VALUE=DATE-TIME:20130912T140000Z
+CLASS:PUBLIC
+END:VEVENT
+END:VCALENDAR
+EOD
+				]
 			]));
 
 		$this->backgroundJob->run([]);

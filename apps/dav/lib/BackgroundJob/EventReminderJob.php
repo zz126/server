@@ -19,22 +19,26 @@
  */
 namespace OCA\DAV\BackgroundJob;
 
-use OCA\DAV\AppInfo\Application;
-use OC\BackgroundJob\TimedJob;
-use OCP\IUser;
-use OCP\IUserManager;
-use OCP\Notification\IManager;
-use OCP\Notification\INotification;
-use OCP\Util;
-use Sabre\VObject\Component;
-use Sabre\VObject\Reader;
+use \DateTime;
+use OC\BackgroundJob\Job;
 use OCA\DAV\CalDAV\Reminder\Backend;
 use OCA\DAV\CalDAV\Reminder\EmailNotification;
+use OCA\DAV\CalDAV\Reminder\Notification;
+use OCP\L10N\IFactory as L10NFactory;
+use OCP\IUserManager;
+use OCP\IConfig;
+use Sabre\VObject\Component\VCalendar;
+use Sabre\VObject\Component\VEvent;
+use Sabre\VObject\DateTimeParser;
+use Sabre\VObject\Parameter;
+use Sabre\VObject\Property;
+use Sabre\VObject\Recur\EventIterator;
+use Sabre\VObject\Reader;
 
-class EventReminderJob extends TimedJob {
+class EventReminderJob extends Job {
 
-	/** @var IManager */
-	private $notifications;
+	/** @var Notification */
+	private $notification;
 
 	/** @var EmailNotification */
 	private $emailNotification;
@@ -42,17 +46,33 @@ class EventReminderJob extends TimedJob {
 	/** @var Backend */
 	private $backend;
 
-	/** @var IUserManager */
-	private $usermanager;
+	/** @var L10NFactory */
+	private $l10nFactory;
 
-	public function __construct(Backend $backend, EmailNotification $emailNotification, IManager $notifications, IUserManager $usermanager) {
-		$this->notifications = $notifications;
+	/** @var IL10N */
+	private $l10n;
+
+	/** @var IUserManager */
+	private $userManager;
+
+	/** @var IConfig */
+	private $config;
+
+	public function __construct(Backend $backend,
+								EmailNotification $emailNotification,
+								Notification $notification,
+								L10NFactory $l10nFactory,
+								IUserManager $userManager,
+								IConfig $config) {
+		$this->notification = $notification;
 		$this->backend = $backend;
-		$this->usermanager = $usermanager;
 		$this->emailNotification = $emailNotification;
+		$this->l10nFactory = $l10nFactory;
+		$this->userManager = $userManager;
+		$this->config = $config;
 
 		/** Run every 15 minutes */
-		$this->setInterval(10);
+		// $this->setInterval(10);
 	}
 
 	/**
@@ -63,111 +83,191 @@ class EventReminderJob extends TimedJob {
 
 		error_log('reminder background job run');
 		foreach ($reminders as $reminder) {
+			error_log('running reminder');
 			$calendarData = Reader::read($reminder['calendardata']);
 
-			$reminderDetails = $this->getDetails($reminder);
-
 			if ($reminder['type'] === 'EMAIL') {
-				$this->emailNotification->sendEmail($calendarData, 'toto', 'tata');
+				$notification = $this->emailNotification;
 			} elseif ($reminder['type'] === 'DISPLAY') {
-				$this->sendNotification($this->usermanager->get($reminder['uid']), $reminderDetails);
+				$notification = $this->notification;
+			} else {
+				break;
 			}
+
+			$user = $this->userManager->get($reminder['uid']);
+
+			$lang = $this->config->getUserValue($user->getUID(), 'core', 'lang', $this->l10nFactory->findLanguage());
+
+			$this->l10n = $this->l10nFactory->get('dav', $lang);
+
+			$event = $this->extractEventDetails($calendarData);
+			var_dump($event);
+
+			$notification
+				->setLang($this->l10n)
+				->send($event, $calendarData, $user);
 			$this->backend->removeReminder($reminder['id']);
 		}
 	}
 
-	private function getDetails(array $reminder)
-	{
-		$component = null;
+	/**
+	 * @var VCalendar $vcalendar
+	 * @var string $defaultValue
+	 * @return array
+	 */
+    private function extractEventDetails(VCalendar $vcalendar, $defaultValue = '--')
+    {
+        $vevent = $vcalendar->VEVENT;
 
-		/**
-		 * Get the real event
-		 */
-		foreach($reminder['eventData']->getComponents() as $component) {
-			/** @var Component $component */
-			if ($component->name === 'VEVENT') {
-				break;
+		$start = $vevent->DTSTART;
+		if (isset($vevent->DTEND)) {
+			$end = $vevent->DTEND;
+		} elseif (isset($vevent->DURATION)) {
+			$isFloating = $vevent->DTSTART->isFloating();
+			$end = clone $vevent->DTSTART;
+			$endDateTime = $end->getDateTime();
+			$endDateTime = $endDateTime->add(DateTimeParser::parse($vevent->DURATION->getValue()));
+			$end->setDateTime($endDateTime, $isFloating);
+		} elseif (!$vevent->DTSTART->hasTime()) {
+			$isFloating = $vevent->DTSTART->isFloating();
+			$end = clone $vevent->DTSTART;
+			$endDateTime = $end->getDateTime();
+			$endDateTime = $endDateTime->modify('+1 day');
+			$end->setDateTime($endDateTime, $isFloating);
+		} else {
+			$end = clone $vevent->DTSTART;
+		}
+
+        return [
+            'title' => (string) $vevent->SUMMARY ?: $defaultValue,
+            'description' => (string) $vevent->DESCRIPTION ?: $defaultValue,
+            'start'=> $start->getDateTime(),
+            'end' => $end->getDateTime(),
+            'when' => $this->generateWhenString($start, $end),
+            'url' => (string) $vevent->URL ?: $defaultValue,
+            'location' => (string) $vevent->LOCATION ?: $defaultValue,
+            'uid' => (string) $vevent->UID,
+        ];
+    }
+
+	/**
+	 * @param Property $dtstart
+	 * @param Property $dtend
+	 */
+	private function generateWhenString(Property $dtstart, Property $dtend)
+	{
+		$isAllDay = $dtstart instanceof \Property\ICalendar\Date;
+
+		/** @var Property\ICalendar\Date | Property\ICalendar\DateTime $dtstart */
+		/** @var Property\ICalendar\Date | Property\ICalendar\DateTime $dtend */
+		/** @var DateTimeImmutable $dtstartDt */
+		$dtstartDt = $dtstart->getDateTime();
+		/** @var DateTimeImmutable $dtendDt */
+		$dtendDt = $dtend->getDateTime();
+
+		$diff = $dtstartDt->diff($dtendDt);
+
+		$dtstartDt = new DateTime($dtstartDt->format(DateTime::ATOM));
+		$dtendDt = new DateTime($dtendDt->format(DateTime::ATOM));
+
+		if ($isAllDay) {
+			// One day event
+			if ($diff->days === 1) {
+				return $this->l10n->l('date', $dtstartDt, ['width' => 'medium']);
+			}
+
+			//event that spans over multiple days
+			$localeStart = $this->l10n->l('date', $dtstartDt, ['width' => 'medium']);
+			$localeEnd = $this->l10n->l('date', $dtendDt, ['width' => 'medium']);
+
+			return $localeStart . ' - ' . $localeEnd;
+		}
+
+		/** @var Property\ICalendar\DateTime $dtstart */
+		/** @var Property\ICalendar\DateTime $dtend */
+		$isFloating = $dtstart->isFloating();
+		$startTimezone = $endTimezone = null;
+		if (!$isFloating) {
+			$prop = $dtstart->offsetGet('TZID');
+			if ($prop instanceof Parameter) {
+				$startTimezone = $prop->getValue();
+			}
+
+			$prop = $dtend->offsetGet('TZID');
+			if ($prop instanceof Parameter) {
+				$endTimezone = $prop->getValue();
 			}
 		}
 
-		/**
-		 * Try to get geocoordinates
-		 */
-		$geo = null;
-		if (isset($component->GEO)) {
-			list($geo['lat'], $geo['long']) = explode(';', $component->GEO, 2);
+		$localeStart = $this->l10n->l('weekdayName', $dtstartDt, ['width' => 'abbreviated']) . ', ' .
+			$this->l10n->l('datetime', $dtstartDt, ['width' => 'medium|short']);
+
+		// always show full date with timezone if timezones are different
+		if ($startTimezone !== $endTimezone) {
+			$localeEnd = $this->l10n->l('datetime', $dtendDt, ['width' => 'medium|short']);
+
+			return $localeStart . ' (' . $startTimezone . ') - ' .
+				$localeEnd . ' (' . $endTimezone . ')';
 		}
 
-		/**
-		 * Build the list of attendees
-		 */
+		// show only end time if date is the same
+		if ($this->isDayEqual($dtstartDt, $dtendDt)) {
+			$localeEnd = $this->l10n->l('time', $dtendDt, ['width' => 'short']);
+		} else {
+			$localeEnd = $this->l10n->l('weekdayName', $dtendDt, ['width' => 'abbreviated']) . ', ' .
+				$this->l10n->l('datetime', $dtendDt, ['width' => 'medium|short']);
+		}
 
-
-		return [
-			'title' => (string) $component->SUMMARY,
-			'start' => $component->DTSTART->getDateTime(),
-			'location' => $component->LOCATION,
-			'geo' => $geo,
-			'description' => $component->DESCRIPTION,
-			'calendarName' => $reminder['displayname'],
-			'participants' => $component->ATTENDEE,
-			'notificationdate' => $reminder['notificationdate'],
-			'uri' => $reminder['objecturi'],
-		];
+		return  $localeStart . ' - ' . $localeEnd . ' (' . $startTimezone . ')';
 	}
 
-	// private function sendMail(IUser $user, array $details) {
+	/**
+	 * @param DateTime $dtStart
+	 * @param DateTime $dtEnd
+	 * @return bool
+	 */
+    private function isDayEqual(DateTime $dtStart, DateTime $dtEnd): bool
+    {
+		return $dtStart->format('Y-m-d') === $dtEnd->format('Y-m-d');
+	}
 
-	// 	$message = $this->mailer->createMessage();
-	// 	$template = $this->mailer->createEMailTemplate();
+	// private function getDetails(array $reminder)
+	// {
+	// 	$component = null;
 
-	// 	$template->addHeader();
-	// 	$template->addHeading($this->l10n->t('Notification: %s - ', [$details['title']]) . $this->l10n->l('datetime', $details['start']));
-
-	// 	$template->addBodyText($this->l10n->t('Hello,'));
-
-	// 	$template->addBodyText($details['title']);
-
-	// 	if ($details['location']) {
-	// 		if ($details['geo']) {
-	// 			// if we have exact coordinates, put a link to OSM on the location string
-	// 			$template->addBodyButton($this->l10n->t('Where: %s', [$details['location']]), 'https://www.openstreetmap.org/#map=16/' . $details['geo']['lat'] . '/' . $details['geo']['long']);
-	// 		} else {
-	// 			// if we have a location field, show it
-	// 			$template->addBodyText($this->l10n->t('Where: %s', [$details['location']]));
+	// 	/**
+	// 	 * Get the real event
+	// 	 */
+	// 	foreach($reminder['eventData']->getComponents() as $component) {
+	// 		/** @var Component $component */
+	// 		if ($component->name === 'VEVENT') {
+	// 			break;
 	// 		}
 	// 	}
 
-	// 	$template->addBodyText($this->l10n->t('Calendar: %s', [$details['calendarName']]));
-
-	// 	if ($details['participants']) {
-	// 		$template->addBodyText($this->l10n->t('Attendees: %s', [implode(', ', $details['participants'])]));
+	// 	/**
+	// 	 * Try to get geocoordinates
+	// 	 */
+	// 	$geo = null;
+	// 	if (isset($component->GEO)) {
+	// 		list($geo['lat'], $geo['long']) = explode(';', $component->GEO, 2);
 	// 	}
 
-	// 	$body = $template->renderHtml();
-	// 	$plainBody = $template->renderText();
+	// 	/**
+	// 	 * Build the list of attendees
+	// 	 */
 
-	// 	$from = Util::getDefaultEmailAddress('register');
 
-	// 	$message->setFrom([$from => $this->defaults->getName()]);
-	// 	$message->setTo([$user->getEMailAddress() => 'Recipient']);
-	// 	$message->setPlainBody($plainBody);
-	// 	$message->setHtmlBody($body);
-
-	// 	$this->mailer->send($message);
+	// 	return [
+	// 		'title' => (string) $component->SUMMARY,
+	// 		'start' => $component->DTSTART->getDateTime(),
+	// 		'location' => $component->LOCATION,
+	// 		'geo' => $geo,
+	// 		'description' => $component->DESCRIPTION,
+	// 		'calendarName' => $reminder['displayname'],
+	// 		'participants' => $component->ATTENDEE,
+	// 		'notificationdate' => $reminder['notificationdate'],
+	// 		'uri' => $reminder['objecturi'],
+	// 	];
 	// }
-
-	private function sendNotification(IUser $user, $reminder) {
-		/** @var INotification $notification */
-		$notification = $this->notifications->createNotification();
-		$notification->setApp(Application::APP_ID)
-			->setUser($user->getUID())
-			//->setDateTime(\DateTime::createFromFormat('U', $reminder['notificationdate']))
-			->setDateTime(new \DateTime())
-			->setObject(Application::APP_ID, $reminder['uri']) // $type and $id
-			->setSubject('calendar_reminder', [$reminder['title'], $reminder['start']->getTimeStamp()]) // $subject and $parameters
-			->setMessage('calendar_reminder', ['hurry up !'])
-		;
-		$this->notifications->notify($notification);
-	}
 }
