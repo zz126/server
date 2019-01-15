@@ -107,6 +107,8 @@ function updateGithubStatus(postData) {
 	};
 
 	console.log(process.env.DRONE_COMMIT_SHA);
+	console.log('/repos/nextcloud/server/statuses/' + process.env.DRONE_COMMIT_SHA);
+	console.log(process.env.GITHUB_TOKEN.length);
 	console.log(postData);
 
 	const req = http.request(options, function(res) {
