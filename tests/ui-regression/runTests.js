@@ -90,6 +90,9 @@ function errorJSON (err) {
 }
 
 function updateGithubStatus(postData) {
+	if (!process.env.GITHUB_TOKEN) {
+		console.error('No GITHUB_TOKEN provided')
+	}
 	const http = require('https');
 	var options = {
 		host: 'api.github.com',
