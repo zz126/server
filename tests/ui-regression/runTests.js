@@ -92,17 +92,18 @@ function errorJSON (err) {
 function updateGithubStatus(postData) {
 	if (!process.env.GITHUB_TOKEN) {
 		console.error('No GITHUB_TOKEN provided')
+		return
 	}
 	const http = require('https');
 	var options = {
 		host: 'api.github.com',
 		port: 443,
-		path: '/repos/nextcloud/server/statuses/' + process.env.DRONE_COMMIT_SHA +
-			'?access_token=' + process.env.GITHUB_TOKEN,
+		path: '/repos/nextcloud/server/statuses/' + process.env.DRONE_COMMIT_SHA,
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
-			'User-Agent': 'ui regression reporter'
+			'User-Agent': 'ui regression reporter',
+			'Authorization': 'token ' + process.env.GITHUB_TOKEN
 		}
 	};
 
