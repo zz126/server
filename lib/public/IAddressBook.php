@@ -46,6 +46,12 @@ namespace OCP {
 		public function getKey();
 
 		/**
+		 * @return string defining the unique uri
+		 * @since 16.0.0
+		 */
+		public function getUri();
+
+		/**
 		 * In comparison to getKey() this function returns a human readable (maybe translated) name
 		 * @return mixed
 		 * @since 5.0.0

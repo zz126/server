@@ -76,6 +76,14 @@ class AddressBookImpl implements IAddressBook {
 	}
 
 	/**
+	 * @return string defining the unique uri
+	 * @since 16.0.0
+	 */
+	public function getUri() {
+		return $this->addressBookInfo['uri'];
+	}
+
+	/**
 	 * In comparison to getKey() this function returns a human readable (maybe translated) name
 	 *
 	 * @return mixed

@@ -119,13 +119,32 @@ namespace OC {
 		}
 
 		/**
+		 * Return a list of the user's addressbooks display names
+		 * 
 		 * @return array
+		 * @since 6.0.0
 		 */
 		public function getAddressBooks() {
 			$this->loadAddressBooks();
 			$result = array();
 			foreach($this->addressBooks as $addressBook) {
 				$result[$addressBook->getKey()] = $addressBook->getDisplayName();
+			}
+
+			return $result;
+		}
+
+		/**
+		 * Return a list of the user's addressbooks unique uris
+		 * 
+		 * @return array
+		 * @since 16.0.0
+		 */
+		public function getAddressBooksUris() {
+			$this->loadAddressBooks();
+			$result = array();
+			foreach($this->addressBooks as $addressBook) {
+				$result[$addressBook->getKey()] = $addressBook->getUri();
 			}
 
 			return $result;
