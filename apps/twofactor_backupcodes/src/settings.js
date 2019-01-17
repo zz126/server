@@ -4,7 +4,7 @@ import store from './store';
 
 Vue.prototype.t = t;
 
-const initialStateElem = document.getElementById('twofactor-backupcodes-initial-state');
+const initialStateElem = document.getElementById('initial-state-twofactor_backupcodes');
 store.replaceState(
 	JSON.parse(atob(initialStateElem.value))
 )
