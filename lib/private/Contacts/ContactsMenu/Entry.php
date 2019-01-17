@@ -147,14 +147,6 @@ class Entry implements IEntry {
 	}
 
 	/**
-	 * @param string $key
-	 * @return mixed
-	 */
-	public function getProperties() {
-		return $this->properties;
-	}
-
-	/**
 	 * @return array
 	 */
 	public function jsonSerialize() {
