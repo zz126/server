@@ -52,13 +52,13 @@ class OCPostgreSqlPlatformTest extends \Test\TestCase {
 		$this->assertContains(
 			'ALTER TABLE poor_yorick ALTER id TYPE BIGINT',
 			$sqlStatements,
-			true
+			json_encode($sqlStatements)
 		);
 
 		$this->assertNotContains(
 			'ALTER TABLE poor_yorick ALTER id DROP DEFAULT',
 			$sqlStatements,
-			true
+			json_encode($sqlStatements)
 		);
 	}
 
