@@ -3,6 +3,10 @@
  * @copyright Copyright (c) 2017 Arthur Schiwon <blizzz@arthur-schiwon.de>
  *
  * @author Arthur Schiwon <blizzz@arthur-schiwon.de>
+ * @author Bjoern Schiessle <bjoern@schiessle.org>
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author Joas Schilling <coding@schilljs.com>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -17,12 +21,11 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
 namespace OC\Collaboration\Collaborators;
-
 
 use OCP\Collaboration\Collaborators\ISearchPlugin;
 use OCP\Collaboration\Collaborators\ISearchResult;
@@ -32,7 +35,7 @@ use OCP\Http\Client\IClientService;
 use OCP\IConfig;
 use OCP\ILogger;
 use OCP\IUserSession;
-use OCP\Share;
+use OCP\Share\IShare;
 
 class LookupPlugin implements ISearchPlugin {
 
@@ -62,16 +65,16 @@ class LookupPlugin implements ISearchPlugin {
 
 	public function search($search, $limit, $offset, ISearchResult $searchResult) {
 		$isGlobalScaleEnabled = $this->config->getSystemValue('gs.enabled', false);
-		$isLookupServerEnabled = $this->config->getAppValue('files_sharing', 'lookupServerEnabled', 'no') === 'yes';
-		$hasInternetConnection = (bool)$this->config->getSystemValue('has_internet_connection', true);
+		$isLookupServerEnabled = $this->config->getAppValue('files_sharing', 'lookupServerEnabled', 'yes') === 'yes';
+		$hasInternetConnection = $this->config->getSystemValueBool('has_internet_connection', true);
 
 		// if case of Global Scale we always search the lookup server
-		if ((!$isLookupServerEnabled && !$isGlobalScaleEnabled) || !$hasInternetConnection) {
+		if (!$isGlobalScaleEnabled && (!$isLookupServerEnabled || !$hasInternetConnection)) {
 			return false;
 		}
 
 		$lookupServerUrl = $this->config->getSystemValue('lookup_server', 'https://lookup.nextcloud.com');
-		if(empty($lookupServerUrl)) {
+		if (empty($lookupServerUrl)) {
 			return false;
 		}
 		$lookupServerUrl = rtrim($lookupServerUrl, '/');
@@ -105,7 +108,7 @@ class LookupPlugin implements ISearchPlugin {
 				$result[] = [
 					'label' => $label,
 					'value' => [
-						'shareType' => Share::SHARE_TYPE_REMOTE,
+						'shareType' => IShare::TYPE_REMOTE,
 						'shareWith' => $lookup['federationId'],
 					],
 					'extra' => $lookup,

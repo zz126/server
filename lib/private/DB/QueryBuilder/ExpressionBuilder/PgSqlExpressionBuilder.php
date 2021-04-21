@@ -3,6 +3,7 @@
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
  * @author Joas Schilling <coding@schilljs.com>
+ * @author Robin Appelman <robin@icewind.nl>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
  * @license AGPL-3.0
@@ -17,15 +18,15 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
 namespace OC\DB\QueryBuilder\ExpressionBuilder;
 
-
 use OC\DB\QueryBuilder\QueryFunction;
 use OCP\DB\QueryBuilder\IQueryBuilder;
+use OCP\DB\QueryBuilder\IQueryFunction;
 
 class PgSqlExpressionBuilder extends ExpressionBuilder {
 
@@ -34,24 +35,25 @@ class PgSqlExpressionBuilder extends ExpressionBuilder {
 	 *
 	 * @param string $column
 	 * @param mixed $type One of IQueryBuilder::PARAM_*
-	 * @return string
+	 * @return IQueryFunction
 	 */
-	public function castColumn($column, $type) {
-		if ($type === IQueryBuilder::PARAM_INT) {
-			$column = $this->helper->quoteColumnName($column);
-			return new QueryFunction('CAST(' . $column . ' AS INT)');
+	public function castColumn($column, $type): IQueryFunction {
+		switch ($type) {
+			case IQueryBuilder::PARAM_INT:
+				return new QueryFunction('CAST(' . $this->helper->quoteColumnName($column) . ' AS INT)');
+			case IQueryBuilder::PARAM_STR:
+				return new QueryFunction('CAST(' . $this->helper->quoteColumnName($column) . ' AS TEXT)');
+			default:
+				return parent::castColumn($column, $type);
 		}
-
-		return parent::castColumn($column, $type);
 	}
 
 	/**
 	 * @inheritdoc
 	 */
-	public function iLike($x, $y, $type = null) {
+	public function iLike($x, $y, $type = null): string {
 		$x = $this->helper->quoteColumnName($x);
 		$y = $this->helper->quoteColumnName($y);
 		return $this->expressionBuilder->comparison($x, 'ILIKE', $y);
 	}
-
 }

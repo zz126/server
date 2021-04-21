@@ -1,9 +1,12 @@
 <?php
+
 declare(strict_types=1);
+
 /**
  * @copyright Copyright (c) 2017 Joas Schilling <coding@schilljs.com>
  *
  * @author Joas Schilling <coding@schilljs.com>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -18,7 +21,7 @@ declare(strict_types=1);
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -29,7 +32,7 @@ class AppManagement extends Action {
 	/**
 	 * @param string $appName
 	 */
-	public function enableApp(string $appName) {
+	public function enableApp(string $appName): void {
 		$this->log('App "%s" enabled',
 			['app' => $appName],
 			['app']
@@ -40,7 +43,7 @@ class AppManagement extends Action {
 	 * @param string $appName
 	 * @param string[] $groups
 	 */
-	public function enableAppForGroups(string $appName, array $groups) {
+	public function enableAppForGroups(string $appName, array $groups): void {
 		$this->log('App "%1$s" enabled for groups: %2$s',
 			['app' => $appName, 'groups' => implode(', ', $groups)],
 			['app', 'groups']
@@ -50,7 +53,7 @@ class AppManagement extends Action {
 	/**
 	 * @param string $appName
 	 */
-	public function disableApp(string $appName) {
+	public function disableApp(string $appName): void {
 		$this->log('App "%s" disabled',
 			['app' => $appName],
 			['app']

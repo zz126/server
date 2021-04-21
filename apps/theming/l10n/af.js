@@ -20,10 +20,10 @@ OC.L10N.register(
     "Missing a temporary folder" : "Ontbrekende tydelike gids",
     "A PHP extension stopped the file upload" : "’n PHP-uitbreiding het die oplaai gestaak",
     "No file uploaded" : "Geen lêer opgelaai",
-    "Unsupported image type" : "Onondersteunde beeldtipe",
     "Legal notice" : "Regskennisgewing",
     "Privacy policy" : "Privaatheidsbeleid",
     "Adjust the Nextcloud theme" : "Pas die Nextcloud-tema aan",
+    "Open documentation" : "Open dokumentasie",
     "Name" : "Naam",
     "Reset to default" : "Herstel na verstek",
     "Web link" : "Webskakel",
@@ -36,11 +36,6 @@ OC.L10N.register(
     "Remove background image" : "Verwyder agtergrondbeeld",
     "Advanced options" : "Gevorderde opsies",
     "Legal notice link" : "Regskennisgewingskakel",
-    "Privacy policy link" : "Privaatheidsbeleidskakel",
-    "There is no error, the file uploaded with success" : "Geen fout is teëgekom nie, die lêer is met suksesvol opgelaai",
-    "The uploaded file was only partially uploaded" : "Die opgelaaide lêer is slegs gedeeltelik opgelaai",
-    "A PHP extension stopped the file upload." : "’n PHP-uitbreiding het die oplaai gestaak.",
-    "You are already using a custom theme" : "U gebruik reeds ’n pasgemaakte tema",
-    "Web address https://…" : "Webadres https://…"
+    "Privacy policy link" : "Privaatheidsbeleidskakel"
 },
 "nplurals=2; plural=(n != 1);");

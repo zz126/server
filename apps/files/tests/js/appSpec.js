@@ -1,30 +1,31 @@
 /**
-* ownCloud
-*
-* @author Vincent Petry
 * @copyright 2014 Vincent Petry <pvince81@owncloud.com>
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
-* License as published by the Free Software Foundation; either
-* version 3 of the License, or any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU AFFERO GENERAL PUBLIC LICENSE for more details.
-*
-* You should have received a copy of the GNU Affero General Public
-* License along with this library.  If not, see <http://www.gnu.org/licenses/>.
-*
-*/
+ *
+ * @author John Molakvoæ <skjnldsv@protonmail.com>
+ * @author Vincent Petry <vincent@nextcloud.com>
+ *
+ * @license GNU AGPL version 3 or any later version
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 
 describe('OCA.Files.App tests', function() {
 	var App = OCA.Files.App;
 	var pushStateStub;
 	var replaceStateStub;
 	var parseUrlQueryStub;
-	var oldLegacyFileActions;
 
 	beforeEach(function() {
 		$('#testArea').append(
@@ -43,9 +44,6 @@ describe('OCA.Files.App tests', function() {
 			'</div>'
 		);
 
-		oldLegacyFileActions = window.FileActions;
-		window.FileActions = new OCA.Files.FileActions();
-		OCA.Files.legacyFileActions = window.FileActions;
 		OCA.Files.fileActions = new OCA.Files.FileActions();
 
 		pushStateStub = sinon.stub(OC.Util.History, 'pushState');
@@ -58,8 +56,6 @@ describe('OCA.Files.App tests', function() {
 	afterEach(function() {
 		App.destroy();
 
-		window.FileActions = oldLegacyFileActions;
-
 		pushStateStub.restore();
 		replaceStateStub.restore();
 		parseUrlQueryStub.restore();
@@ -70,66 +66,6 @@ describe('OCA.Files.App tests', function() {
 			expect(App.fileList).toBeDefined();
 			expect(App.fileList.fileActions.actions.all).toBeDefined();
 			expect(App.fileList.$el.is('#app-content-files')).toEqual(true);
-		});
-		it('merges the legacy file actions with the default ones', function() {
-			var legacyActionStub = sinon.stub();
-			var actionStub = sinon.stub();
-			// legacy action
-			window.FileActions.register(
-					'all',
-					'LegacyTest',
-					OC.PERMISSION_READ,
-					OC.imagePath('core', 'actions/test'),
-					legacyActionStub
-			);
-			// legacy action to be overwritten
-			window.FileActions.register(
-					'all',
-					'OverwriteThis',
-					OC.PERMISSION_READ,
-					OC.imagePath('core', 'actions/test'),
-					legacyActionStub
-			);
-
-			// regular file actions
-			OCA.Files.fileActions.register(
-					'all',
-					'RegularTest',
-					OC.PERMISSION_READ,
-					OC.imagePath('core', 'actions/test'),
-					actionStub
-			);
-
-			// overwrite
-			OCA.Files.fileActions.register(
-					'all',
-					'OverwriteThis',
-					OC.PERMISSION_READ,
-					OC.imagePath('core', 'actions/test'),
-					actionStub
-			);
-
-			App.initialize();
-
-			var actions = App.fileList.fileActions.actions;
-			var context = { fileActions: sinon.createStubInstance(OCA.Files.FileActions) };
-			actions.all.OverwriteThis.action('testFileName', context);
-			expect(actionStub.calledOnce).toBe(true);
-			expect(context.fileActions._notifyUpdateListeners.callCount).toBe(2);
-			expect(context.fileActions._notifyUpdateListeners.getCall(0).calledWith('beforeTriggerAction')).toBe(true);
-			expect(context.fileActions._notifyUpdateListeners.getCall(1).calledWith('afterTriggerAction')).toBe(true);
-			actions.all.LegacyTest.action('testFileName', context);
-			expect(legacyActionStub.calledOnce).toBe(true);
-			expect(context.fileActions._notifyUpdateListeners.callCount).toBe(4);
-			expect(context.fileActions._notifyUpdateListeners.getCall(2).calledWith('beforeTriggerAction')).toBe(true);
-			expect(context.fileActions._notifyUpdateListeners.getCall(3).calledWith('afterTriggerAction')).toBe(true);
-			actions.all.RegularTest.action('testFileName', context);
-			expect(actionStub.calledTwice).toBe(true);
-			expect(context.fileActions._notifyUpdateListeners.callCount).toBe(6);
-			expect(context.fileActions._notifyUpdateListeners.getCall(4).calledWith('beforeTriggerAction')).toBe(true);
-			expect(context.fileActions._notifyUpdateListeners.getCall(5).calledWith('afterTriggerAction')).toBe(true);
-			// default one still there
-			expect(actions.dir.Open.action).toBeDefined();
 		});
 	});
 

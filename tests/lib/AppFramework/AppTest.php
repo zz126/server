@@ -21,7 +21,6 @@
  *
  */
 
-
 namespace Test\AppFramework;
 
 use OC\AppFramework\App;
@@ -30,9 +29,8 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Response;
 
-
 function rrmdir($directory) {
-	$files = array_diff(scandir($directory), array('.','..'));
+	$files = array_diff(scandir($directory), ['.','..']);
 	foreach ($files as $file) {
 		if (is_dir($directory . '/' . $file)) {
 			rrmdir($directory . '/' . $file);
@@ -45,7 +43,6 @@ function rrmdir($directory) {
 
 
 class AppTest extends \Test\TestCase {
-
 	private $container;
 	private $io;
 	private $api;
@@ -58,15 +55,15 @@ class AppTest extends \Test\TestCase {
 	private $controllerMethod;
 	private $appPath;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
-		$this->container = new \OC\AppFramework\DependencyInjection\DIContainer('test', array());
+		$this->container = new \OC\AppFramework\DependencyInjection\DIContainer('test', []);
 		$this->controller = $this->createMock(Controller::class);
 		$this->dispatcher = $this->createMock(Dispatcher::class);
 		$this->io = $this->createMock(Http\IOutput::class);
 
-		$this->headers = array('key' => 'value');
+		$this->headers = ['key' => 'value'];
 		$this->output = 'hi';
 		$this->controllerName = 'Controller';
 		$this->controllerMethod = 'method';
@@ -74,7 +71,7 @@ class AppTest extends \Test\TestCase {
 		$this->container[$this->controllerName] = $this->controller;
 		$this->container['Dispatcher'] = $this->dispatcher;
 		$this->container['OCP\\AppFramework\\Http\\IOutput'] = $this->io;
-		$this->container['urlParams'] = array();
+		$this->container['urlParams'] = [];
 
 		$this->appPath = __DIR__ . '/../../../apps/namespacetestapp';
 		$infoXmlPath = $this->appPath . '/appinfo/info.xml';
@@ -82,20 +79,20 @@ class AppTest extends \Test\TestCase {
 
 		$xml = '<?xml version="1.0" encoding="UTF-8"?>' .
 		'<info>' .
-		    '<id>namespacetestapp</id>' .
+			'<id>namespacetestapp</id>' .
 			'<namespace>NameSpaceTestApp</namespace>' .
 		'</info>';
 		file_put_contents($infoXmlPath, $xml);
 	}
 
 
-	public function testControllerNameAndMethodAreBeingPassed(){
-		$return = array(null, array(), array(), null, new Response());
+	public function testControllerNameAndMethodAreBeingPassed() {
+		$return = ['HTTP/2.0 200 OK', [], [], null, new Response()];
 		$this->dispatcher->expects($this->once())
 			->method('dispatch')
 			->with($this->equalTo($this->controller),
 				$this->equalTo($this->controllerMethod))
-			->will($this->returnValue($return));
+			->willReturn($return);
 
 		$this->io->expects($this->never())
 			->method('setOutput');
@@ -123,19 +120,19 @@ class AppTest extends \Test\TestCase {
 	}
 
 
-	protected function tearDown() {
+	protected function tearDown(): void {
 		rrmdir($this->appPath);
 		parent::tearDown();
 	}
 
 
-	public function testOutputIsPrinted(){
-		$return = [Http::STATUS_OK, [], [], $this->output, new Response()];
+	public function testOutputIsPrinted() {
+		$return = ['HTTP/2.0 200 OK', [], [], $this->output, new Response()];
 		$this->dispatcher->expects($this->once())
 			->method('dispatch')
 			->with($this->equalTo($this->controller),
 				$this->equalTo($this->controllerMethod))
-			->will($this->returnValue($return));
+			->willReturn($return);
 		$this->io->expects($this->once())
 			->method('setOutput')
 			->with($this->equalTo($this->output));
@@ -144,22 +141,21 @@ class AppTest extends \Test\TestCase {
 
 	public function dataNoOutput() {
 		return [
-			[Http::STATUS_NO_CONTENT],
-			[Http::STATUS_NOT_MODIFIED],
+			['HTTP/2.0 204 No content'],
+			['HTTP/2.0 304 Not modified'],
 		];
 	}
 
 	/**
 	 * @dataProvider dataNoOutput
-	 * @param int $statusCode
 	 */
-	public function testNoOutput($statusCode) {
+	public function testNoOutput(string $statusCode) {
 		$return = [$statusCode, [], [], $this->output, new Response()];
 		$this->dispatcher->expects($this->once())
 			->method('dispatch')
 			->with($this->equalTo($this->controller),
 				$this->equalTo($this->controllerMethod))
-			->will($this->returnValue($return));
+			->willReturn($return);
 		$this->io->expects($this->once())
 			->method('setHeader')
 			->with($this->equalTo($statusCode));
@@ -169,16 +165,16 @@ class AppTest extends \Test\TestCase {
 	}
 
 
-	public function testCallbackIsCalled(){
+	public function testCallbackIsCalled() {
 		$mock = $this->getMockBuilder('OCP\AppFramework\Http\ICallbackResponse')
 			->getMock();
 
-		$return = [null, [], [], $this->output, $mock];
+		$return = ['HTTP/2.0 200 OK', [], [], $this->output, $mock];
 		$this->dispatcher->expects($this->once())
 			->method('dispatch')
 			->with($this->equalTo($this->controller),
 				$this->equalTo($this->controllerMethod))
-			->will($this->returnValue($return));
+			->willReturn($return);
 		$mock->expects($this->once())
 			->method('callback');
 		App::main($this->controllerName, $this->controllerMethod, $this->container, []);
@@ -188,12 +184,12 @@ class AppTest extends \Test\TestCase {
 		$this->container['AppName'] = 'core';
 		$this->container['OC\Core\Controller\Foo'] = $this->controller;
 
-		$return = array(null, array(), array(), null, new Response());
+		$return = ['HTTP/2.0 200 OK', [], [], null, new Response()];
 		$this->dispatcher->expects($this->once())
 			->method('dispatch')
 			->with($this->equalTo($this->controller),
 				$this->equalTo($this->controllerMethod))
-			->will($this->returnValue($return));
+			->willReturn($return);
 
 		$this->io->expects($this->never())
 			->method('setOutput');
@@ -203,14 +199,14 @@ class AppTest extends \Test\TestCase {
 
 	public function testSettingsApp() {
 		$this->container['AppName'] = 'settings';
-		$this->container['OC\Settings\Controller\Foo'] = $this->controller;
+		$this->container['OCA\Settings\Controller\Foo'] = $this->controller;
 
-		$return = array(null, array(), array(), null, new Response());
+		$return = ['HTTP/2.0 200 OK', [], [], null, new Response()];
 		$this->dispatcher->expects($this->once())
 			->method('dispatch')
 			->with($this->equalTo($this->controller),
 				$this->equalTo($this->controllerMethod))
-			->will($this->returnValue($return));
+			->willReturn($return);
 
 		$this->io->expects($this->never())
 			->method('setOutput');
@@ -222,17 +218,16 @@ class AppTest extends \Test\TestCase {
 		$this->container['AppName'] = 'bar';
 		$this->container['OCA\Bar\Controller\Foo'] = $this->controller;
 
-		$return = array(null, array(), array(), null, new Response());
+		$return = ['HTTP/2.0 200 OK', [], [], null, new Response()];
 		$this->dispatcher->expects($this->once())
 			->method('dispatch')
 			->with($this->equalTo($this->controller),
 				$this->equalTo($this->controllerMethod))
-			->will($this->returnValue($return));
+			->willReturn($return);
 
 		$this->io->expects($this->never())
 			->method('setOutput');
 
 		App::main('Foo', $this->controllerMethod, $this->container);
 	}
-
 }

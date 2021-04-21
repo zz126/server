@@ -1,8 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 /**
  * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -17,7 +20,7 @@ declare(strict_types=1);
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -29,6 +32,7 @@ use OCA\TwoFactorBackupCodes\Settings\Personal;
 use OCP\Authentication\TwoFactorAuth\IPersonalProviderSettings;
 use OCP\Authentication\TwoFactorAuth\IProvider;
 use OCP\Authentication\TwoFactorAuth\IProvidesPersonalSettings;
+use OCP\IInitialStateService;
 use OCP\IL10N;
 use OCP\IUser;
 use OCP\Template;
@@ -46,6 +50,8 @@ class BackupCodesProvider implements IProvider, IProvidesPersonalSettings {
 
 	/** @var AppManager */
 	private $appManager;
+	/** @var IInitialStateService */
+	private $initialStateService;
 
 	/**
 	 * @param string $appName
@@ -53,11 +59,16 @@ class BackupCodesProvider implements IProvider, IProvidesPersonalSettings {
 	 * @param IL10N $l10n
 	 * @param AppManager $appManager
 	 */
-	public function __construct(string $appName, BackupCodeStorage $storage, IL10N $l10n, AppManager $appManager) {
+	public function __construct(string $appName,
+								BackupCodeStorage $storage,
+								IL10N $l10n,
+								AppManager $appManager,
+								IInitialStateService $initialStateService) {
 		$this->appName = $appName;
 		$this->l10n = $l10n;
 		$this->storage = $storage;
 		$this->appManager = $appManager;
+		$this->initialStateService = $initialStateService;
 	}
 
 	/**
@@ -130,7 +141,7 @@ class BackupCodesProvider implements IProvider, IProvidesPersonalSettings {
 	 * @return boolean
 	 */
 	public function isActive(IUser $user): bool {
-		$appIds = array_filter($this->appManager->getEnabledAppsForUser($user), function($appId) {
+		$appIds = array_filter($this->appManager->getEnabledAppsForUser($user), function ($appId) {
 			return $appId !== $this->appName;
 		});
 		foreach ($appIds as $appId) {
@@ -149,8 +160,7 @@ class BackupCodesProvider implements IProvider, IProvidesPersonalSettings {
 	 */
 	public function getPersonalSettings(IUser $user): IPersonalProviderSettings {
 		$state = $this->storage->getBackupCodesState($user);
-		return new Personal(base64_encode(json_encode($state)));
+		$this->initialStateService->provideInitialState($this->appName, 'state', $state);
+		return new Personal();
 	}
-
 }
-

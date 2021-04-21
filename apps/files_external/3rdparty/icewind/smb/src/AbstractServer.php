@@ -21,65 +21,56 @@
 
 namespace Icewind\SMB;
 
-
 abstract class AbstractServer implements IServer {
 	const LOCALE = 'en_US.UTF-8';
 
-	/**
-	 * @var string $host
-	 */
+	/** @var string */
 	protected $host;
 
-	/**
-	 * @var IAuth $user
-	 */
+	/** @var IAuth */
 	protected $auth;
 
-	/**
-	 * @var \Icewind\SMB\System
-	 */
+	/** @var ISystem */
 	protected $system;
 
-	/**
-	 * @var TimeZoneProvider
-	 */
+	/** @var ITimeZoneProvider */
 	protected $timezoneProvider;
+
+	/** @var IOptions */
+	protected $options;
 
 	/**
 	 * @param string $host
 	 * @param IAuth $auth
-	 * @param System $system
-	 * @param TimeZoneProvider $timeZoneProvider
+	 * @param ISystem $system
+	 * @param ITimeZoneProvider $timeZoneProvider
+	 * @param IOptions $options
 	 */
-	public function __construct($host, IAuth $auth, System $system, TimeZoneProvider $timeZoneProvider) {
+	public function __construct(string $host, IAuth $auth, ISystem $system, ITimeZoneProvider $timeZoneProvider, IOptions $options) {
 		$this->host = $host;
 		$this->auth = $auth;
 		$this->system = $system;
 		$this->timezoneProvider = $timeZoneProvider;
+		$this->options = $options;
 	}
 
-	/**
-	 * @return IAuth
-	 */
-	public function getAuth() {
+	public function getAuth(): IAuth {
 		return $this->auth;
 	}
 
-	/**
-	 * return string
-	 */
-	public function getHost() {
+	public function getHost(): string {
 		return $this->host;
 	}
 
-	/**
-	 * @return string
-	 */
-	public function getTimeZone() {
-		return $this->timezoneProvider->get();
+	public function getTimeZone(): string {
+		return $this->timezoneProvider->get($this->host);
 	}
 
-	public function getSystem() {
+	public function getSystem(): ISystem {
 		return $this->system;
+	}
+
+	public function getOptions(): IOptions {
+		return $this->options;
 	}
 }

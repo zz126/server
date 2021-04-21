@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 /**
  * @copyright Copyright (c) 2016 Lukas Reschke <lukas@statuscode.ch>
  *
@@ -19,7 +21,7 @@ declare(strict_types=1);
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -31,7 +33,7 @@ namespace OCA\AdminAudit\Actions;
  * @package OCA\AdminAudit\Actions
  */
 class Auth extends Action {
-	public function loginAttempt(array $params) {
+	public function loginAttempt(array $params): void {
 		$this->log(
 			'Login attempt: "%s"',
 			$params,
@@ -42,7 +44,7 @@ class Auth extends Action {
 		);
 	}
 
-	public function loginSuccessful(array $params) {
+	public function loginSuccessful(array $params): void {
 		$this->log(
 			'Login successful: "%s"',
 			$params,
@@ -53,7 +55,7 @@ class Auth extends Action {
 		);
 	}
 
-	public function logout(array $params) {
+	public function logout(array $params): void {
 		$this->log(
 			'Logout occurred',
 			[],

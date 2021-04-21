@@ -1,8 +1,12 @@
 <?php
+
 declare(strict_types=1);
+
 /**
  * @copyright 2018, Roeland Jago Douma <roeland@famdouma.nl>
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author Morris Jobke <hey@morrisjobke.de>
  * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
@@ -18,7 +22,7 @@ declare(strict_types=1);
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -41,25 +45,25 @@ use Test\TestCase;
 
 class DirectControllerTest extends TestCase {
 
-	/** @var IRootFolder|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IRootFolder|\PHPUnit\Framework\MockObject\MockObject */
 	private $rootFolder;
 
-	/** @var DirectMapper|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var DirectMapper|\PHPUnit\Framework\MockObject\MockObject */
 	private $directMapper;
 
-	/** @var ISecureRandom|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ISecureRandom|\PHPUnit\Framework\MockObject\MockObject */
 	private $random;
 
-	/** @var ITimeFactory|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ITimeFactory|\PHPUnit\Framework\MockObject\MockObject */
 	private $timeFactory;
 
-	/** @var IURLGenerator|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IURLGenerator|\PHPUnit\Framework\MockObject\MockObject */
 	private $urlGenerator;
 
 	/** @var DirectController */
 	private $controller;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->rootFolder = $this->createMock(IRootFolder::class);
@@ -137,11 +141,13 @@ class DirectControllerTest extends TestCase {
 				$this->assertSame('awesomeUser', $direct->getUserId());
 				$this->assertSame(101, $direct->getFileId());
 				$this->assertSame('superduperlongtoken', $direct->getToken());
-				$this->assertSame(42 + 60*60*8, $direct->getExpiration());
+				$this->assertSame(42 + 60 * 60 * 8, $direct->getExpiration());
+
+				return $direct;
 			});
 
 		$this->urlGenerator->method('getAbsoluteURL')
-			->willReturnCallback(function(string $url) {
+			->willReturnCallback(function (string $url) {
 				return 'https://my.nextcloud/'.$url;
 			});
 

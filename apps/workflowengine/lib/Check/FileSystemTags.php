@@ -21,17 +21,19 @@
 
 namespace OCA\WorkflowEngine\Check;
 
-
+use OCA\Files_Sharing\SharedStorage;
+use OCA\WorkflowEngine\Entity\File;
 use OCP\Files\Cache\ICache;
 use OCP\Files\IHomeStorage;
-use OCP\Files\Storage\IStorage;
 use OCP\IL10N;
 use OCP\SystemTag\ISystemTagManager;
 use OCP\SystemTag\ISystemTagObjectMapper;
 use OCP\SystemTag\TagNotFoundException;
 use OCP\WorkflowEngine\ICheck;
+use OCP\WorkflowEngine\IFileCheck;
 
-class FileSystemTags implements ICheck {
+class FileSystemTags implements ICheck, IFileCheck {
+	use TFileCheck;
 
 	/** @var array */
 	protected $fileIds;
@@ -48,12 +50,6 @@ class FileSystemTags implements ICheck {
 	/** @var ISystemTagObjectMapper */
 	protected $systemTagObjectMapper;
 
-	/** @var IStorage */
-	protected $storage;
-
-	/** @var string */
-	protected $path;
-
 	/**
 	 * @param IL10N $l
 	 * @param ISystemTagManager $systemTagManager
@@ -63,15 +59,6 @@ class FileSystemTags implements ICheck {
 		$this->l = $l;
 		$this->systemTagManager = $systemTagManager;
 		$this->systemTagObjectMapper = $systemTagObjectMapper;
-	}
-
-	/**
-	 * @param IStorage $storage
-	 * @param string $path
-	 */
-	public function setFileInfo(IStorage $storage, $path) {
-		$this->storage = $storage;
-		$this->path = $path;
 	}
 
 	/**
@@ -109,7 +96,7 @@ class FileSystemTags implements ICheck {
 	 */
 	protected function getSystemTags() {
 		$cache = $this->storage->getCache();
-		$fileIds = $this->getFileIds($cache, $this->path, !$this->storage->instanceOfStorage(IHomeStorage::class));
+		$fileIds = $this->getFileIds($cache, $this->path, !$this->storage->instanceOfStorage(IHomeStorage::class) || $this->storage->instanceOfStorage(SharedStorage::class));
 
 		$systemTags = [];
 		foreach ($fileIds as $i => $fileId) {
@@ -148,7 +135,7 @@ class FileSystemTags implements ICheck {
 		$parentIds = [];
 		if ($path !== $this->dirname($path)) {
 			$parentIds = $this->getFileIds($cache, $this->dirname($path), $isExternalStorage);
-		} else if (!$isExternalStorage) {
+		} elseif (!$isExternalStorage) {
 			return [];
 		}
 
@@ -165,5 +152,13 @@ class FileSystemTags implements ICheck {
 	protected function dirname($path) {
 		$dir = dirname($path);
 		return $dir === '.' ? '' : $dir;
+	}
+
+	public function supportedEntities(): array {
+		return [ File::class ];
+	}
+
+	public function isAvailableForScope(int $scope): bool {
+		return true;
 	}
 }

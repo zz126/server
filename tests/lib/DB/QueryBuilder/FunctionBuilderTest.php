@@ -35,7 +35,7 @@ class FunctionBuilderTest extends TestCase {
 	/** @var \Doctrine\DBAL\Connection|\OCP\IDBConnection */
 	protected $connection;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->connection = \OC::$server->getDatabaseConnection();
@@ -48,7 +48,10 @@ class FunctionBuilderTest extends TestCase {
 		$query->from('appconfig')
 			->setMaxResults(1);
 
-		$this->assertEquals('foobar', $query->execute()->fetchColumn());
+		$result = $query->execute();
+		$column = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals('foobar', $column);
 	}
 
 	public function testMd5() {
@@ -58,7 +61,10 @@ class FunctionBuilderTest extends TestCase {
 		$query->from('appconfig')
 			->setMaxResults(1);
 
-		$this->assertEquals(md5('foobar'), $query->execute()->fetchColumn());
+		$result = $query->execute();
+		$column = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals(md5('foobar'), $column);
 	}
 
 	public function testSubstring() {
@@ -68,7 +74,10 @@ class FunctionBuilderTest extends TestCase {
 		$query->from('appconfig')
 			->setMaxResults(1);
 
-		$this->assertEquals('oo', $query->execute()->fetchColumn());
+		$result = $query->execute();
+		$column = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals('oo', $column);
 	}
 
 	public function testSubstringNoLength() {
@@ -78,7 +87,10 @@ class FunctionBuilderTest extends TestCase {
 		$query->from('appconfig')
 			->setMaxResults(1);
 
-		$this->assertEquals('oobar', $query->execute()->fetchColumn());
+		$result = $query->execute();
+		$column = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals('oobar', $column);
 	}
 
 	public function testLower() {
@@ -88,7 +100,10 @@ class FunctionBuilderTest extends TestCase {
 		$query->from('appconfig')
 			->setMaxResults(1);
 
-		$this->assertEquals('foobar', $query->execute()->fetchColumn());
+		$result = $query->execute();
+		$column = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals('foobar', $column);
 	}
 
 	public function testAdd() {
@@ -98,7 +113,10 @@ class FunctionBuilderTest extends TestCase {
 		$query->from('appconfig')
 			->setMaxResults(1);
 
-		$this->assertEquals(3, $query->execute()->fetchColumn());
+		$result = $query->execute();
+		$column = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals(3, $column);
 	}
 
 	public function testSubtract() {
@@ -108,7 +126,10 @@ class FunctionBuilderTest extends TestCase {
 		$query->from('appconfig')
 			->setMaxResults(1);
 
-		$this->assertEquals(1, $query->execute()->fetchColumn());
+		$result = $query->execute();
+		$column = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals(1, $column);
 	}
 
 	public function testCount() {
@@ -118,6 +139,125 @@ class FunctionBuilderTest extends TestCase {
 		$query->from('appconfig')
 			->setMaxResults(1);
 
-		$this->assertGreaterThan(1, $query->execute()->fetchColumn());
+		$result = $query->execute();
+		$column = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertGreaterThan(1, $column);
+	}
+
+	private function setUpMinMax($value) {
+		$query = $this->connection->getQueryBuilder();
+
+		$query->insert('appconfig')
+			->values([
+				'appid' => $query->createNamedParameter('minmax'),
+				'configkey' => $query->createNamedParameter(uniqid()),
+				'configvalue' => $query->createNamedParameter((string)$value),
+			]);
+		$query->execute();
+	}
+
+	private function clearMinMax() {
+		$query = $this->connection->getQueryBuilder();
+
+		$query->delete('appconfig')
+			->where($query->expr()->eq('appid', $query->createNamedParameter('minmax')));
+		$query->execute();
+	}
+
+	public function testMaxEmpty() {
+		$this->clearMinMax();
+
+		$query = $this->connection->getQueryBuilder();
+
+		$query->select($query->func()->max($query->expr()->castColumn('configvalue', IQueryBuilder::PARAM_INT)));
+		$query->from('appconfig')
+			->where($query->expr()->eq('appid', $query->createNamedParameter('minmax')))
+			->setMaxResults(1);
+
+		$result = $query->execute();
+		$row = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals(null, $row);
+	}
+
+	public function testMinEmpty() {
+		$this->clearMinMax();
+
+		$query = $this->connection->getQueryBuilder();
+
+		$query->select($query->func()->min($query->expr()->castColumn('configvalue', IQueryBuilder::PARAM_INT)));
+		$query->from('appconfig')
+			->where($query->expr()->eq('appid', $query->createNamedParameter('minmax')))
+			->setMaxResults(1);
+
+		$result = $query->execute();
+		$row = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals(null, $row);
+	}
+
+	public function testMax() {
+		$this->clearMinMax();
+		$this->setUpMinMax(10);
+		$this->setUpMinMax(11);
+		$this->setUpMinMax(20);
+
+		$query = $this->connection->getQueryBuilder();
+
+		$query->select($query->func()->max($query->expr()->castColumn('configvalue', IQueryBuilder::PARAM_INT)));
+		$query->from('appconfig')
+			->where($query->expr()->eq('appid', $query->createNamedParameter('minmax')))
+			->setMaxResults(1);
+
+		$result = $query->execute();
+		$row = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals(20, $row);
+	}
+
+	public function testMin() {
+		$this->clearMinMax();
+		$this->setUpMinMax(10);
+		$this->setUpMinMax(11);
+		$this->setUpMinMax(20);
+
+		$query = $this->connection->getQueryBuilder();
+
+		$query->select($query->func()->min($query->expr()->castColumn('configvalue', IQueryBuilder::PARAM_INT)));
+		$query->from('appconfig')
+			->where($query->expr()->eq('appid', $query->createNamedParameter('minmax')))
+			->setMaxResults(1);
+
+		$result = $query->execute();
+		$row = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals(10, $row);
+	}
+
+	public function testGreatest() {
+		$query = $this->connection->getQueryBuilder();
+
+		$query->select($query->func()->greatest($query->createNamedParameter(2, IQueryBuilder::PARAM_INT), new Literal(1)));
+		$query->from('appconfig')
+			->setMaxResults(1);
+
+		$result = $query->execute();
+		$row = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals(2, $row);
+	}
+
+	public function testLeast() {
+		$query = $this->connection->getQueryBuilder();
+
+		$query->select($query->func()->least($query->createNamedParameter(2, IQueryBuilder::PARAM_INT), new Literal(1)));
+		$query->from('appconfig')
+			->setMaxResults(1);
+
+		$result = $query->execute();
+		$row = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals(1, $row);
 	}
 }

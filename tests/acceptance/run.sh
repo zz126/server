@@ -108,12 +108,12 @@ function prepareSelenium() {
 	SELENIUM_CONTAINER=selenium-nextcloud-local-test-acceptance
 
 	echo "Starting Selenium server"
-	docker run --detach --name=$SELENIUM_CONTAINER --publish 4444:4444 --publish 5900:5900 $DOCKER_OPTIONS selenium/standalone-firefox-debug:2.53.1-beryllium
+	docker run --detach --name=$SELENIUM_CONTAINER --publish 4444:4444 --publish 5900:5900 $DOCKER_OPTIONS selenium/standalone-chrome-debug:3.141.59
 
 	echo "Waiting for Selenium server to be ready"
 	if ! $TIMEOUT 10s bash -c "while ! curl 127.0.0.1:4444 >/dev/null 2>&1; do sleep 1; done"; then
 		echo "Could not start Selenium server; running" \
-		     "\"docker run --rm --publish 4444:4444 --publish 5900:5900 $DOCKER_OPTIONS selenium/standalone-firefox-debug:2.53.1-beryllium\"" \
+		     "\"docker run --rm --publish 4444:4444 --publish 5900:5900 $DOCKER_OPTIONS selenium/standalone-chrome-debug:3.141.59\"" \
 		     "could give you a hint of the problem"
 
 		exit 1
@@ -138,7 +138,7 @@ function prepareDocker() {
 	# Selenium server.
 	# The container exits immediately if no command is given, so a Bash session
 	# is created to prevent that.
-	docker run --detach --name=$NEXTCLOUD_LOCAL_CONTAINER --network=container:$SELENIUM_CONTAINER --interactive --tty nextcloudci/acceptance-php7.1:acceptance-php7.1-2 bash
+	docker run --detach --name=$NEXTCLOUD_LOCAL_CONTAINER --network=container:$SELENIUM_CONTAINER --interactive --tty nextcloudci/acceptance-php7.3:acceptance-php7.3-2 bash
 
 	# Use the $TMPDIR or, if not set, fall back to /tmp.
 	NEXTCLOUD_LOCAL_TAR="$($MKTEMP --tmpdir="${TMPDIR:-/tmp}" --suffix=.tar nextcloud-local-XXXXXXXXXX)"
@@ -147,7 +147,18 @@ function prepareDocker() {
 	# "docker cp" does not take them into account (the extracted files are set
 	# to root).
 	echo "Copying local Git working directory of Nextcloud to the container"
-	tar --create --file="$NEXTCLOUD_LOCAL_TAR" --exclude=".git" --exclude="./build" --exclude="./config/config.php" --exclude="./data" --exclude="./data-autotest" --exclude="./tests" --exclude="./apps-extra" --exclude="apps-writable" --directory=../../ .
+	tar --create --file="$NEXTCLOUD_LOCAL_TAR" \
+		--exclude=".git" \
+		--exclude="./build" \
+		--exclude="./config/config.php" \
+		--exclude="./data" \
+		--exclude="./data-autotest" \
+		--exclude="./tests" \
+		--exclude="./apps-extra" \
+		--exclude="./apps-writable" \
+		--exclude="node_modules" \
+		--directory=../../ \
+		.
 	tar --append --file="$NEXTCLOUD_LOCAL_TAR" --directory=../../ tests/acceptance/
 
 	docker exec $NEXTCLOUD_LOCAL_CONTAINER mkdir /nextcloud

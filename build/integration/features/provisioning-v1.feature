@@ -71,12 +71,12 @@ Feature: provisioning
 		And the HTTP status code should be "200"
 		And sending "PUT" to "/cloud/users/brand-new-user" with
 			| key | email |
-			| value | brand-new-user@gmail.com |
+			| value | no-reply@nextcloud.com |
 		And the OCS status code should be "100"
 		And the HTTP status code should be "200"
 		And sending "PUT" to "/cloud/users/brand-new-user" with
 			| key | phone |
-			| value | 0123 456 789 |
+			| value | +49 711 / 25 24 28-90 |
 		And the OCS status code should be "100"
 		And the HTTP status code should be "200"
 		And sending "PUT" to "/cloud/users/brand-new-user" with
@@ -97,11 +97,104 @@ Feature: provisioning
 		Then user "brand-new-user" has
 			| id | brand-new-user |
 			| displayname | Brand New User |
-			| email | brand-new-user@gmail.com |
-			| phone | 0123 456 789 |
+			| email | no-reply@nextcloud.com |
+			| phone | +4971125242890 |
 			| address | Foo Bar Town |
 			| website | https://nextcloud.com |
 			| twitter | Nextcloud |
+
+	Scenario: Edit a user account properties scopes
+		Given user "brand-new-user" exists
+    And As an "brand-new-user"
+		When sending "PUT" to "/cloud/users/brand-new-user" with
+			| key | phoneScope |
+			| value | v2-private |
+		Then the OCS status code should be "100"
+		And the HTTP status code should be "200"
+		When sending "PUT" to "/cloud/users/brand-new-user" with
+			| key | twitterScope |
+			| value | v2-local |
+		Then the OCS status code should be "100"
+		And the HTTP status code should be "200"
+		When sending "PUT" to "/cloud/users/brand-new-user" with
+			| key | addressScope |
+			| value | v2-federated |
+		Then the OCS status code should be "100"
+		And the HTTP status code should be "200"
+		When sending "PUT" to "/cloud/users/brand-new-user" with
+			| key | emailScope |
+			| value | v2-published |
+		Then the OCS status code should be "100"
+		And the HTTP status code should be "200"
+		When sending "PUT" to "/cloud/users/brand-new-user" with
+			| key | websiteScope |
+			| value | public |
+		Then the OCS status code should be "100"
+		And the HTTP status code should be "200"
+		When sending "PUT" to "/cloud/users/brand-new-user" with
+			| key | displaynameScope |
+			| value | contacts |
+		Then the OCS status code should be "100"
+		And the HTTP status code should be "200"
+		When sending "PUT" to "/cloud/users/brand-new-user" with
+			| key | avatarScope |
+			| value | private |
+		Then the OCS status code should be "100"
+		And the HTTP status code should be "200"
+		Then user "brand-new-user" has
+			| id | brand-new-user |
+			| phoneScope | v2-private |
+			| twitterScope | v2-local |
+			| addressScope | v2-federated |
+			| emailScope | v2-published |
+			| websiteScope | v2-published |
+			| displaynameScope | v2-federated |
+			| avatarScope | v2-local |
+
+	Scenario: Edit a user account properties scopes with invalid or unsupported value
+		Given user "brand-new-user" exists
+    And As an "brand-new-user"
+		When sending "PUT" to "/cloud/users/brand-new-user" with
+			| key | phoneScope |
+			| value | invalid |
+		Then the OCS status code should be "102"
+		And the HTTP status code should be "200"
+		When sending "PUT" to "/cloud/users/brand-new-user" with
+			| key | displaynameScope |
+			| value | v2-private |
+		Then the OCS status code should be "102"
+		And the HTTP status code should be "200"
+		When sending "PUT" to "/cloud/users/brand-new-user" with
+			| key | emailScope |
+			| value | v2-private |
+		Then the OCS status code should be "102"
+		And the HTTP status code should be "200"
+
+	Scenario: An admin cannot edit user account property scopes
+    Given As an "admin"
+		And user "brand-new-user" exists
+		When sending "PUT" to "/cloud/users/brand-new-user" with
+			| key | phoneScope |
+			| value | v2-private |
+		Then the OCS status code should be "997"
+		And the HTTP status code should be "401"
+
+	Scenario: Search by phone number
+		Given As an "admin"
+		And user "phone-user" exists
+		And sending "PUT" to "/cloud/users/phone-user" with
+			| key | phone |
+			| value | +49 711 / 25 24 28-90 |
+		And the OCS status code should be "100"
+		And the HTTP status code should be "200"
+		Then search users by phone for region "DE" with
+			| random-string1 | 0711 / 123 456 78 |
+			| random-string1 | 0711 / 252 428-90 |
+			| random-string2 | 0711 / 90-824 252 |
+		And the OCS status code should be "100"
+		And the HTTP status code should be "200"
+		Then phone matches returned are
+			| random-string1 | phone-user@localhost:8080 |
 
 	Scenario: Create a group
 		Given As an "admin"
@@ -328,6 +421,8 @@ Feature: provisioning
 			| accessibility |
 			| cloud_federation_api |
 			| comments |
+			| contactsinteraction |
+			| dashboard |
 			| dav |
 			| federatedfilesharing |
 			| federation |
@@ -337,13 +432,17 @@ Feature: provisioning
 			| files_versions |
 			| lookup_server_connector |
 			| provisioning_api |
+			| settings |
 			| sharebymail |
 			| systemtags |
 			| theming |
 			| twofactor_backupcodes |
 			| updatenotification |
 			| user_ldap |
+			| user_status |
+			| viewer |
 			| workflowengine |
+			| weather_status |
 			| files_external |
 			| oauth2 |
 
@@ -589,4 +688,3 @@ Feature: provisioning
 		And As an "user0"
 		When sending "GET" with exact url to "/index.php/apps/files"
 		And the HTTP status code should be "403"
-

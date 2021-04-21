@@ -1,15 +1,9 @@
 OC.L10N.register(
     "systemtags",
     {
-    "Tags" : "Nhãn",
     "Update" : "Cập nhật",
     "Create" : "Tạo",
-    "Select tag…" : "Chọn nhãn...",
-    "Tagged files" : "Các tệp được dán nhãn",
-    "Select tags to filter by" : "Chọn nhãn để lọc theo",
-    "No tags found" : "Không tìm thấy nhãn",
-    "Please select tags to filter by" : "Vui lòng chọn các nhãn để lọc theo",
-    "No files found for the selected tags" : "Không tìm thấy tệp cho các nhãn đã chọn",
+    "Select tag …" : "Lựa chọn thẻ",
     "Added system tag {systemtag}" : "Nhãn hệ thống được thêm vào {systemtag}",
     "Added system tag %1$s" : "Đã thêm nhãn hệ thống %1$s",
     "%1$s added system tag %2$s" : "%1$s đã thêm nhãn hệ thống %2$s",
@@ -41,8 +35,14 @@ OC.L10N.register(
     "%s (restricted)" : "%s (bị hạn chế)",
     "%s (invisible)" : "%s (vô hình)",
     "<strong>System tags</strong> for a file have been modified" : "<strong>Nhãn</strong> cho một tập tin đã được sửa đổi",
+    "Tags" : "Nhãn",
     "Collaborative tags" : "Thẻ cộng tác",
-    "Select tag …" : "Lựa chọn thẻ",
+    "Tagged files" : "Các tệp được dán nhãn",
+    "Select tags to filter by" : "Chọn nhãn để lọc theo",
+    "No tags found" : "Không tìm thấy nhãn",
+    "Please select tags to filter by" : "Vui lòng chọn các nhãn để lọc theo",
+    "No files found for the selected tags" : "Không tìm thấy tệp cho các nhãn đã chọn",
+    "Create a new tag" : "Tạo một thẻ mới",
     "Name" : "Tên",
     "Public" : "Công khai",
     "Restricted" : "Bị giới hạn",
@@ -52,7 +52,6 @@ OC.L10N.register(
     "No files in here" : "Không có tệp ở đây",
     "No entries found in this folder" : "Chưa có mục nào trong thư mục",
     "Size" : "Kích cỡ",
-    "Modified" : "Thay đổi",
-    "Create and edit collaborative tags. These tags affect all users." : "Tạo và hiệu chỉnh các thẻ cộng tác. Những thẻ này ảnh hưởng tới toàn bộ người dùng."
+    "Modified" : "Thay đổi"
 },
 "nplurals=1; plural=0;");

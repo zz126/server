@@ -3,6 +3,8 @@
  * @copyright Copyright (c) 2017 Lukas Reschke <lukas@statuscode.ch>
  *
  * @author Lukas Reschke <lukas@statuscode.ch>
+ * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -17,7 +19,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -36,16 +38,16 @@ use Test\TestCase;
  * @group DB
  */
 class BearerAuthTest extends TestCase {
-	/** @var IUserSession|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IUserSession|\PHPUnit\Framework\MockObject\MockObject */
 	private $userSession;
-	/** @var ISession|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ISession|\PHPUnit\Framework\MockObject\MockObject */
 	private $session;
-	/** @var IRequest|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IRequest|\PHPUnit\Framework\MockObject\MockObject */
 	private $request;
 	/** @var BearerAuth */
 	private $bearerAuth;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->userSession = $this->createMock(\OC\User\Session::class);
@@ -86,9 +88,9 @@ class BearerAuthTest extends TestCase {
 	}
 
 	public function testChallenge() {
-		/** @var \PHPUnit_Framework_MockObject_MockObject|RequestInterface $request */
+		/** @var \PHPUnit\Framework\MockObject\MockObject|RequestInterface $request */
 		$request = $this->createMock(RequestInterface::class);
-		/** @var \PHPUnit_Framework_MockObject_MockObject|ResponseInterface $response */
+		/** @var \PHPUnit\Framework\MockObject\MockObject|ResponseInterface $response */
 		$response = $this->createMock(ResponseInterface::class);
 		$result = $this->bearerAuth->challenge($request, $response);
 		$this->assertEmpty($result);

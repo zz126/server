@@ -4,13 +4,15 @@
  *
  * @author Arthur Schiwon <blizzz@arthur-schiwon.de>
  * @author Bart Visscher <bartv@thisnet.nl>
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author Joas Schilling <coding@schilljs.com>
+ * @author John Molakvoæ (skjnldsv) <skjnldsv@protonmail.com>
  * @author Lukas Reschke <lukas@statuscode.ch>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <robin@icewind.nl>
  * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Roeland Jago Douma <roeland@famdouma.nl>
- * @author Vincent Petry <pvince81@owncloud.com>
- * @author John Molakvoæ <skjnldsv@protonmail.com>
+ * @author Vincent Petry <vincent@nextcloud.com>
  *
  * @license AGPL-3.0
  *
@@ -24,61 +26,60 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
 namespace OC\Group;
 
+use OC\Hooks\PublicEmitter;
+use OCP\Group\Backend\ICountDisabledInGroup;
+use OCP\Group\Backend\IGetDisplayNameBackend;
+use OCP\Group\Backend\IHideFromCollaborationBackend;
+use OCP\Group\Backend\INamedBackend;
+use OCP\Group\Backend\ISetDisplayNameBackend;
 use OCP\GroupInterface;
 use OCP\IGroup;
 use OCP\IUser;
-use OCP\Group\Backend\ICountDisabledInGroup;
+use OCP\IUserManager;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\GenericEvent;
 
 class Group implements IGroup {
 	/** @var null|string  */
 	protected $displayName;
 
-	/**
-	 * @var string $id
-	 */
+	/** @var string */
 	private $gid;
 
-	/**
-	 * @var \OC\User\User[] $users
-	 */
-	private $users = array();
+	/** @var \OC\User\User[] */
+	private $users = [];
 
-	/**
-	 * @var bool $usersLoaded
-	 */
+	/** @var bool */
 	private $usersLoaded;
 
-	/**
-	 * @var \OC\Group\Backend[]|\OC\Group\Database[] $backend
-	 */
+	/** @var Backend[] */
 	private $backends;
-
-	/**
-	 * @var \OC\Hooks\PublicEmitter $emitter
-	 */
+	/** @var EventDispatcherInterface */
+	private $dispatcher;
+	/** @var \OC\User\Manager|IUserManager  */
+	private $userManager;
+	/** @var PublicEmitter */
 	private $emitter;
 
-	/**
-	 * @var \OC\User\Manager $userManager
-	 */
-	private $userManager;
 
 	/**
 	 * @param string $gid
-	 * @param \OC\Group\Backend[] $backends
-	 * @param \OC\User\Manager $userManager
-	 * @param \OC\Hooks\PublicEmitter $emitter
+	 * @param Backend[] $backends
+	 * @param EventDispatcherInterface $dispatcher
+	 * @param IUserManager $userManager
+	 * @param PublicEmitter $emitter
 	 * @param string $displayName
 	 */
-	public function __construct($gid, $backends, $userManager, $emitter = null, $displayName = null) {
+	public function __construct(string $gid, array $backends, EventDispatcherInterface $dispatcher, IUserManager $userManager, PublicEmitter $emitter = null, ?string $displayName = null) {
 		$this->gid = $gid;
 		$this->backends = $backends;
+		$this->dispatcher = $dispatcher;
 		$this->userManager = $userManager;
 		$this->emitter = $emitter;
 		$this->displayName = $displayName;
@@ -90,9 +91,32 @@ class Group implements IGroup {
 
 	public function getDisplayName() {
 		if (is_null($this->displayName)) {
+			foreach ($this->backends as $backend) {
+				if ($backend instanceof IGetDisplayNameBackend) {
+					$displayName = $backend->getDisplayName($this->gid);
+					if (trim($displayName) !== '') {
+						$this->displayName = $displayName;
+						return $this->displayName;
+					}
+				}
+			}
 			return $this->gid;
 		}
 		return $this->displayName;
+	}
+
+	public function setDisplayName(string $displayName): bool {
+		$displayName = trim($displayName);
+		if ($displayName !== '') {
+			foreach ($this->backends as $backend) {
+				if (($backend instanceof ISetDisplayNameBackend)
+					&& $backend->setDisplayName($this->gid, $displayName)) {
+					$this->displayName = $displayName;
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -105,7 +129,7 @@ class Group implements IGroup {
 			return $this->users;
 		}
 
-		$userIds = array();
+		$userIds = [];
 		foreach ($this->backends as $backend) {
 			$diff = array_diff(
 				$backend->usersInGroup($this->gid),
@@ -150,8 +174,12 @@ class Group implements IGroup {
 			return;
 		}
 
+		$this->dispatcher->dispatch(IGroup::class . '::preAddUser', new GenericEvent($this, [
+			'user' => $user,
+		]));
+
 		if ($this->emitter) {
-			$this->emitter->emit('\OC\Group', 'preAddUser', array($this, $user));
+			$this->emitter->emit('\OC\Group', 'preAddUser', [$this, $user]);
 		}
 		foreach ($this->backends as $backend) {
 			if ($backend->implementsActions(\OC\Group\Backend::ADD_TO_GROUP)) {
@@ -159,8 +187,13 @@ class Group implements IGroup {
 				if ($this->users) {
 					$this->users[$user->getUID()] = $user;
 				}
+
+				$this->dispatcher->dispatch(IGroup::class . '::postAddUser', new GenericEvent($this, [
+					'user' => $user,
+				]));
+
 				if ($this->emitter) {
-					$this->emitter->emit('\OC\Group', 'postAddUser', array($this, $user));
+					$this->emitter->emit('\OC\Group', 'postAddUser', [$this, $user]);
 				}
 				return;
 			}
@@ -174,8 +207,11 @@ class Group implements IGroup {
 	 */
 	public function removeUser($user) {
 		$result = false;
+		$this->dispatcher->dispatch(IGroup::class . '::preRemoveUser', new GenericEvent($this, [
+			'user' => $user,
+		]));
 		if ($this->emitter) {
-			$this->emitter->emit('\OC\Group', 'preRemoveUser', array($this, $user));
+			$this->emitter->emit('\OC\Group', 'preRemoveUser', [$this, $user]);
 		}
 		foreach ($this->backends as $backend) {
 			if ($backend->implementsActions(\OC\Group\Backend::REMOVE_FROM_GOUP) and $backend->inGroup($user->getUID(), $this->gid)) {
@@ -184,8 +220,11 @@ class Group implements IGroup {
 			}
 		}
 		if ($result) {
+			$this->dispatcher->dispatch(IGroup::class . '::postRemoveUser', new GenericEvent($this, [
+				'user' => $user,
+			]));
 			if ($this->emitter) {
-				$this->emitter->emit('\OC\Group', 'postRemoveUser', array($this, $user));
+				$this->emitter->emit('\OC\Group', 'postRemoveUser', [$this, $user]);
 			}
 			if ($this->users) {
 				foreach ($this->users as $index => $groupUser) {
@@ -207,7 +246,7 @@ class Group implements IGroup {
 	 * @return \OC\User\User[]
 	 */
 	public function searchUsers($search, $limit = null, $offset = null) {
-		$users = array();
+		$users = [];
 		foreach ($this->backends as $backend) {
 			$userIds = $backend->usersInGroup($this->gid, $search, $limit, $offset);
 			$users += $this->getVerifiedUsers($userIds);
@@ -227,8 +266,8 @@ class Group implements IGroup {
 	public function count($search = '') {
 		$users = false;
 		foreach ($this->backends as $backend) {
-			if($backend->implementsActions(\OC\Group\Backend::COUNT_USERS)) {
-				if($users === false) {
+			if ($backend->implementsActions(\OC\Group\Backend::COUNT_USERS)) {
+				if ($users === false) {
 					//we could directly add to a bool variable, but this would
 					//be ugly
 					$users = 0;
@@ -247,8 +286,8 @@ class Group implements IGroup {
 	public function countDisabled() {
 		$users = false;
 		foreach ($this->backends as $backend) {
-			if($backend instanceOf ICountDisabledInGroup) {
-				if($users === false) {
+			if ($backend instanceof ICountDisabledInGroup) {
+				if ($users === false) {
 					//we could directly add to a bool variable, but this would
 					//be ugly
 					$users = 0;
@@ -268,7 +307,7 @@ class Group implements IGroup {
 	 * @return \OC\User\User[]
 	 */
 	public function searchDisplayName($search, $limit = null, $offset = null) {
-		$users = array();
+		$users = [];
 		foreach ($this->backends as $backend) {
 			$userIds = $backend->usersInGroup($this->gid, $search, $limit, $offset);
 			$users = $this->getVerifiedUsers($userIds);
@@ -277,6 +316,24 @@ class Group implements IGroup {
 			}
 		}
 		return array_values($users);
+	}
+
+	/**
+	 * Get the names of the backend classes the group is connected to
+	 *
+	 * @return string[]
+	 */
+	public function getBackendNames() {
+		$backends = [];
+		foreach ($this->backends as $backend) {
+			if ($backend instanceof INamedBackend) {
+				$backends[] = $backend->getBackendName();
+			} else {
+				$backends[] = get_class($backend);
+			}
+		}
+
+		return $backends;
 	}
 
 	/**
@@ -291,8 +348,9 @@ class Group implements IGroup {
 		}
 
 		$result = false;
+		$this->dispatcher->dispatch(IGroup::class . '::preDelete', new GenericEvent($this));
 		if ($this->emitter) {
-			$this->emitter->emit('\OC\Group', 'preDelete', array($this));
+			$this->emitter->emit('\OC\Group', 'preDelete', [$this]);
 		}
 		foreach ($this->backends as $backend) {
 			if ($backend->implementsActions(\OC\Group\Backend::DELETE_GROUP)) {
@@ -300,8 +358,11 @@ class Group implements IGroup {
 				$backend->deleteGroup($this->gid);
 			}
 		}
-		if ($result and $this->emitter) {
-			$this->emitter->emit('\OC\Group', 'postDelete', array($this));
+		if ($result) {
+			$this->dispatcher->dispatch(IGroup::class . '::postDelete', new GenericEvent($this));
+			if ($this->emitter) {
+				$this->emitter->emit('\OC\Group', 'postDelete', [$this]);
+			}
 		}
 		return $result;
 	}
@@ -313,9 +374,9 @@ class Group implements IGroup {
 	 */
 	private function getVerifiedUsers($userIds) {
 		if (!is_array($userIds)) {
-			return array();
+			return [];
 		}
-		$users = array();
+		$users = [];
 		foreach ($userIds as $userId) {
 			$user = $this->userManager->get($userId);
 			if (!is_null($user)) {
@@ -349,5 +410,15 @@ class Group implements IGroup {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * @return bool
+	 * @since 16.0.0
+	 */
+	public function hideFromCollaboration(): bool {
+		return array_reduce($this->backends, function (bool $hide, GroupInterface $backend) {
+			return $hide | ($backend instanceof IHideFromCollaborationBackend && $backend->hideGroup($this->gid));
+		}, false);
 	}
 }

@@ -1,6 +1,8 @@
 /**
  * @copyright Copyright (c) 2018 Roeland Jago Douma <roeland@famdouma.nl>
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author John Molakvoæ <skjnldsv@protonmail.com>
  * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
@@ -20,16 +22,19 @@
  *
  */
 
-import Vue from 'vue';
-import App from './App.vue';
+import Vue from 'vue'
+import App from './App.vue'
+import { loadState } from '@nextcloud/initial-state'
 
-Vue.prototype.t = t;
-Vue.prototype.oc_defaults = oc_defaults;
-Vue.prototype.OC = OC;
+Vue.prototype.t = t
+Vue.prototype.OC = OC
 
-const app = new Vue({
-	render: h => h(App)
-}).$mount('#oauth2');
+const clients = loadState('oauth2', 'clients')
 
-export { app };
-
+const View = Vue.extend(App)
+const oauth = new View({
+	propsData: {
+		clients,
+	},
+})
+oauth.$mount('#oauth2')

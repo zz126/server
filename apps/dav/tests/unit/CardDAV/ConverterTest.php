@@ -3,6 +3,7 @@
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
  * @author Bjoern Schiessle <bjoern@schiessle.org>
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Joas Schilling <coding@schilljs.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Roeland Jago Douma <roeland@famdouma.nl>
@@ -20,7 +21,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -28,31 +29,20 @@ namespace OCA\DAV\Tests\unit\CardDAV;
 
 use OC\Accounts\AccountManager;
 use OCA\DAV\CardDAV\Converter;
-use OCP\IDBConnection;
+use OCP\Accounts\IAccountManager;
 use OCP\IImage;
 use OCP\IUser;
-use PHPUnit_Framework_MockObject_MockObject;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 use Test\TestCase;
 
-class ConverterTest extends  TestCase {
+class ConverterTest extends TestCase {
 
-	/** @var  AccountManager | PHPUnit_Framework_MockObject_MockObject */
+	/** @var AccountManager|\PHPUnit\Framework\MockObject\MockObject */
 	private $accountManager;
 
-	/** @var  EventDispatcher | PHPUnit_Framework_MockObject_MockObject */
-	private $eventDispatcher;
-
-	/** @var  IDBConnection | PHPUnit_Framework_MockObject_MockObject */
-	private $databaseConnection;
-
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
-		$this->databaseConnection = $this->getMockBuilder(IDBConnection::class)->getMock();
-		$this->eventDispatcher = $this->getMockBuilder(EventDispatcher::class)
-			->disableOriginalConstructor()->getMock();
-		$this->accountManager = $this->getMockBuilder(AccountManager::class)
-			->disableOriginalConstructor()->getMock();
+
+		$this->accountManager = $this->createMock(AccountManager::class);
 	}
 
 	public function getAccountManager(IUser $user) {
@@ -60,39 +50,39 @@ class ConverterTest extends  TestCase {
 			->disableOriginalConstructor()->getMock();
 		$accountManager->expects($this->any())->method('getUser')->willReturn(
 			[
-				AccountManager::PROPERTY_DISPLAYNAME =>
+				IAccountManager::PROPERTY_DISPLAYNAME =>
 					[
 						'value' => $user->getDisplayName(),
-						'scope' => AccountManager::VISIBILITY_CONTACTS_ONLY,
+						'scope' => AccountManager::SCOPE_FEDERATED,
 					],
-				AccountManager::PROPERTY_ADDRESS =>
+				IAccountManager::PROPERTY_ADDRESS =>
 					[
 						'value' => '',
-						'scope' => AccountManager::VISIBILITY_PRIVATE,
+						'scope' => AccountManager::SCOPE_LOCAL,
 					],
-				AccountManager::PROPERTY_WEBSITE =>
+				IAccountManager::PROPERTY_WEBSITE =>
 					[
 						'value' => '',
-						'scope' => AccountManager::VISIBILITY_PRIVATE,
+						'scope' => AccountManager::SCOPE_LOCAL,
 					],
-				AccountManager::PROPERTY_EMAIL =>
+				IAccountManager::PROPERTY_EMAIL =>
 					[
 						'value' => $user->getEMailAddress(),
-						'scope' => AccountManager::VISIBILITY_CONTACTS_ONLY,
+						'scope' => AccountManager::SCOPE_FEDERATED,
 					],
-				AccountManager::PROPERTY_AVATAR =>
+				IAccountManager::PROPERTY_AVATAR =>
 					[
-						'scope' => AccountManager::VISIBILITY_CONTACTS_ONLY
+						'scope' => AccountManager::SCOPE_FEDERATED
 					],
-				AccountManager::PROPERTY_PHONE =>
-					[
-						'value' => '',
-						'scope' => AccountManager::VISIBILITY_PRIVATE,
-					],
-				AccountManager::PROPERTY_TWITTER =>
+				IAccountManager::PROPERTY_PHONE =>
 					[
 						'value' => '',
-						'scope' => AccountManager::VISIBILITY_PRIVATE,
+						'scope' => AccountManager::SCOPE_LOCAL,
+					],
+				IAccountManager::PROPERTY_TWITTER =>
+					[
+						'value' => '',
+						'scope' => AccountManager::SCOPE_LOCAL,
 					],
 			]
 		);
@@ -113,23 +103,23 @@ class ConverterTest extends  TestCase {
 			$this->assertInstanceOf('Sabre\VObject\Component\VCard', $vCard);
 			$cardData = $vCard->jsonSerialize();
 			$this->compareData($expectedVCard, $cardData);
-
 		} else {
 			$this->assertSame($expectedVCard, $vCard);
 		}
-
 	}
 
 	protected function compareData($expected, $data) {
 		foreach ($expected as $key => $value) {
 			$found = false;
 			foreach ($data[1] as $d) {
-				if($d[0] === $key && $d[3] === $value) {
+				if ($d[0] === $key && $d[3] === $value) {
 					$found = true;
 					break;
 				}
 			}
-			if (!$found) $this->assertTrue(false, 'Expected data: ' . $key . ' not found.');
+			if (!$found) {
+				$this->assertTrue(false, 'Expected data: ' . $key . ' not found.');
+			}
 		}
 	}
 
@@ -193,7 +183,6 @@ class ConverterTest extends  TestCase {
 	 * @param $fullName
 	 */
 	public function testNameSplitter($expected, $fullName) {
-
 		$converter = new Converter($this->accountManager);
 		$r = $converter->splitFullName($fullName);
 		$r = implode(';', $r);
@@ -202,9 +191,9 @@ class ConverterTest extends  TestCase {
 
 	public function providesNames() {
 		return [
-				['Sauron;;;;', 'Sauron'],
-				['Baggins;Bilbo;;;', 'Bilbo Baggins'],
-				['Tolkien;John;Ronald Reuel;;', 'John Ronald Reuel Tolkien'],
+			['Sauron;;;;', 'Sauron'],
+			['Baggins;Bilbo;;;', 'Bilbo Baggins'],
+			['Tolkien;John;Ronald Reuel;;', 'John Ronald Reuel Tolkien'],
 		];
 	}
 
@@ -212,7 +201,7 @@ class ConverterTest extends  TestCase {
 	 * @param $displayName
 	 * @param $eMailAddress
 	 * @param $cloudId
-	 * @return IUser | PHPUnit_Framework_MockObject_MockObject
+	 * @return IUser | \PHPUnit\Framework\MockObject\MockObject
 	 */
 	protected function getUserMock($displayName, $eMailAddress, $cloudId) {
 		$image0 = $this->getMockBuilder(IImage::class)->disableOriginalConstructor()->getMock();

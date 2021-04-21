@@ -1,9 +1,16 @@
 <?php
-declare (strict_types = 1);
+
+declare(strict_types=1);
+
 /**
  * @copyright Copyright (c) 2018, John Molakvoæ (skjnldsv@protonmail.com)
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author Joas Schilling <coding@schilljs.com>
  * @author John Molakvoæ (skjnldsv) <skjnldsv@protonmail.com>
+ * @author Julius Härtl <jus@bitgrid.net>
+ * @author Robin Appelman <robin@icewind.nl>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -18,20 +25,20 @@ declare (strict_types = 1);
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
 namespace OC\Template;
 
+use OC\Files\AppData\Factory;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Files\IAppData;
 use OCP\Files\NotFoundException;
-use OCP\Files\SimpleFS\ISimpleFolder;
 use OCP\Files\SimpleFS\ISimpleFile;
+use OCP\Files\SimpleFS\ISimpleFolder;
 use OCP\ILogger;
 use OCP\IURLGenerator;
-use OC\Files\AppData\Factory;
 
 class IconsCacher {
 
@@ -72,10 +79,10 @@ class IconsCacher {
 								Factory $appDataFactory,
 								IURLGenerator $urlGenerator,
 								ITimeFactory $timeFactory) {
-		$this->logger       = $logger;
-		$this->appData      = $appDataFactory->get('css');
+		$this->logger = $logger;
+		$this->appData = $appDataFactory->get('css');
 		$this->urlGenerator = $urlGenerator;
-		$this->timeFactory  = $timeFactory;
+		$this->timeFactory = $timeFactory;
 
 		try {
 			$this->folder = $this->appData->getFolder('icons');
@@ -101,7 +108,6 @@ class IconsCacher {
 	 * @throws \OCP\Files\NotPermittedException
 	 */
 	public function setIconsCss(string $css): string {
-
 		$cachedFile = $this->getCachedList();
 		if (!$cachedFile) {
 			$currentData = '';
@@ -121,7 +127,7 @@ class IconsCacher {
 		$list = '';
 		foreach ($icons as $icon => $url) {
 			$list .= "--$icon: url('$url');";
-			list($location,$color) = $this->parseUrl($url);
+			[$location,$color] = $this->parseUrl($url);
 			$svg = false;
 			if ($location !== '' && \file_exists($location)) {
 				$svg = \file_get_contents($location);
@@ -159,18 +165,17 @@ class IconsCacher {
 		if (\strpos($url, $base . 'core') === 0) {
 			$cleanUrl = \substr($cleanUrl, \strlen('core'));
 			if (\preg_match('/\/([a-zA-Z0-9-_\~\/\.\=\:\;\+\,]+)\?color=([0-9a-fA-F]{3,6})/', $cleanUrl, $matches)) {
-				list(,$cleanUrl,$color) = $matches;
+				[,$cleanUrl,$color] = $matches;
 				$location = \OC::$SERVERROOT . '/core/img/' . $cleanUrl . '.svg';
 			}
 		} elseif (\strpos($url, $base) === 0) {
-			if(\preg_match('/([A-z0-9\_\-]+)\/([a-zA-Z0-9-_\~\/\.\=\:\;\+\,]+)\?color=([0-9a-fA-F]{3,6})/', $cleanUrl, $matches)) {
-				list(,$app,$cleanUrl, $color) = $matches;
+			if (\preg_match('/([A-z0-9\_\-]+)\/([a-zA-Z0-9-_\~\/\.\=\:\;\+\,]+)\?color=([0-9a-fA-F]{3,6})/', $cleanUrl, $matches)) {
+				[,$app,$cleanUrl, $color] = $matches;
 				$location = \OC_App::getAppPath($app) . '/img/' . $cleanUrl . '.svg';
 				if ($app === 'settings') {
 					$location = \OC::$SERVERROOT . '/settings/img/' . $cleanUrl . '.svg';
 				}
 			}
-
 		}
 		return [
 			$location,
@@ -184,6 +189,11 @@ class IconsCacher {
 	 * @return string
 	 */
 	public function colorizeSvg($svg, $color): string {
+		if (!preg_match('/^[0-9a-f]{3,6}$/i', $color)) {
+			// Prevent not-sane colors from being written into the SVG
+			$color = '000';
+		}
+
 		// add fill (fill is not present on black elements)
 		$fillRe = '/<((circle|rect|path)((?!fill)[a-z0-9 =".\-#():;,])+)\/>/mi';
 		$svg = preg_replace($fillRe, '<$1 fill="#' . $color . '"/>', $svg);
@@ -233,6 +243,9 @@ class IconsCacher {
 		}
 	}
 
+	/**
+	 * Add the icons cache css into the header
+	 */
 	public function injectCss() {
 		$mtime = $this->timeFactory->getTime();
 		$file = $this->getCachedList();
@@ -251,5 +264,4 @@ class IconsCacher {
 		$linkToCSS = $this->urlGenerator->linkToRoute('core.Css.getCss', ['appName' => 'icons', 'fileName' => $this->fileName, 'v' => $mtime]);
 		\OC_Util::addHeader('link', ['rel' => 'stylesheet', 'href' => $linkToCSS], null, true);
 	}
-
 }

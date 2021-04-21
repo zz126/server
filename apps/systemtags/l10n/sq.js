@@ -1,15 +1,9 @@
 OC.L10N.register(
     "systemtags",
     {
-    "Tags" : "Etiketa",
     "Update" : "Përditëso",
     "Create" : "Krijo",
-    "Select tag…" : "Përzgjidh etiketën...",
-    "Tagged files" : "Kartela të etiketuara",
-    "Select tags to filter by" : "Përzgjidhni etiketa sipas të cilat të bëhet filtrimi",
-    "No tags found" : "Asnjë etiket nuk u gjet",
-    "Please select tags to filter by" : "Ju lutemi, përzgjidhni etiketa sipas të cilat të bëhet filtrimi",
-    "No files found for the selected tags" : "S’u gjetën kartela për etiketat e përzgjedhura",
+    "Select tag …" : "Zgjidh etiketimin",
     "Added system tag {systemtag}" : "Tagu i shtuar i sistemit{systemtag}",
     "Added system tag %1$s" : "U shtua etiketa %1$s e sistemit ",
     "%1$s added system tag %2$s" : "%1$s shtoi etiketën %2$s të sistemit ",
@@ -41,8 +35,14 @@ OC.L10N.register(
     "%s (restricted)" : "%s (e kufizuar)",
     "%s (invisible)" : "%s (e padukshme)",
     "<strong>System tags</strong> for a file have been modified" : "U ndryshyan <strong>etiketa sistemi</strong>për një kartelë",
+    "Tags" : "Etiketa",
     "Collaborative tags" : "Etiketa bashkëpunuese",
-    "Select tag …" : "Zgjidh etiketimin",
+    "Tagged files" : "Kartela të etiketuara",
+    "Select tags to filter by" : "Përzgjidhni etiketa sipas të cilat të bëhet filtrimi",
+    "No tags found" : "Asnjë etiket nuk u gjet",
+    "Please select tags to filter by" : "Ju lutemi, përzgjidhni etiketa sipas të cilat të bëhet filtrimi",
+    "No files found for the selected tags" : "S’u gjetën kartela për etiketat e përzgjedhura",
+    "Create a new tag" : "Krijo një etiketë të re",
     "Name" : "Emër",
     "Public" : "Publik",
     "Restricted" : "I/E kufizuar",
@@ -52,7 +52,6 @@ OC.L10N.register(
     "No files in here" : "S’ka kartela këtu",
     "No entries found in this folder" : "S’u gjetën zëra në këtë dosje",
     "Size" : "Madhësi",
-    "Modified" : "Ndryshuar më",
-    "Create and edit collaborative tags. These tags affect all users." : "Krijo dhe ndrysho etiketa bashkëpunuese. Këto etiketa ndikojnë tek të gjithë përdoruesit."
+    "Modified" : "Ndryshuar më"
 },
 "nplurals=2; plural=(n != 1);");

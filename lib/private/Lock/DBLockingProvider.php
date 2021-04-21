@@ -2,9 +2,11 @@
 /**
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Individual IT Services <info@individual-it.net>
- * @author Lukas Reschke <lukas@statuscode.ch>
+ * @author Joas Schilling <coding@schilljs.com>
  * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Ole Ostergaard <ole.c.ostergaard@gmail.com>
  * @author Robin Appelman <robin@icewind.nl>
  * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
@@ -20,13 +22,12 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
 namespace OC\Lock;
 
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use OC\DB\QueryBuilder\Literal;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\DB\QueryBuilder\IQueryBuilder;
@@ -97,7 +98,7 @@ class DBLockingProvider extends AbstractLockingProvider {
 		if ($this->cacheSharedLocks) {
 			if ($targetType === self::LOCK_SHARED) {
 				$this->sharedLocks[$path] = true;
-			} else if ($targetType === self::LOCK_EXCLUSIVE) {
+			} elseif ($targetType === self::LOCK_EXCLUSIVE) {
 				$this->sharedLocks[$path] = false;
 			}
 		}
@@ -131,20 +132,13 @@ class DBLockingProvider extends AbstractLockingProvider {
 	 * @param int $lock
 	 * @return int number of inserted rows
 	 */
-
 	protected function initLockField(string $path, int $lock = 0): int {
 		$expire = $this->getExpireTime();
-
-		try {
-			$builder = $this->connection->getQueryBuilder();
-			return $builder->insert('file_locks')
-				->setValue('key', $builder->createNamedParameter($path))
-				->setValue('lock', $builder->createNamedParameter($lock))
-				->setValue('ttl', $builder->createNamedParameter($expire))
-				->execute();
-		} catch(UniqueConstraintViolationException $e) {
-			return 0;
-		}
+		return $this->connection->insertIgnoreConflict('file_locks', [
+			'key' => $path,
+			'lock' => $lock,
+			'ttl' => $expire
+		]);
 	}
 
 	/**
@@ -165,7 +159,7 @@ class DBLockingProvider extends AbstractLockingProvider {
 		}
 		$query = $this->connection->prepare('SELECT `lock` from `*PREFIX*file_locks` WHERE `key` = ?');
 		$query->execute([$path]);
-		$lockValue = (int)$query->fetchColumn();
+		$lockValue = (int)$query->fetchOne();
 		if ($type === self::LOCK_SHARED) {
 			if ($this->isLocallyLocked($path)) {
 				// if we have a shared lock we kept open locally but it's released we always have at least 1 shared lock in the db
@@ -173,7 +167,7 @@ class DBLockingProvider extends AbstractLockingProvider {
 			} else {
 				return $lockValue > 0;
 			}
-		} else if ($type === self::LOCK_EXCLUSIVE) {
+		} elseif ($type === self::LOCK_EXCLUSIVE) {
 			return $lockValue === -1;
 		} else {
 			return false;
@@ -185,7 +179,7 @@ class DBLockingProvider extends AbstractLockingProvider {
 	 * @param int $type self::LOCK_SHARED or self::LOCK_EXCLUSIVE
 	 * @throws \OCP\Lock\LockedException
 	 */
-	public function acquireLock(string $path, int $type) {
+	public function acquireLock(string $path, int $type, string $readablePath = null) {
 		$expire = $this->getExpireTime();
 		if ($type === self::LOCK_SHARED) {
 			if (!$this->isLocallyLocked($path)) {
@@ -213,7 +207,7 @@ class DBLockingProvider extends AbstractLockingProvider {
 			}
 		}
 		if ($result !== 1) {
-			throw new LockedException($path);
+			throw new LockedException($path, null, null, $readablePath);
 		}
 		$this->markAcquire($path, $type);
 	}
@@ -221,8 +215,6 @@ class DBLockingProvider extends AbstractLockingProvider {
 	/**
 	 * @param string $path
 	 * @param int $type self::LOCK_SHARED or self::LOCK_EXCLUSIVE
-	 *
-	 * @suppress SqlInjectionChecker
 	 */
 	public function releaseLock(string $path, int $type) {
 		$this->markRelease($path, $type);
@@ -233,7 +225,7 @@ class DBLockingProvider extends AbstractLockingProvider {
 				'UPDATE `*PREFIX*file_locks` SET `lock` = 0 WHERE `key` = ? AND `lock` = -1',
 				[$path]
 			);
-		} else if (!$this->cacheSharedLocks) {
+		} elseif (!$this->cacheSharedLocks) {
 			$query = $this->connection->getQueryBuilder();
 			$query->update('file_locks')
 				->set('lock', $query->func()->subtract('lock', $query->createNamedParameter(1)))
@@ -293,8 +285,6 @@ class DBLockingProvider extends AbstractLockingProvider {
 
 	/**
 	 * release all lock acquired by this instance which were marked using the mark* methods
-	 *
-	 * @suppress SqlInjectionChecker
 	 */
 	public function releaseAll() {
 		parent::releaseAll();

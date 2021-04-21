@@ -2,6 +2,7 @@
 /**
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Joas Schilling <coding@schilljs.com>
  * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
@@ -17,7 +18,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -36,7 +37,7 @@ interface ICompositeExpression {
 	 * @return ICompositeExpression
 	 * @since 8.2.0
 	 */
-	public function addMultiple(array $parts = array());
+	public function addMultiple(array $parts = []): ICompositeExpression;
 
 	/**
 	 * Adds an expression to composite expression.
@@ -46,7 +47,7 @@ interface ICompositeExpression {
 	 * @return ICompositeExpression
 	 * @since 8.2.0
 	 */
-	public function add($part);
+	public function add($part): ICompositeExpression;
 
 	/**
 	 * Retrieves the amount of expressions on composite expression.
@@ -54,7 +55,7 @@ interface ICompositeExpression {
 	 * @return integer
 	 * @since 8.2.0
 	 */
-	public function count();
+	public function count(): int;
 
 	/**
 	 * Returns the type of this composite expression (AND/OR).
@@ -62,5 +63,5 @@ interface ICompositeExpression {
 	 * @return string
 	 * @since 8.2.0
 	 */
-	public function getType();
+	public function getType(): string;
 }

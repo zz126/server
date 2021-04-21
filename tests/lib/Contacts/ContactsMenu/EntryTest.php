@@ -33,7 +33,7 @@ class EntryTest extends TestCase {
 	/** @var Entry */
 	private $entry;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->entry = new Entry();
@@ -110,5 +110,4 @@ class EntryTest extends TestCase {
 
 		$this->assertEquals($expectedJson, $json);
 	}
-
 }

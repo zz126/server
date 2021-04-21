@@ -20,6 +20,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 namespace Test\Security\IdentityProof;
 
 use OC\Security\IdentityProof\Key;
@@ -76,19 +77,19 @@ gQIDAQAB
 	/** @var Key */
 	private $key;
 
-	/** @var Manager|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var Manager|\PHPUnit\Framework\MockObject\MockObject */
 	private $keyManager;
 
-	/** @var ITimeFactory|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ITimeFactory|\PHPUnit\Framework\MockObject\MockObject */
 	private $timeFactory;
 
-	/** @var IUserManager|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IUserManager|\PHPUnit\Framework\MockObject\MockObject */
 	private $userManager;
 
 	/** @var Signer */
 	private $signer;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->key = new Key($this->public, $this->private);
@@ -199,6 +200,4 @@ gQIDAQAB
 
 		$this->assertFalse($this->signer->verify($data));
 	}
-
-
 }

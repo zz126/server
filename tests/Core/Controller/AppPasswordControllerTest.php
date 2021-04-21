@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2018, Roeland Jago Douma <roeland@famdouma.nl>
@@ -24,14 +25,17 @@ declare(strict_types=1);
 
 namespace Tests\Core\Controller;
 
+use OC\Authentication\Exceptions\InvalidTokenException;
 use OC\Authentication\Token\IProvider;
 use OC\Authentication\Token\IToken;
 use OC\Core\Controller\AppPasswordController;
+use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\Authentication\Exceptions\CredentialsUnavailableException;
 use OCP\Authentication\Exceptions\PasswordUnavailableException;
 use OCP\Authentication\LoginCredentials\ICredentials;
 use OCP\Authentication\LoginCredentials\IStore;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IRequest;
 use OCP\ISession;
 use OCP\Security\ISecureRandom;
@@ -55,10 +59,13 @@ class AppPasswordControllerTest extends TestCase {
 	/** @var IRequest|MockObject */
 	private $request;
 
+	/** @var IEventDispatcher|\PHPUnit\Framework\MockObject\MockObject */
+	private $eventDispatcher;
+
 	/** @var AppPasswordController */
 	private $controller;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->session = $this->createMock(ISession::class);
@@ -66,6 +73,7 @@ class AppPasswordControllerTest extends TestCase {
 		$this->tokenProvider = $this->createMock(IProvider::class);
 		$this->credentialStore = $this->createMock(IStore::class);
 		$this->request = $this->createMock(IRequest::class);
+		$this->eventDispatcher = $this->createMock(IEventDispatcher::class);
 
 		$this->controller = new AppPasswordController(
 			'core',
@@ -73,7 +81,8 @@ class AppPasswordControllerTest extends TestCase {
 			$this->session,
 			$this->random,
 			$this->tokenProvider,
-			$this->credentialStore
+			$this->credentialStore,
+			$this->eventDispatcher
 		);
 	}
 
@@ -134,6 +143,9 @@ class AppPasswordControllerTest extends TestCase {
 				IToken::DO_NOT_REMEMBER
 			);
 
+		$this->eventDispatcher->expects($this->once())
+			->method('dispatchTyped');
+
 		$this->controller->getAppPassword();
 	}
 
@@ -172,8 +184,66 @@ class AppPasswordControllerTest extends TestCase {
 				IToken::DO_NOT_REMEMBER
 			);
 
+		$this->eventDispatcher->expects($this->once())
+			->method('dispatchTyped');
+
 		$this->controller->getAppPassword();
 	}
 
+	public function testDeleteAppPasswordNoAppPassword() {
+		$this->session->method('exists')
+			->with('app_password')
+			->willReturn(false);
 
+		$this->expectException(OCSForbiddenException::class);
+
+		$this->controller->deleteAppPassword();
+	}
+
+	public function testDeleteAppPasswordFails() {
+		$this->session->method('exists')
+			->with('app_password')
+			->willReturn(true);
+		$this->session->method('get')
+			->with('app_password')
+			->willReturn('myAppPassword');
+
+		$this->tokenProvider->method('getToken')
+			->with('myAppPassword')
+			->willThrowException(new InvalidTokenException());
+
+		$this->expectException(OCSForbiddenException::class);
+
+		$this->controller->deleteAppPassword();
+	}
+
+	public function testDeleteAppPasswordSuccess() {
+		$this->session->method('exists')
+			->with('app_password')
+			->willReturn(true);
+		$this->session->method('get')
+			->with('app_password')
+			->willReturn('myAppPassword');
+
+		$token = $this->createMock(IToken::class);
+		$this->tokenProvider->method('getToken')
+			->with('myAppPassword')
+			->willReturn($token);
+
+		$token->method('getUID')
+			->willReturn('myUID');
+		$token->method('getId')
+			->willReturn(42);
+
+		$this->tokenProvider->expects($this->once())
+			->method('invalidateTokenById')
+			->with(
+				'myUID',
+				42
+			);
+
+		$result = $this->controller->deleteAppPassword();
+
+		$this->assertEquals(new DataResponse(), $result);
+	}
 }

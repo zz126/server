@@ -2,13 +2,15 @@
 /**
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Joas Schilling <coding@schilljs.com>
  * @author Juan Pablo Villafáñez <jvillafanez@solidgear.es>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <robin@icewind.nl>
  * @author Robin McCorkell <robin@mccorkell.me.uk>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
- * @author Vincent Petry <pvince81@owncloud.com>
+ * @author Vincent Petry <vincent@nextcloud.com>
  *
  * @license AGPL-3.0
  *
@@ -22,7 +24,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -30,7 +32,7 @@ namespace OCA\Files_External\Tests\Storage;
 
 use OC\Files\Notify\Change;
 use OC\Files\Notify\RenameChange;
-use \OCA\Files_External\Lib\Storage\SMB;
+use OCA\Files_External\Lib\Storage\SMB;
 use OCP\Files\Notify\IChange;
 
 /**
@@ -46,7 +48,7 @@ class SmbTest extends \Test\Files\Storage\Storage {
 	 */
 	protected $instance;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$id = $this->getUniqueID();
@@ -62,7 +64,7 @@ class SmbTest extends \Test\Files\Storage\Storage {
 		$this->instance->mkdir('/');
 	}
 
-	protected function tearDown() {
+	protected function tearDown(): void {
 		if ($this->instance) {
 			$this->instance->rmdir('');
 		}
@@ -72,7 +74,7 @@ class SmbTest extends \Test\Files\Storage\Storage {
 
 	public function directoryProvider() {
 		// doesn't support leading/trailing spaces
-		return array(array('folder'));
+		return [['folder']];
 	}
 
 	public function testRenameWithSpaces() {
@@ -98,11 +100,20 @@ class SmbTest extends \Test\Files\Storage\Storage {
 		$notifyHandler = $this->instance->notify('');
 		sleep(1); //give time for the notify to start
 		$this->instance->file_put_contents('/newfile.txt', 'test content');
+		sleep(1);
 		$this->instance->rename('/newfile.txt', 'renamed.txt');
+		sleep(1);
 		$this->instance->unlink('/renamed.txt');
 		sleep(1); //time for all changes to be processed
 
-		$changes = $notifyHandler->getChanges();
+		$changes = [];
+		$count = 0;
+		// wait up to 10 seconds for incoming changes
+		while (count($changes) < 3 && $count < 10) {
+			$changes = array_merge($changes, $notifyHandler->getChanges());
+			$count++;
+			sleep(1);
+		}
 		$notifyHandler->stop();
 
 		$expected = [
@@ -112,7 +123,7 @@ class SmbTest extends \Test\Files\Storage\Storage {
 		];
 
 		foreach ($expected as $expectedChange) {
-			$this->assertContains($expectedChange, $changes, '', false, false); // dont check object identity
+			$this->assertContains($expectedChange, $changes, 'Actual changes are:' . PHP_EOL . print_r($expected, true), false, false); // dont check object identity
 		}
 	}
 

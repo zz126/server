@@ -3,6 +3,7 @@
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
  * @author Arthur Schiwon <blizzz@arthur-schiwon.de>
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Joas Schilling <coding@schilljs.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Philippe Jung <phil.jung@free.fr>
@@ -22,7 +23,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -41,6 +42,7 @@ use OCP\IDBConnection;
 use OCP\Image;
 use OCP\IUserManager;
 use OCP\Notification\IManager as INotificationManager;
+use OCP\Share\IManager;
 
 /**
  * Class Test_User_Manager
@@ -50,34 +52,34 @@ use OCP\Notification\IManager as INotificationManager;
  * @package OCA\User_LDAP\Tests\User
  */
 class ManagerTest extends \Test\TestCase {
-	/** @var Access|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var Access|\PHPUnit\Framework\MockObject\MockObject */
 	protected $access;
 
-	/** @var IConfig|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IConfig|\PHPUnit\Framework\MockObject\MockObject */
 	protected $config;
 
-	/** @var FilesystemHelper|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var FilesystemHelper|\PHPUnit\Framework\MockObject\MockObject */
 	protected $fileSystemHelper;
 
-	/** @var LogWrapper|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var LogWrapper|\PHPUnit\Framework\MockObject\MockObject */
 	protected $log;
 
-	/** @var IAvatarManager|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IAvatarManager|\PHPUnit\Framework\MockObject\MockObject */
 	protected $avatarManager;
 
-	/** @var Image|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var Image|\PHPUnit\Framework\MockObject\MockObject */
 	protected $image;
 
-	/** @var IDBConnection|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IDBConnection|\PHPUnit\Framework\MockObject\MockObject */
 	protected $dbc;
 
-	/** @var IUserManager|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IUserManager|\PHPUnit\Framework\MockObject\MockObject */
 	protected $ncUserManager;
 
-	/** @var INotificationManager|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var INotificationManager|\PHPUnit\Framework\MockObject\MockObject */
 	protected $notificationManager;
 
-	/** @var ILDAPWrapper|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ILDAPWrapper|\PHPUnit\Framework\MockObject\MockObject */
 	protected $ldapWrapper;
 
 	/** @var Connection */
@@ -85,8 +87,10 @@ class ManagerTest extends \Test\TestCase {
 
 	/** @var Manager */
 	protected $manager;
+	/** @var IManager|\PHPUnit\Framework\MockObject\MockObject */
+	protected $shareManager;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->access = $this->createMock(Access::class);
@@ -95,16 +99,16 @@ class ManagerTest extends \Test\TestCase {
 		$this->log = $this->createMock(LogWrapper::class);
 		$this->avatarManager = $this->createMock(IAvatarManager::class);
 		$this->image = $this->createMock(Image::class);
-		$this->dbc = $this->createMock(IDBConnection::class);
 		$this->ncUserManager = $this->createMock(IUserManager::class);
 		$this->notificationManager = $this->createMock(INotificationManager::class);
-
 		$this->ldapWrapper = $this->createMock(ILDAPWrapper::class);
+		$this->shareManager = $this->createMock(IManager::class);
+
 		$this->connection = new Connection($this->ldapWrapper, '', null);
 
 		$this->access->expects($this->any())
 			->method('getConnection')
-			->will($this->returnValue($this->connection));
+			->willReturn($this->connection);
 
 		/** @noinspection PhpUnhandledExceptionInspection */
 		$this->manager = new Manager(
@@ -113,9 +117,9 @@ class ManagerTest extends \Test\TestCase {
 			$this->log,
 			$this->avatarManager,
 			$this->image,
-			$this->dbc,
 			$this->ncUserManager,
-			$this->notificationManager
+			$this->notificationManager,
+			$this->shareManager
 		);
 
 		$this->manager->setLdapAccess($this->access);
@@ -138,11 +142,11 @@ class ManagerTest extends \Test\TestCase {
 		$this->access->expects($this->once())
 			->method('stringResemblesDN')
 			->with($this->equalTo($inputDN))
-			->will($this->returnValue(true));
+			->willReturn(true);
 		$this->access->expects($this->once())
 			->method('dn2username')
 			->with($this->equalTo($inputDN))
-			->will($this->returnValue($uid));
+			->willReturn($uid);
 		$this->access->expects($this->never())
 			->method('username2dn');
 
@@ -163,15 +167,15 @@ class ManagerTest extends \Test\TestCase {
 		$this->access->expects($this->once())
 			->method('stringResemblesDN')
 			->with($this->equalTo($inputDN))
-			->will($this->returnValue(true));
+			->willReturn(true);
 		$this->access->expects($this->once())
 			->method('dn2username')
 			->with($this->equalTo($inputDN))
-			->will($this->returnValue(false));
+			->willReturn(false);
 		$this->access->expects($this->once())
 			->method('username2dn')
 			->with($this->equalTo($inputDN))
-			->will($this->returnValue(false));
+			->willReturn(false);
 
 		/** @noinspection PhpUnhandledExceptionInspection */
 		$user = $this->manager->get($inputDN);
@@ -188,11 +192,11 @@ class ManagerTest extends \Test\TestCase {
 		$this->access->expects($this->once())
 			->method('username2dn')
 			->with($this->equalTo($uid))
-			->will($this->returnValue($dn));
+			->willReturn($dn);
 		$this->access->expects($this->once())
 			->method('stringResemblesDN')
 			->with($this->equalTo($uid))
-			->will($this->returnValue(false));
+			->willReturn(false);
 
 		/** @noinspection PhpUnhandledExceptionInspection */
 		$this->manager->get($uid);
@@ -213,7 +217,7 @@ class ManagerTest extends \Test\TestCase {
 		$this->access->expects($this->exactly(1))
 			->method('username2dn')
 			->with($this->equalTo($uid))
-			->will($this->returnValue(false));
+			->willReturn(false);
 
 		/** @noinspection PhpUnhandledExceptionInspection */
 		$user = $this->manager->get($uid);
@@ -233,18 +237,21 @@ class ManagerTest extends \Test\TestCase {
 	 */
 	public function testGetAttributes($minimal) {
 		$this->connection->setConfiguration([
-			'ldapEmailAttribute' => 'mail',
+			'ldapEmailAttribute' => 'MAIL',
 			'ldapUserAvatarRule' => 'default',
 			'ldapQuotaAttribute' => '',
+			'ldapUserDisplayName2' => 'Mail',
 		]);
 
 		$attributes = $this->manager->getAttributes($minimal);
 
 		$this->assertTrue(in_array('dn', $attributes));
-		$this->assertTrue(in_array($this->access->getConnection()->ldapEmailAttribute, $attributes));
+		$this->assertTrue(in_array(strtolower($this->access->getConnection()->ldapEmailAttribute), $attributes));
+		$this->assertTrue(!in_array($this->access->getConnection()->ldapEmailAttribute, $attributes)); #cases check
 		$this->assertFalse(in_array('', $attributes));
 		$this->assertSame(!$minimal, in_array('jpegphoto', $attributes));
 		$this->assertSame(!$minimal, in_array('thumbnailphoto', $attributes));
+		$valueCounts = array_count_values($attributes);
+		$this->assertSame(1, $valueCounts['mail']);
 	}
-
 }

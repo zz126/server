@@ -1,9 +1,15 @@
 <?php
+
 declare(strict_types=1);
+
 /**
  * @copyright 2018, Georg Ehrke <oc.list@georgehrke.com>
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Georg Ehrke <oc.list@georgehrke.com>
+ * @author Joas Schilling <coding@schilljs.com>
+ * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -18,17 +24,18 @@ declare(strict_types=1);
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
 namespace OCA\DAV\Tests\Unit\DAV\Controller;
 
 use OCA\DAV\CalDAV\InvitationResponse\InvitationResponseServer;
-use OCA\DAV\CalDAV\Schedule\Plugin;
 use OCA\DAV\Controller\InvitationResponseController;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\DB\IResult;
+use OCP\DB\QueryBuilder\IExpressionBuilder;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 use OCP\IRequest;
@@ -40,19 +47,19 @@ class InvitationResponseControllerTest extends TestCase {
 	/** @var InvitationResponseController */
 	private $controller;
 
-	/** @var IDBConnection|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IDBConnection|\PHPUnit\Framework\MockObject\MockObject */
 	private $dbConnection;
 
-	/** @var IRequest|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IRequest|\PHPUnit\Framework\MockObject\MockObject */
 	private $request;
 
-	/** @var ITimeFactory|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ITimeFactory|\PHPUnit\Framework\MockObject\MockObject */
 	private $timeFactory;
 
-	/** @var InvitationResponseServer|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var InvitationResponseServer|\PHPUnit\Framework\MockObject\MockObject */
 	private $responseServer;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->dbConnection = $this->createMock(IDBConnection::class);
@@ -104,7 +111,7 @@ EOF;
 		$called = false;
 		$this->responseServer->expects($this->once())
 			->method('handleITipMessage')
-			->will($this->returnCallback(function(Message $iTipMessage) use (&$called, $expected) {
+			->willReturnCallback(function (Message $iTipMessage) use (&$called, $expected) {
 				$called = true;
 				$this->assertEquals('this-is-the-events-uid', $iTipMessage->uid);
 				$this->assertEquals('VEVENT', $iTipMessage->component);
@@ -116,7 +123,7 @@ EOF;
 				$iTipMessage->scheduleStatus = '1.2;Message delivered locally';
 
 				$this->assertEquals($expected, $iTipMessage->message->serialize());
-			}));
+			});
 
 
 
@@ -160,7 +167,7 @@ EOF;
 		$called = false;
 		$this->responseServer->expects($this->once())
 			->method('handleITipMessage')
-			->will($this->returnCallback(function(Message $iTipMessage) use (&$called, $expected) {
+			->willReturnCallback(function (Message $iTipMessage) use (&$called, $expected) {
 				$called = true;
 				$this->assertEquals('this-is-the-events-uid', $iTipMessage->uid);
 				$this->assertEquals('VEVENT', $iTipMessage->component);
@@ -172,7 +179,7 @@ EOF;
 				$iTipMessage->scheduleStatus = '1.2;Message delivered locally';
 
 				$this->assertEquals($expected, $iTipMessage->message->serialize());
-			}));
+			});
 
 
 
@@ -217,7 +224,7 @@ EOF;
 		$called = false;
 		$this->responseServer->expects($this->once())
 			->method('handleITipMessage')
-			->will($this->returnCallback(function(Message $iTipMessage) use (&$called, $expected) {
+			->willReturnCallback(function (Message $iTipMessage) use (&$called, $expected) {
 				$called = true;
 				$this->assertEquals('this-is-the-events-uid', $iTipMessage->uid);
 				$this->assertEquals('VEVENT', $iTipMessage->component);
@@ -229,7 +236,7 @@ EOF;
 				$iTipMessage->scheduleStatus = '1.2;Message delivered locally';
 
 				$this->assertEquals($expected, $iTipMessage->message->serialize());
-			}));
+			});
 
 
 
@@ -300,7 +307,7 @@ EOF;
 		$called = false;
 		$this->responseServer->expects($this->once())
 			->method('handleITipMessage')
-			->will($this->returnCallback(function(Message $iTipMessage) use (&$called, $expected) {
+			->willReturnCallback(function (Message $iTipMessage) use (&$called, $expected) {
 				$called = true;
 				$this->assertEquals('this-is-the-events-uid', $iTipMessage->uid);
 				$this->assertEquals('VEVENT', $iTipMessage->component);
@@ -312,7 +319,7 @@ EOF;
 				$iTipMessage->scheduleStatus = '1.2;Message delivered locally';
 
 				$this->assertEquals($expected, $iTipMessage->message->serialize());
-			}));
+			});
 
 
 
@@ -334,15 +341,15 @@ EOF;
 		$this->request->expects($this->at(0))
 			->method('getParam')
 			->with('partStat')
-			->will($this->returnValue('TENTATIVE'));
+			->willReturn('TENTATIVE');
 		$this->request->expects($this->at(1))
 			->method('getParam')
 			->with('guests')
-			->will($this->returnValue('7'));
+			->willReturn('7');
 		$this->request->expects($this->at(2))
 			->method('getParam')
 			->with('comment')
-			->will($this->returnValue('Foo bar Bli blub'));
+			->willReturn('Foo bar Bli blub');
 
 		$this->buildQueryExpects('TOKEN123', [
 			'id' => 0,
@@ -378,7 +385,7 @@ EOF;
 		$called = false;
 		$this->responseServer->expects($this->once())
 			->method('handleITipMessage')
-			->will($this->returnCallback(function(Message $iTipMessage) use (&$called, $expected) {
+			->willReturnCallback(function (Message $iTipMessage) use (&$called, $expected) {
 				$called = true;
 				$this->assertEquals('this-is-the-events-uid', $iTipMessage->uid);
 				$this->assertEquals('VEVENT', $iTipMessage->component);
@@ -390,7 +397,7 @@ EOF;
 				$iTipMessage->scheduleStatus = '1.2;Message delivered locally';
 
 				$this->assertEquals($expected, $iTipMessage->message->serialize());
-			}));
+			});
 
 
 
@@ -403,53 +410,53 @@ EOF;
 
 	private function buildQueryExpects($token, $return, $time) {
 		$queryBuilder = $this->createMock(IQueryBuilder::class);
-		$stmt = $this->createMock(\Doctrine\DBAL\Driver\Statement::class);
-		$expr = $this->createMock(\OCP\DB\QueryBuilder\IExpressionBuilder::class);
+		$stmt = $this->createMock(IResult::class);
+		$expr = $this->createMock(IExpressionBuilder::class);
 
 		$this->dbConnection->expects($this->once())
 			->method('getQueryBuilder')
 			->with()
-			->will($this->returnValue($queryBuilder));
+			->willReturn($queryBuilder);
 		$queryBuilder->method('expr')
-			->will($this->returnValue($expr));
+			->willReturn($expr);
 		$queryBuilder->method('createNamedParameter')
-			->will($this->returnValueMap([
+			->willReturnMap([
 				[$token, \PDO::PARAM_STR, null, 'namedParameterToken']
-			]));
+			]);
 
 		$stmt->expects($this->once())
 			->method('fetch')
 			->with(\PDO::FETCH_ASSOC)
-			->will($this->returnValue($return));
+			->willReturn($return);
 
 		$expr->expects($this->once())
 			->method('eq')
 			->with('token', 'namedParameterToken')
-			->will($this->returnValue('EQ STATEMENT'));
+			->willReturn('EQ STATEMENT');
 
 		$this->dbConnection->expects($this->once())
 			->method('getQueryBuilder')
 			->with()
-			->will($this->returnValue($queryBuilder));
+			->willReturn($queryBuilder);
 
 		$queryBuilder->expects($this->at(0))
 			->method('select')
 			->with('*')
-			->will($this->returnValue($queryBuilder));
+			->willReturn($queryBuilder);
 		$queryBuilder->expects($this->at(1))
 			->method('from')
 			->with('calendar_invitations')
-			->will($this->returnValue($queryBuilder));
+			->willReturn($queryBuilder);
 		$queryBuilder->expects($this->at(4))
 			->method('where')
 			->with('EQ STATEMENT')
-			->will($this->returnValue($queryBuilder));
+			->willReturn($queryBuilder);
 		$queryBuilder->expects($this->at(5))
 			->method('execute')
 			->with()
-			->will($this->returnValue($stmt));
+			->willReturn($stmt);
 
 		$this->timeFactory->method('getTime')
-			->will($this->returnValue($time));
+			->willReturn($time);
 	}
 }

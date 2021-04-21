@@ -31,7 +31,7 @@ class ExpressionBuilderDBTest extends TestCase {
 	/** @var \Doctrine\DBAL\Connection|\OCP\IDBConnection */
 	protected $connection;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->connection = \OC::$server->getDatabaseConnection();
@@ -67,7 +67,10 @@ class ExpressionBuilderDBTest extends TestCase {
 			->from('users')
 			->where($query->expr()->like($query->createNamedParameter($param1), $query->createNamedParameter($param2)));
 
-		$this->assertEquals($match, $query->execute()->fetchColumn());
+		$result = $query->execute();
+		$column = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals($match, $column);
 	}
 
 	public function ilikeProvider() {
@@ -101,6 +104,9 @@ class ExpressionBuilderDBTest extends TestCase {
 			->from('users')
 			->where($query->expr()->iLike($query->createNamedParameter($param1), $query->createNamedParameter($param2)));
 
-		$this->assertEquals($match, $query->execute()->fetchColumn());
+		$result = $query->execute();
+		$column = $result->fetchOne();
+		$result->closeCursor();
+		$this->assertEquals($match, $column);
 	}
 }

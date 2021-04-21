@@ -2,8 +2,10 @@
 /**
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Joas Schilling <coding@schilljs.com>
  * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
  * @license AGPL-3.0
@@ -18,7 +20,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -31,9 +33,8 @@ use Sabre\DAV\PropPatch;
 use Test\TestCase;
 
 class AddressBookTest extends TestCase {
-
 	public function testDelete() {
-		/** @var \PHPUnit_Framework_MockObject_MockObject | CardDavBackend $backend */
+		/** @var \PHPUnit\Framework\MockObject\MockObject | CardDavBackend $backend */
 		$backend = $this->getMockBuilder(CardDavBackend::class)->disableOriginalConstructor()->getMock();
 		$backend->expects($this->once())->method('updateShares');
 		$backend->expects($this->any())->method('getShares')->willReturn([
@@ -51,11 +52,11 @@ class AddressBookTest extends TestCase {
 		$c->delete();
 	}
 
-	/**
-	 * @expectedException \Sabre\DAV\Exception\Forbidden
-	 */
+
 	public function testDeleteFromGroup() {
-		/** @var \PHPUnit_Framework_MockObject_MockObject | CardDavBackend $backend */
+		$this->expectException(\Sabre\DAV\Exception\Forbidden::class);
+
+		/** @var \PHPUnit\Framework\MockObject\MockObject | CardDavBackend $backend */
 		$backend = $this->getMockBuilder(CardDavBackend::class)->disableOriginalConstructor()->getMock();
 		$backend->expects($this->never())->method('updateShares');
 		$backend->expects($this->any())->method('getShares')->willReturn([
@@ -73,11 +74,11 @@ class AddressBookTest extends TestCase {
 		$c->delete();
 	}
 
-	/**
-	 * @expectedException \Sabre\DAV\Exception\Forbidden
-	 */
+
 	public function testPropPatch() {
-		/** @var \PHPUnit_Framework_MockObject_MockObject | CardDavBackend $backend */
+		$this->expectException(\Sabre\DAV\Exception\Forbidden::class);
+
+		/** @var \PHPUnit\Framework\MockObject\MockObject | CardDavBackend $backend */
 		$backend = $this->getMockBuilder(CardDavBackend::class)->disableOriginalConstructor()->getMock();
 		$calendarInfo = [
 			'{http://owncloud.org/ns}owner-principal' => 'user1',
@@ -95,7 +96,7 @@ class AddressBookTest extends TestCase {
 	 * @dataProvider providesReadOnlyInfo
 	 */
 	public function testAcl($expectsWrite, $readOnlyValue, $hasOwnerSet) {
-		/** @var \PHPUnit_Framework_MockObject_MockObject | CardDavBackend $backend */
+		/** @var \PHPUnit\Framework\MockObject\MockObject | CardDavBackend $backend */
 		$backend = $this->getMockBuilder(CardDavBackend::class)->disableOriginalConstructor()->getMock();
 		$backend->expects($this->any())->method('applyShareAcl')->willReturnArgument(1);
 		$calendarInfo = [
@@ -151,4 +152,5 @@ class AddressBookTest extends TestCase {
 			'read-only property is false and no owner' => [true, false, false],
 			'read-only property is true and no owner' => [false, true, false],
 		];
-	}}
+	}
+}

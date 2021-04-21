@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  *
@@ -16,17 +18,12 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 // @codeCoverageIgnoreStart
 return [
 	'routes' => [
-		[
-			'name' => 'settings#state',
-			'url' => '/settings/state',
-			'verb' => 'GET'
-		],
 		[
 			'name' => 'settings#createCodes',
 			'url' => '/settings/create',

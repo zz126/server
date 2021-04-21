@@ -20,7 +20,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -29,6 +29,7 @@ namespace OCA\Files_Sharing\Tests;
 use OC\Files\Filesystem;
 use OC\Files\View;
 use OCP\Lock\ILockingProvider;
+use OCP\Share\IShare;
 
 /**
  * Class LockingTest
@@ -46,7 +47,7 @@ class LockingTest extends TestCase {
 	private $ownerUid;
 	private $recipientUid;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->userBackend = new \Test\Util\User\Dummy();
@@ -63,7 +64,7 @@ class LockingTest extends TestCase {
 		$fileId = Filesystem::getFileInfo('/foo/bar.txt')->getId();
 
 		$this->share(
-			\OCP\Share::SHARE_TYPE_USER,
+			IShare::TYPE_USER,
 			'/foo/bar.txt',
 			$this->ownerUid,
 			$this->recipientUid,
@@ -74,15 +75,15 @@ class LockingTest extends TestCase {
 		$this->assertTrue(Filesystem::file_exists('bar.txt'));
 	}
 
-	public function tearDown() {
+	protected function tearDown(): void {
 		\OC::$server->getUserManager()->removeBackend($this->userBackend);
 		parent::tearDown();
 	}
 
-	/**
-	 * @expectedException \OCP\Lock\LockedException
-	 */
+
 	public function testLockAsRecipient() {
+		$this->expectException(\OCP\Lock\LockedException::class);
+
 		$this->loginAsUser($this->ownerUid);
 
 		Filesystem::initMountPoints($this->recipientUid);
@@ -104,7 +105,6 @@ class LockingTest extends TestCase {
 	}
 
 	public function testChangeLock() {
-
 		Filesystem::initMountPoints($this->recipientUid);
 		$recipientView = new View('/' . $this->recipientUid . '/files');
 		$recipientView->lockFile('bar.txt', ILockingProvider::LOCK_SHARED);

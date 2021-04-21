@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types = 1);
 /**
  * @author Joas Schilling <nickvergessen@owncloud.com>
  *
@@ -21,7 +23,6 @@
 
 namespace Test\Notification;
 
-
 use OC\Notification\Notification;
 use OCP\Notification\IAction;
 use OCP\Notification\INotification;
@@ -31,10 +32,10 @@ use Test\TestCase;
 class NotificationTest extends TestCase {
 	/** @var INotification */
 	protected $notification;
-	/** @var IValidator|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IValidator|\PHPUnit\Framework\MockObject\MockObject */
 	protected $validator;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 		$this->validator = $this->createMock(IValidator::class);
 		$this->notification = new Notification($this->validator);
@@ -43,6 +44,7 @@ class NotificationTest extends TestCase {
 	protected function dataValidString($maxLength) {
 		$dataSets = [
 			['test1'],
+			['1564'],
 			[str_repeat('a', 1)],
 		];
 		if ($maxLength !== false) {
@@ -53,31 +55,12 @@ class NotificationTest extends TestCase {
 
 	protected function dataInvalidString($maxLength) {
 		$dataSets = [
-			[true],
-			[false],
-			[0],
-			[1],
-			[''],
-			[[]],
+			['']
 		];
 		if ($maxLength !== false) {
 			$dataSets[] = [str_repeat('a', $maxLength + 1)];
-			$dataSets[] = [[str_repeat('a', $maxLength + 1)]];
 		}
 		return $dataSets;
-	}
-
-	protected function dataInvalidInt() {
-		return [
-			[true],
-			[false],
-			[''],
-			['a'],
-			[str_repeat('a', 256)],
-			[[]],
-			[['a']],
-			[[str_repeat('a', 256)]],
-		];
 	}
 
 	public function dataSetApp() {
@@ -102,11 +85,13 @@ class NotificationTest extends TestCase {
 	 * @dataProvider dataSetAppInvalid
 	 * @param mixed $app
 	 *
-	 * @expectedException \InvalidArgumentException
 	 */
 	public function testSetAppInvalid($app) {
+		$this->expectException(\InvalidArgumentException::class);
+
 		$this->notification->setApp($app);
 	}
+
 
 	public function dataSetUser() {
 		return $this->dataValidString(64);
@@ -130,9 +115,10 @@ class NotificationTest extends TestCase {
 	 * @dataProvider dataSetUserInvalid
 	 * @param mixed $user
 	 *
-	 * @expectedException \InvalidArgumentException
 	 */
 	public function testSetUserInvalid($user) {
+		$this->expectException(\InvalidArgumentException::class);
+
 		$this->notification->setUser($user);
 	}
 
@@ -172,57 +158,42 @@ class NotificationTest extends TestCase {
 	 * @dataProvider dataSetDateTimeZero
 	 * @param \DateTime $dateTime
 	 *
-	 * @expectedException \InvalidArgumentException
 	 * @expectedMessage 'The given date time is invalid'
 	 */
 	public function testSetDateTimeZero($dateTime) {
+		$this->expectException(\InvalidArgumentException::class);
+
 		$this->notification->setDateTime($dateTime);
 	}
 
 	public function dataSetObject() {
 		return [
-			['a', '21', '21'],
-			[str_repeat('a', 64), 42, '42'],
+			['a', '21'],
+			[str_repeat('a', 64), '42'],
 		];
 	}
 
 	/**
 	 * @dataProvider dataSetObject
 	 * @param string $type
-	 * @param int|string $id
-	 * @param string $exptectedId
+	 * @param string $id
 	 */
-	public function testSetObject($type, $id, $exptectedId) {
+	public function testSetObject($type, $id) {
 		$this->assertSame('', $this->notification->getObjectType());
 		$this->assertSame('', $this->notification->getObjectId());
 		$this->assertSame($this->notification, $this->notification->setObject($type, $id));
 		$this->assertSame($type, $this->notification->getObjectType());
-		$this->assertSame($exptectedId, $this->notification->getObjectId());
+		$this->assertSame($id, $this->notification->getObjectId());
 	}
 
 	public function dataSetObjectTypeInvalid() {
 		return $this->dataInvalidString(64);
 	}
 
-	/**
-	 * @dataProvider dataSetObjectTypeInvalid
-	 * @param mixed $type
-	 *
-	 * @expectedException \InvalidArgumentException
-	 * @expectedMessage 'The given object type is invalid'
-	 */
-	public function testSetObjectTypeInvalid($type) {
-		$this->notification->setObject($type, 1337);
-	}
-
 	public function dataSetObjectIdInvalid() {
 		return [
-			[true],
-			[false],
 			[''],
 			[str_repeat('a', 64 + 1)],
-			[[]],
-			[[str_repeat('a', 64 + 1)]],
 		];
 	}
 
@@ -230,10 +201,11 @@ class NotificationTest extends TestCase {
 	 * @dataProvider dataSetObjectIdInvalid
 	 * @param mixed $id
 	 *
-	 * @expectedException \InvalidArgumentException
 	 * @expectedMessage 'The given object id is invalid'
 	 */
 	public function testSetObjectIdInvalid($id) {
+		$this->expectException(\InvalidArgumentException::class);
+
 		$this->notification->setObject('object', $id);
 	}
 
@@ -266,9 +238,10 @@ class NotificationTest extends TestCase {
 	 * @dataProvider dataSetSubjectInvalidSubject
 	 * @param mixed $subject
 	 *
-	 * @expectedException \InvalidArgumentException
 	 */
 	public function testSetSubjectInvalidSubject($subject) {
+		$this->expectException(\InvalidArgumentException::class);
+
 		$this->notification->setSubject($subject, []);
 	}
 
@@ -294,9 +267,10 @@ class NotificationTest extends TestCase {
 	 * @dataProvider dataSetParsedSubjectInvalid
 	 * @param mixed $subject
 	 *
-	 * @expectedException \InvalidArgumentException
 	 */
 	public function testSetParsedSubjectInvalid($subject) {
+		$this->expectException(\InvalidArgumentException::class);
+
 		$this->notification->setParsedSubject($subject);
 	}
 
@@ -329,9 +303,10 @@ class NotificationTest extends TestCase {
 	 * @dataProvider dataSetMessageInvalidMessage
 	 * @param mixed $message
 	 *
-	 * @expectedException \InvalidArgumentException
 	 */
 	public function testSetMessageInvalidMessage($message) {
+		$this->expectException(\InvalidArgumentException::class);
+
 		$this->notification->setMessage($message, []);
 	}
 
@@ -357,9 +332,10 @@ class NotificationTest extends TestCase {
 	 * @dataProvider dataSetParsedMessageInvalid
 	 * @param mixed $message
 	 *
-	 * @expectedException \InvalidArgumentException
 	 */
 	public function testSetParsedMessageInvalid($message) {
+		$this->expectException(\InvalidArgumentException::class);
+
 		$this->notification->setParsedMessage($message);
 	}
 
@@ -385,9 +361,10 @@ class NotificationTest extends TestCase {
 	 * @dataProvider dataSetLinkInvalid
 	 * @param mixed $link
 	 *
-	 * @expectedException \InvalidArgumentException
 	 */
 	public function testSetLinkInvalid($link) {
+		$this->expectException(\InvalidArgumentException::class);
+
 		$this->notification->setLink($link);
 	}
 
@@ -413,9 +390,10 @@ class NotificationTest extends TestCase {
 	 * @dataProvider dataSetIconInvalid
 	 * @param mixed $icon
 	 *
-	 * @expectedException \InvalidArgumentException
 	 */
 	public function testSetIconInvalid($icon) {
+		$this->expectException(\InvalidArgumentException::class);
+
 		$this->notification->setIcon($icon);
 	}
 
@@ -425,7 +403,7 @@ class NotificationTest extends TestCase {
 	}
 
 	public function testAddAction() {
-		/** @var \OCP\Notification\IAction|\PHPUnit_Framework_MockObject_MockObject $action */
+		/** @var \OCP\Notification\IAction|\PHPUnit\Framework\MockObject\MockObject $action */
 		$action = $this->createMock(IAction::class);
 		$action->expects($this->once())
 			->method('isValid')
@@ -439,11 +417,11 @@ class NotificationTest extends TestCase {
 		$this->assertEquals([], $this->notification->getParsedActions());
 	}
 
-	/**
-	 * @expectedException \InvalidArgumentException
-	 */
+
 	public function testAddActionInvalid() {
-		/** @var \OCP\Notification\IAction|\PHPUnit_Framework_MockObject_MockObject $action */
+		$this->expectException(\InvalidArgumentException::class);
+
+		/** @var \OCP\Notification\IAction|\PHPUnit\Framework\MockObject\MockObject $action */
 		$action = $this->createMock(IAction::class);
 		$action->expects($this->once())
 			->method('isValid')
@@ -455,7 +433,7 @@ class NotificationTest extends TestCase {
 	}
 
 	public function testAddActionSecondPrimary() {
-		/** @var \OCP\Notification\IAction|\PHPUnit_Framework_MockObject_MockObject $action */
+		/** @var \OCP\Notification\IAction|\PHPUnit\Framework\MockObject\MockObject $action */
 		$action = $this->createMock(IAction::class);
 		$action->expects($this->exactly(2))
 			->method('isValid')
@@ -471,7 +449,7 @@ class NotificationTest extends TestCase {
 	}
 
 	public function testAddParsedAction() {
-		/** @var \OCP\Notification\IAction|\PHPUnit_Framework_MockObject_MockObject $action */
+		/** @var \OCP\Notification\IAction|\PHPUnit\Framework\MockObject\MockObject $action */
 		$action = $this->createMock(IAction::class);
 		$action->expects($this->once())
 			->method('isValidParsed')
@@ -485,11 +463,11 @@ class NotificationTest extends TestCase {
 		$this->assertEquals([], $this->notification->getActions());
 	}
 
-	/**
-	 * @expectedException \InvalidArgumentException
-	 */
+
 	public function testAddParsedActionInvalid() {
-		/** @var \OCP\Notification\IAction|\PHPUnit_Framework_MockObject_MockObject $action */
+		$this->expectException(\InvalidArgumentException::class);
+
+		/** @var \OCP\Notification\IAction|\PHPUnit\Framework\MockObject\MockObject $action */
 		$action = $this->createMock(IAction::class);
 		$action->expects($this->once())
 			->method('isValidParsed')
@@ -501,7 +479,7 @@ class NotificationTest extends TestCase {
 	}
 
 	public function testAddActionSecondParsedPrimary() {
-		/** @var \OCP\Notification\IAction|\PHPUnit_Framework_MockObject_MockObject $action */
+		/** @var \OCP\Notification\IAction|\PHPUnit\Framework\MockObject\MockObject $action */
 		$action = $this->createMock(IAction::class);
 		$action->expects($this->exactly(2))
 			->method('isValidParsed')
@@ -517,7 +495,7 @@ class NotificationTest extends TestCase {
 	}
 
 	public function testAddActionParsedPrimaryEnd() {
-		/** @var \OCP\Notification\IAction|\PHPUnit_Framework_MockObject_MockObject $action */
+		/** @var \OCP\Notification\IAction|\PHPUnit\Framework\MockObject\MockObject $action */
 		$action1 = $this->createMock(IAction::class);
 		$action1->expects($this->exactly(2))
 			->method('isValidParsed')
@@ -525,7 +503,7 @@ class NotificationTest extends TestCase {
 		$action1->expects($this->exactly(2))
 			->method('isPrimary')
 			->willReturn(false);
-		/** @var \OCP\Notification\IAction|\PHPUnit_Framework_MockObject_MockObject $action */
+		/** @var \OCP\Notification\IAction|\PHPUnit\Framework\MockObject\MockObject $action */
 		$action2 = $this->createMock(IAction::class);
 		$action2->expects($this->once())
 			->method('isValidParsed')
@@ -558,7 +536,7 @@ class NotificationTest extends TestCase {
 	 * @param bool $expected
 	 */
 	public function testIsValid($isValidCommon, $subject, $expected) {
-		/** @var \OCP\Notification\INotification|\PHPUnit_Framework_MockObject_MockObject $notification */
+		/** @var \OCP\Notification\INotification|\PHPUnit\Framework\MockObject\MockObject $notification */
 		$notification = $this->getMockBuilder(Notification::class)
 			->setMethods([
 				'isValidCommon',
@@ -591,7 +569,7 @@ class NotificationTest extends TestCase {
 	 * @param bool $expected
 	 */
 	public function testIsParsedValid($isValidCommon, $subject, $expected) {
-		/** @var \OCP\Notification\INotification|\PHPUnit_Framework_MockObject_MockObject $notification */
+		/** @var \OCP\Notification\INotification|\PHPUnit\Framework\MockObject\MockObject $notification */
 		$notification = $this->getMockBuilder(Notification::class)
 			->setMethods([
 				'isValidCommon',
@@ -638,7 +616,7 @@ class NotificationTest extends TestCase {
 	 * @param bool $expected
 	 */
 	public function testIsValidCommon($app, $user, $timestamp, $objectType, $objectId, $expected) {
-		/** @var \OCP\Notification\INotification|\PHPUnit_Framework_MockObject_MockObject $notification */
+		/** @var \OCP\Notification\INotification|\PHPUnit\Framework\MockObject\MockObject $notification */
 		$notification = $this->getMockBuilder(Notification::class)
 			->setMethods([
 				'getApp',

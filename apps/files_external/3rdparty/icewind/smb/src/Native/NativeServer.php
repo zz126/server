@@ -8,9 +8,13 @@
 namespace Icewind\SMB\Native;
 
 use Icewind\SMB\AbstractServer;
+use Icewind\SMB\Exception\AuthenticationException;
+use Icewind\SMB\Exception\InvalidHostException;
 use Icewind\SMB\IAuth;
-use Icewind\SMB\System;
-use Icewind\SMB\TimeZoneProvider;
+use Icewind\SMB\IOptions;
+use Icewind\SMB\IShare;
+use Icewind\SMB\ISystem;
+use Icewind\SMB\ITimeZoneProvider;
 
 class NativeServer extends AbstractServer {
 	/**
@@ -18,54 +22,44 @@ class NativeServer extends AbstractServer {
 	 */
 	protected $state;
 
-	/**
-	 * @param string $host
-	 * @param IAuth $auth
-	 * @param System $system
-	 * @param TimeZoneProvider $timeZoneProvider
-	 */
-	public function __construct($host, IAuth $auth, System $system, TimeZoneProvider $timeZoneProvider) {
-		parent::__construct($host, $auth, $system, $timeZoneProvider);
+	public function __construct(string $host, IAuth $auth, ISystem $system, ITimeZoneProvider $timeZoneProvider, IOptions $options) {
+		parent::__construct($host, $auth, $system, $timeZoneProvider, $options);
 		$this->state = new NativeState();
 	}
 
-	protected function connect() {
-		$this->state->init($this->getAuth());
+	protected function connect(): void {
+		$this->state->init($this->getAuth(), $this->getOptions());
 	}
 
 	/**
-	 * @return \Icewind\SMB\IShare[]
-	 * @throws \Icewind\SMB\Exception\AuthenticationException
-	 * @throws \Icewind\SMB\Exception\InvalidHostException
+	 * @return IShare[]
+	 * @throws AuthenticationException
+	 * @throws InvalidHostException
 	 */
-	public function listShares() {
+	public function listShares(): array {
 		$this->connect();
-		$shares = array();
+		$shares = [];
 		$dh = $this->state->opendir('smb://' . $this->getHost());
-		while ($share = $this->state->readdir($dh)) {
+		while ($share = $this->state->readdir($dh, '')) {
 			if ($share['type'] === 'file share') {
 				$shares[] = $this->getShare($share['name']);
 			}
 		}
-		$this->state->closedir($dh);
+		$this->state->closedir($dh, '');
 		return $shares;
 	}
 
-	/**
-	 * @param string $name
-	 * @return \Icewind\SMB\IShare
-	 */
-	public function getShare($name) {
+	public function getShare(string $name): IShare {
 		return new NativeShare($this, $name);
 	}
 
 	/**
 	 * Check if the smbclient php extension is available
 	 *
-	 * @param System $system
+	 * @param ISystem $system
 	 * @return bool
 	 */
-	public static function available(System $system) {
-		return function_exists('smbclient_state_new');
+	public static function available(ISystem $system): bool {
+		return $system->libSmbclientAvailable();
 	}
 }

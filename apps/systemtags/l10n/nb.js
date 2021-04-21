@@ -1,15 +1,9 @@
 OC.L10N.register(
     "systemtags",
     {
-    "Tags" : "Merkelapper",
     "Update" : "Oppdater",
     "Create" : "Opprett",
-    "Select tag…" : "Velg merkelapp…",
-    "Tagged files" : "Filer med merkelapper",
-    "Select tags to filter by" : "Velg merkelapper å filtrere etter",
-    "No tags found" : "Fant ingen merkelapper",
-    "Please select tags to filter by" : "Velg merkelapper å filtrere etter",
-    "No files found for the selected tags" : "Ingen filer funnet for de valgte merkelappene",
+    "Select tag …" : "Velg merkelapp…",
     "Added system tag {systemtag}" : "La til system-merkelapp {systemtag}",
     "Added system tag %1$s" : "La til system-merkelapp %1$s",
     "%1$s added system tag %2$s" : "%1$s  la til system-merkelapp %2$s",
@@ -41,8 +35,14 @@ OC.L10N.register(
     "%s (restricted)" : "%s (begrenset)",
     "%s (invisible)" : "%s (usynlig)",
     "<strong>System tags</strong> for a file have been modified" : "Endringer av en fils <strong>System-merkelapper</strong>",
+    "Tags" : "Merkelapper",
     "Collaborative tags" : "Samarbeidsmerkelapper",
-    "Select tag …" : "Velg merkelapp…",
+    "Tagged files" : "Filer med merkelapper",
+    "Select tags to filter by" : "Velg merkelapper å filtrere etter",
+    "No tags found" : "Fant ingen merkelapper",
+    "Please select tags to filter by" : "Velg merkelapper å filtrere etter",
+    "No files found for the selected tags" : "Ingen filer funnet for de valgte merkelappene",
+    "Create a new tag" : "Lag en ny merkelapp",
     "Name" : "Navn",
     "Public" : "Offentlig",
     "Restricted" : "Begrenset",
@@ -52,7 +52,6 @@ OC.L10N.register(
     "No files in here" : "Ingen filer her",
     "No entries found in this folder" : "Ingen oppføringer funnet i denne mappen",
     "Size" : "Størrelse",
-    "Modified" : "Endret",
-    "Create and edit collaborative tags. These tags affect all users." : "Opprett og rediger samarbeidsmerkelapper. Disse har innvirkning på alle brukere."
+    "Modified" : "Endret"
 },
 "nplurals=2; plural=(n != 1);");

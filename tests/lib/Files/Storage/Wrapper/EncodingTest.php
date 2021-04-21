@@ -9,16 +9,15 @@
 namespace Test\Files\Storage\Wrapper;
 
 class EncodingTest extends \Test\Files\Storage\Storage {
-
-	const NFD_NAME = 'ümlaut';
-	const NFC_NAME = 'ümlaut';
+	public const NFD_NAME = 'ümlaut';
+	public const NFC_NAME = 'ümlaut';
 
 	/**
 	 * @var \OC\Files\Storage\Temporary
 	 */
 	private $sourceStorage;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 		$this->sourceStorage = new \OC\Files\Storage\Temporary([]);
 		$this->instance = new \OC\Files\Storage\Wrapper\Encoding([
@@ -26,7 +25,7 @@ class EncodingTest extends \Test\Files\Storage\Storage {
 		]);
 	}
 
-	public function tearDown() {
+	protected function tearDown(): void {
 		$this->sourceStorage->cleanUp();
 		parent::tearDown();
 	}

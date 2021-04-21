@@ -18,14 +18,14 @@ declare(strict_types=1);
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
 namespace OCA\TwoFactorBackupCodes\Event;
 
+use OCP\EventDispatcher\Event;
 use OCP\IUser;
-use Symfony\Component\EventDispatcher\Event;
 
 class CodesGenerated extends Event {
 
@@ -33,6 +33,7 @@ class CodesGenerated extends Event {
 	private $user;
 
 	public function __construct(IUser $user) {
+		parent::__construct();
 		$this->user = $user;
 	}
 
@@ -42,5 +43,4 @@ class CodesGenerated extends Event {
 	public function getUser(): IUser {
 		return $this->user;
 	}
-
 }

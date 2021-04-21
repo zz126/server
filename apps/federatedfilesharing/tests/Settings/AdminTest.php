@@ -4,6 +4,8 @@
  *
  * @author Bjoern Schiessle <bjoern@schiessle.org>
  * @author Lukas Reschke <lukas@statuscode.ch>
+ * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -18,7 +20,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -35,10 +37,10 @@ class AdminTest extends TestCase {
 	private $admin;
 	/** @var \OCA\FederatedFileSharing\FederatedShareProvider */
 	private $federatedShareProvider;
-	/** @var  IConfig|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var  IConfig|\PHPUnit\Framework\MockObject\MockObject */
 	private $gsConfig;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 		$this->federatedShareProvider = $this->createMock(FederatedShareProvider::class);
 		$this->gsConfig = $this->createMock(IConfig::class);

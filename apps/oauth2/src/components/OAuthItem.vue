@@ -21,11 +21,29 @@
   -->
 <template>
 	<tr>
-		<td>{{name}}</td>
-		<td>{{redirectUri}}</td>
-		<td><code>{{clientId}}</code></td>
-		<td><code>{{renderedSecret}}</code><a class='icon-toggle has-tooltip' :title="t('oauth2', 'Show client secret')" @click="toggleSecret"></a></td>
-		<td class="action-column"><span><a class="icon-delete has-tooltip" :title="t('oauth2', 'Delete')" @click="$emit('delete', id)"></a></span></td>
+		<td>
+			<table class="inline">
+				<tr>
+					<td>{{ t('oauth2', 'Name') }}</td>
+					<td>{{ name }}</td>
+				</tr>
+				<tr>
+					<td>{{ t('oauth2', 'Redirection URI') }}</td>
+					<td>{{ redirectUri }}</td>
+				</tr>
+				<tr>
+					<td>{{ t('oauth2', 'Client Identifier') }}</td>
+					<td><code>{{ clientId }}</code></td>
+				</tr>
+				<tr>
+					<td>{{ t('oauth2', 'Secret') }}</td>
+					<td><code>{{ renderedSecret }}</code><a class="icon-toggle has-tooltip" :title="t('oauth2', 'Show client secret')" @click="toggleSecret" /></td>
+				</tr>
+			</table>
+		</td>
+		<td class="action-column">
+			<span><a class="icon-delete has-tooltip" :title="t('oauth2', 'Delete')" @click="$emit('delete', id)" /></span>
+		</td>
 	</tr>
 </template>
 
@@ -35,33 +53,33 @@ export default {
 	props: {
 		client: {
 			type: Object,
-			required: true
-		}
+			required: true,
+		},
 	},
-	data: function() {
-			return {
-				id: this.client.id,
-				name: this.client.name,
-				redirectUri: this.client.redirectUri,
-				clientId: this.client.clientId,
-				clientSecret: this.client.clientSecret,
-				renderSecret: false,
-			};
+	data() {
+		return {
+			id: this.client.id,
+			name: this.client.name,
+			redirectUri: this.client.redirectUri,
+			clientId: this.client.clientId,
+			clientSecret: this.client.clientSecret,
+			renderSecret: false,
+		}
 	},
 	computed: {
-		renderedSecret: function() {
+		renderedSecret() {
 			if (this.renderSecret) {
-				return this.clientSecret;
+				return this.clientSecret
 			} else {
-				return '****';
+				return '****'
 			}
-		}
+		},
 	},
 	methods: {
 		toggleSecret() {
-			this.renderSecret = !this.renderSecret;
-		}
-	}
+			this.renderSecret = !this.renderSecret
+		},
+	},
 }
 </script>
 
@@ -77,6 +95,9 @@ export default {
 	td code {
 		display: inline-block;
 		vertical-align: middle;
-		padding: 3px;
+	}
+	table.inline td {
+		border: none;
+		padding: 5px;
 	}
 </style>

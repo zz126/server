@@ -18,6 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 namespace Test\Security\Bruteforce;
 
 use OC\AppFramework\Utility\TimeFactory;
@@ -40,10 +41,10 @@ class ThrottlerTest extends TestCase {
 	private $dbConnection;
 	/** @var ILogger */
 	private $logger;
-	/** @var IConfig|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IConfig|\PHPUnit\Framework\MockObject\MockObject */
 	private $config;
 
-	public function setUp() {
+	protected function setUp(): void {
 		$this->dbConnection = $this->createMock(IDBConnection::class);
 		$this->logger = $this->createMock(ILogger::class);
 		$this->config = $this->createMock(IConfig::class);
@@ -101,6 +102,27 @@ class ThrottlerTest extends TestCase {
 				true,
 			],
 			[
+				'10.10.10.10',
+				[
+					'whitelist_0' => '10.10.10.11/31',
+				],
+				true,
+			],
+			[
+				'10.10.10.10',
+				[
+					'whitelist_0' => '10.10.10.9/31',
+				],
+				false,
+			],
+			[
+				'10.10.10.10',
+				[
+					'whitelist_0' => '10.10.10.15/29',
+				],
+				true,
+			],
+			[
 				'dead:beef:cafe::1',
 				[
 					'whitelist_0' => '192.168.0.0/16',
@@ -124,6 +146,14 @@ class ThrottlerTest extends TestCase {
 					'whitelist_0' => '192.168.0.0/16',
 					'whitelist_1' => '10.10.10.0/24',
 					'whitelist_2' => 'deaf:cafe::/8'
+				],
+				true,
+			],
+			[
+				'dead:beef:cafe::1111',
+				[
+					'whitelist_0' => 'dead:beef:cafe::1100/123',
+
 				],
 				true,
 			],
@@ -155,7 +185,7 @@ class ThrottlerTest extends TestCase {
 			->willReturn($enabled);
 
 		$this->config->method('getAppValue')
-			->will($this->returnCallback(function($app, $key, $default) use ($whitelists) {
+			->willReturnCallback(function ($app, $key, $default) use ($whitelists) {
 				if ($app !== 'bruteForce') {
 					return $default;
 				}
@@ -163,7 +193,7 @@ class ThrottlerTest extends TestCase {
 					return $whitelists[$key];
 				}
 				return $default;
-			}));
+			});
 
 		$this->assertSame(
 			($enabled === false) ? true : $isWhiteListed,

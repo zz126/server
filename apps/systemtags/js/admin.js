@@ -1,5 +1,6 @@
 /**
  * @copyright Copyright (c) 2016 Joas Schilling <coding@schilljs.com>
+ * @copyright Copyright (c) 2019 Gary Kim <gary@garykim.dev>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -83,6 +84,11 @@
 				userAssignable: level === 3
 			};
 
+			if (!data.name) {
+				OCP.Toast.error(t('systemtags_manager', 'Tag name is empty'));
+				return;
+			}
+
 			if (tagId) {
 				var model = this.collection.get(tagId);
 				model.save(data);
@@ -139,7 +145,7 @@
 		select2: {
 			allowClear: false,
 			multiple: false,
-			placeholder: t('systemtags_manager', 'Select tag…'),
+			placeholder: t('systemtags_manager', 'Select tag …'),
 			query: _.debounce(function(query) {
 				query.callback({
 					results: OCA.SystemTags.Admin.collection.filterByName(query.term)
@@ -172,7 +178,7 @@
 	};
 })();
 
-$(document).ready(function() {
+window.addEventListener('DOMContentLoaded', function() {
 	OCA.SystemTags.Admin.init();
 });
 

@@ -2,6 +2,7 @@
 /**
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Joas Schilling <coding@schilljs.com>
  *
  * @license AGPL-3.0
@@ -16,7 +17,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -44,7 +45,7 @@ class CompositeExpression implements ICompositeExpression, \Countable {
 	 *
 	 * @return \OCP\DB\QueryBuilder\ICompositeExpression
 	 */
-	public function addMultiple(array $parts = array()) {
+	public function addMultiple(array $parts = []): ICompositeExpression {
 		$this->compositeExpression->addMultiple($parts);
 
 		return $this;
@@ -57,7 +58,7 @@ class CompositeExpression implements ICompositeExpression, \Countable {
 	 *
 	 * @return \OCP\DB\QueryBuilder\ICompositeExpression
 	 */
-	public function add($part) {
+	public function add($part): ICompositeExpression {
 		$this->compositeExpression->add($part);
 
 		return $this;
@@ -68,7 +69,7 @@ class CompositeExpression implements ICompositeExpression, \Countable {
 	 *
 	 * @return integer
 	 */
-	public function count() {
+	public function count(): int {
 		return $this->compositeExpression->count();
 	}
 
@@ -77,7 +78,7 @@ class CompositeExpression implements ICompositeExpression, \Countable {
 	 *
 	 * @return string
 	 */
-	public function getType() {
+	public function getType(): string {
 		return $this->compositeExpression->getType();
 	}
 
@@ -86,8 +87,7 @@ class CompositeExpression implements ICompositeExpression, \Countable {
 	 *
 	 * @return string
 	 */
-	public function __toString()
-	{
+	public function __toString(): string {
 		return (string) $this->compositeExpression;
 	}
 }

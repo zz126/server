@@ -1,7 +1,10 @@
-/*
+/**
  * @copyright 2018 Christoph Wurst <christoph@winzerhof-wurst.at>
  *
- * @author 2018 Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author John Molakvoæ <skjnldsv@protonmail.com>
+ * @author Julius Härtl <jus@bitgrid.net>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -16,11 +19,32 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
-import '@babel/polyfill'
+import $ from 'jquery'
+import 'core-js/stable'
+import 'regenerator-runtime/runtime'
+import './Polyfill/index'
+
+// If you remove the line below, tests won't pass
+// eslint-disable-next-line no-unused-vars
+import OC from './OC/index'
 
 import './globals'
+import './jquery/index'
+import { initCore } from './init'
+import { registerAppsSlideToggle } from './OC/apps'
 
-import './OCP/index'
+window.addEventListener('DOMContentLoaded', function() {
+	initCore()
+	registerAppsSlideToggle()
+
+	// fallback to hashchange when no history support
+	if (window.history.pushState) {
+		window.onpopstate = _.bind(OC.Util.History._onPopState, OC.Util.History)
+	} else {
+		$(window).on('hashchange', _.bind(OC.Util.History._onPopState, OC.Util.History))
+	}
+})

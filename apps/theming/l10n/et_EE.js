@@ -14,8 +14,8 @@ OC.L10N.register(
     "No file was uploaded" : "Ühtegi faili ei latud üles",
     "Missing a temporary folder" : "Ajutine kausta on puudu",
     "No file uploaded" : "Faili ei laetud üles",
-    "Unsupported image type" : "Pildi tüüp pole toetatud",
     "Theming" : "Teemad",
+    "Open documentation" : "Ava dokumentatsioon",
     "Theming makes it possible to easily customize the look and feel of your instance and supported clients. This will be visible for all users." : "Teemad võimaldavad lihtsalt serveriinstantsi ja toetatud klientide välimus muuta. See on näha kõigile kasutajatele.",
     "Name" : "Nimi",
     "Reset to default" : "Taasta vaikeseaded",
@@ -26,12 +26,7 @@ OC.L10N.register(
     "Login image" : "Avalehe taust",
     "Upload new login background" : "Lae üles uus avalehe taustapilt",
     "Remove background image" : "Eemalda taustapilt",
-    "Install the Imagemagick PHP extension with support for SVG images to automatically generate favicons based on the uploaded logo and color." : "Paigalda Imagemagick PHP laiendus SVG piltide toega, et üleslaetud logo ja värvi põhjal automaatselt faviconid genereerida. ",
-    "There is no error, the file uploaded with success" : "Vigu pole, fail laetu edukalt üles",
-    "The uploaded file was only partially uploaded" : "Üleslatud fail laeti üles ainult osaliselt",
-    "Failed to write file to disk." : "Faili kettale kirjutamine ebaõnnestus.",
-    "A PHP extension stopped the file upload." : "PHP laiendus seiskas faili üleslaadimise.",
-    "You are already using a custom theme" : "Kohandatud teema on juba kasutusel",
-    "Web address https://…" : "Veebiaadress https://..."
+    "Advanced options" : "Täpsemad valikud",
+    "Install the Imagemagick PHP extension with support for SVG images to automatically generate favicons based on the uploaded logo and color." : "Paigalda Imagemagick PHP laiendus SVG piltide toega, et üleslaetud logo ja värvi põhjal automaatselt faviconid genereerida. "
 },
 "nplurals=2; plural=(n != 1);");

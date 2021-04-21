@@ -2,9 +2,12 @@
 /**
  * @copyright Copyright (c) 2016 Julius Härtl <jus@bitgrid.net>
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Joas Schilling <coding@schilljs.com>
  * @author Julius Haertl <jus@bitgrid.net>
  * @author Julius Härtl <jus@bitgrid.net>
+ * @author Michael Weimann <mail@michael-weimann.eu>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -19,9 +22,10 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 namespace OCA\Theming\Tests;
 
 use OCA\Theming\Util;
@@ -31,7 +35,6 @@ use OCP\Files\NotFoundException;
 use OCP\Files\SimpleFS\ISimpleFile;
 use OCP\Files\SimpleFS\ISimpleFolder;
 use OCP\IConfig;
-use OCP\Files\IRootFolder;
 use Test\TestCase;
 
 class UtilTest extends TestCase {
@@ -45,7 +48,7 @@ class UtilTest extends TestCase {
 	/** @var IAppManager */
 	protected $appManager;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 		$this->config = $this->createMock(IConfig::class);
 		$this->appData = $this->createMock(IAppData::class);
@@ -103,9 +106,14 @@ class UtilTest extends TestCase {
 		$this->assertEquals('#000000', $elementColor);
 	}
 
+	public function testElementColorOnDarkBackground() {
+		$elementColor = $this->util->elementColor("#000000", false);
+		$this->assertEquals('#555555', $elementColor);
+	}
+
 	public function testElementColorOnBrightBackground() {
 		$elementColor = $this->util->elementColor('#ffffff');
-		$this->assertEquals('#dddddd', $elementColor);
+		$this->assertEquals('#aaaaaa', $elementColor);
 	}
 
 	public function testGenerateRadioButtonWhite() {
@@ -163,7 +171,7 @@ class UtilTest extends TestCase {
 	 * @dataProvider dataGetAppImage
 	 */
 	public function testGetAppImage($app, $image, $expected) {
-		if($app !== 'core') {
+		if ($app !== 'core') {
 			$this->appManager->expects($this->once())
 				->method('getAppPath')
 				->with($app)
@@ -208,33 +216,19 @@ class UtilTest extends TestCase {
 
 	public function dataIsBackgroundThemed() {
 		return [
-			[false, false, false],
-			['png', true, true],
-			['backgroundColor', false, false],
+			['', false],
+			['png', true],
+			['backgroundColor', false],
 		];
 	}
 	/**
 	 * @dataProvider dataIsBackgroundThemed
 	 */
-	public function testIsBackgroundThemed($backgroundMime, $fileFound, $expected) {
+	public function testIsBackgroundThemed($backgroundMime, $expected) {
 		$this->config->expects($this->once())
 			->method('getAppValue')
-			->with('theming', 'backgroundMime', false)
+			->with('theming', 'backgroundMime', '')
 			->willReturn($backgroundMime);
-		$folder = $this->createMock(ISimpleFolder::class);
-		if ($fileFound) {
-			$folder->expects($this->once())
-				->method('getFile')
-				->willReturn($this->createMock(ISimpleFile::class));
-		} else {
-			$folder->expects($this->once())
-				->method('getFile')
-				->willThrowException(new NotFoundException());
-		}
-		$this->appData->expects($this->once())
-			->method('getFolder')
-			->willReturn($folder);
 		$this->assertEquals($expected, $this->util->isBackgroundThemed());
 	}
-
 }

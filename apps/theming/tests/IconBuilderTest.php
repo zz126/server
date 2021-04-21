@@ -2,10 +2,12 @@
 /**
  * @copyright Copyright (c) 2016 Julius Härtl <jus@bitgrid.net>
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Jan-Christoph Borchardt <hey@jancborchardt.net>
+ * @author Joas Schilling <coding@schilljs.com>
  * @author Julius Haertl <jus@bitgrid.net>
  * @author Julius Härtl <jus@bitgrid.net>
- * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -20,9 +22,10 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 namespace OCA\Theming\Tests;
 
 use OC\Files\AppData\AppData;
@@ -53,7 +56,7 @@ class IconBuilderTest extends TestCase {
 	/** @var IAppManager */
 	protected $appManager;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->config = $this->createMock(IConfig::class);
@@ -66,7 +69,7 @@ class IconBuilderTest extends TestCase {
 	}
 
 	private function checkImagick() {
-		if(!extension_loaded('imagick')) {
+		if (!extension_loaded('imagick')) {
 			$this->markTestSkipped('Imagemagick is required for dynamic icon generation.');
 		}
 		$checkImagick = new \Imagick();

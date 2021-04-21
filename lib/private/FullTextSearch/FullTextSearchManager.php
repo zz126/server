@@ -1,15 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
-
 /**
- * FullTextSearch - Full text search framework for Nextcloud
- *
- * This file is licensed under the Affero General Public License version 3 or
- * later. See the COPYING file.
+ * @copyright 2018, Maxence Lange <maxence@artificial-owl.com>
  *
  * @author Maxence Lange <maxence@artificial-owl.com>
- * @copyright 2018, Maxence Lange <maxence@artificial-owl.com>
+ *
  * @license GNU AGPL version 3 or any later version
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,13 +20,11 @@ declare(strict_types=1);
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
-
 namespace OC\FullTextSearch;
-
 
 use OCP\FullTextSearch\Exceptions\FullTextSearchAppNotAvailableException;
 use OCP\FullTextSearch\IFullTextSearchManager;
@@ -38,7 +33,6 @@ use OCP\FullTextSearch\Model\ISearchResult;
 use OCP\FullTextSearch\Service\IIndexService;
 use OCP\FullTextSearch\Service\IProviderService;
 use OCP\FullTextSearch\Service\ISearchService;
-
 
 /**
  * Class FullTextSearchManager
@@ -83,6 +77,21 @@ class FullTextSearchManager implements IFullTextSearchManager {
 	 */
 	public function registerSearchService(ISearchService $searchService) {
 		$this->searchService = $searchService;
+	}
+
+	/**
+	 * @since 16.0.0
+	 *
+	 * @return bool
+	 */
+	public function isAvailable(): bool {
+		if ($this->indexService === null ||
+			$this->providerService === null ||
+			$this->searchService === null) {
+			return false;
+		}
+
+		return true;
 	}
 
 
@@ -221,7 +230,4 @@ class FullTextSearchManager implements IFullTextSearchManager {
 
 		return $this->getSearchService()->search($userId, $searchRequest);
 	}
-
-
 }
-

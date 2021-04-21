@@ -2,7 +2,10 @@
 /**
  * @copyright Copyright (c) 2016 Joas Schilling <coding@schilljs.com>
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Joas Schilling <coding@schilljs.com>
+ * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -17,12 +20,11 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
 namespace OCA\Provisioning_API\Tests\Controller;
-
 
 use OCA\Provisioning_API\Controller\AppConfigController;
 use OCP\AppFramework\Http;
@@ -39,22 +41,21 @@ use Test\TestCase;
  */
 class AppConfigControllerTest extends TestCase {
 
-	/** @var IConfig|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IConfig|\PHPUnit\Framework\MockObject\MockObject */
 	private $config;
-	/** @var IAppConfig|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IAppConfig|\PHPUnit\Framework\MockObject\MockObject */
 	private $appConfig;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->config = $this->createMock(IConfig::class);
 		$this->appConfig = $this->createMock(IAppConfig::class);
-
 	}
 
 	/**
 	 * @param string[] $methods
-	 * @return AppConfigController|\PHPUnit_Framework_MockObject_MockObject
+	 * @return AppConfigController|\PHPUnit\Framework\MockObject\MockObject
 	 */
 	protected function getInstance(array $methods = []) {
 		$request = $this->createMock(IRequest::class);
@@ -105,7 +106,6 @@ class AppConfigControllerTest extends TestCase {
 	 * @param int $status
 	 */
 	public function testGetKeys($app, $keys, $throws, $status) {
-
 		$api = $this->getInstance(['verifyAppId']);
 		if ($throws instanceof \Exception) {
 			$api->expects($this->once())
@@ -153,7 +153,6 @@ class AppConfigControllerTest extends TestCase {
 	 * @param int $status
 	 */
 	public function testGetValue($app, $key, $default, $return, $throws, $status) {
-
 		$api = $this->getInstance(['verifyAppId']);
 		if ($throws instanceof \Exception) {
 			$api->expects($this->once())
@@ -202,7 +201,6 @@ class AppConfigControllerTest extends TestCase {
 	 * @param int $status
 	 */
 	public function testSetValue($app, $key, $value, $appThrows, $keyThrows, $status) {
-
 		$api = $this->getInstance(['verifyAppId', 'verifyConfigKey']);
 		if ($appThrows instanceof \Exception) {
 			$api->expects($this->once())
@@ -214,7 +212,7 @@ class AppConfigControllerTest extends TestCase {
 				->method('verifyConfigKey');
 			$this->config->expects($this->never())
 				->method('setAppValue');
-		} else if ($keyThrows instanceof  \Exception) {
+		} elseif ($keyThrows instanceof  \Exception) {
 			$api->expects($this->once())
 				->method('verifyAppId')
 				->with($app);
@@ -243,7 +241,7 @@ class AppConfigControllerTest extends TestCase {
 		$this->assertSame($status, $result->getStatus());
 		if ($appThrows instanceof \Exception) {
 			$this->assertEquals(['data' => ['message' => $appThrows->getMessage()]], $result->getData());
-		} else if ($keyThrows instanceof \Exception) {
+		} elseif ($keyThrows instanceof \Exception) {
 			$this->assertEquals(['data' => ['message' => $keyThrows->getMessage()]], $result->getData());
 		} else {
 			$this->assertEquals([], $result->getData());
@@ -267,7 +265,6 @@ class AppConfigControllerTest extends TestCase {
 	 * @param int $status
 	 */
 	public function testDeleteValue($app, $key, $appThrows, $keyThrows, $status) {
-
 		$api = $this->getInstance(['verifyAppId', 'verifyConfigKey']);
 		if ($appThrows instanceof \Exception) {
 			$api->expects($this->once())
@@ -279,7 +276,7 @@ class AppConfigControllerTest extends TestCase {
 				->method('verifyConfigKey');
 			$this->config->expects($this->never())
 				->method('deleteAppValue');
-		} else if ($keyThrows instanceof  \Exception) {
+		} elseif ($keyThrows instanceof  \Exception) {
 			$api->expects($this->once())
 				->method('verifyAppId')
 				->with($app);
@@ -308,7 +305,7 @@ class AppConfigControllerTest extends TestCase {
 		$this->assertSame($status, $result->getStatus());
 		if ($appThrows instanceof \Exception) {
 			$this->assertEquals(['data' => ['message' => $appThrows->getMessage()]], $result->getData());
-		} else if ($keyThrows instanceof \Exception) {
+		} elseif ($keyThrows instanceof \Exception) {
 			$this->assertEquals(['data' => ['message' => $keyThrows->getMessage()]], $result->getData());
 		} else {
 			$this->assertEquals([], $result->getData());
@@ -332,19 +329,21 @@ class AppConfigControllerTest extends TestCase {
 
 	/**
 	 * @dataProvider dataVerifyAppIdThrows
-	 * @expectedException \InvalidArgumentException
 	 * @param string $app
 	 */
 	public function testVerifyAppIdThrows($app) {
+		$this->expectException(\InvalidArgumentException::class);
+
 		$api = $this->getInstance();
 		$this->invokePrivate($api, 'verifyAppId', [$app]);
 	}
 
 	public function dataVerifyConfigKey() {
 		return [
-			['activity', 'abc'],
-			['dav', 'public_route'],
-			['files', 'remote_route'],
+			['activity', 'abc', ''],
+			['dav', 'public_route', ''],
+			['files', 'remote_route', ''],
+			['core', 'encryption_enabled', 'yes'],
 		];
 	}
 
@@ -352,33 +351,38 @@ class AppConfigControllerTest extends TestCase {
 	 * @dataProvider dataVerifyConfigKey
 	 * @param string $app
 	 * @param string $key
+	 * @param string $value
 	 */
-	public function testVerifyConfigKey($app, $key) {
+	public function testVerifyConfigKey($app, $key, $value) {
 		$api = $this->getInstance();
-		$this->invokePrivate($api, 'verifyConfigKey', [$app, $key]);
+		$this->invokePrivate($api, 'verifyConfigKey', [$app, $key, $value]);
 		$this->addToAssertionCount(1);
 	}
 
 	public function dataVerifyConfigKeyThrows() {
 		return [
-			['activity', 'installed_version'],
-			['calendar', 'enabled'],
-			['contacts', 'types'],
-			['core', 'public_files'],
-			['core', 'public_dav'],
-			['core', 'remote_files'],
-			['core', 'remote_dav'],
+			['activity', 'installed_version', ''],
+			['calendar', 'enabled', ''],
+			['contacts', 'types', ''],
+			['core', 'encryption_enabled', 'no'],
+			['core', 'encryption_enabled', ''],
+			['core', 'public_files', ''],
+			['core', 'public_dav', ''],
+			['core', 'remote_files', ''],
+			['core', 'remote_dav', ''],
 		];
 	}
 
 	/**
 	 * @dataProvider dataVerifyConfigKeyThrows
-	 * @expectedException \InvalidArgumentException
 	 * @param string $app
 	 * @param string $key
+	 * @param string $value
 	 */
-	public function testVerifyConfigKeyThrows($app, $key) {
+	public function testVerifyConfigKeyThrows($app, $key, $value) {
+		$this->expectException(\InvalidArgumentException::class);
+
 		$api = $this->getInstance();
-		$this->invokePrivate($api, 'verifyConfigKey', [$app, $key]);
+		$this->invokePrivate($api, 'verifyConfigKey', [$app, $key, $value]);
 	}
 }

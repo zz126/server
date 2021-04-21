@@ -3,6 +3,8 @@
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
  * @author Joas Schilling <coding@schilljs.com>
+ * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license AGPL-3.0
  *
@@ -16,7 +18,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -28,12 +30,12 @@ use Test\TestCase;
 class ScannerTest extends TestCase {
 	/** @var \OCA\Files_Sharing\External\Scanner */
 	protected $scanner;
-	/** @var \OCA\Files_Sharing\External\Storage|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var \OCA\Files_Sharing\External\Storage|\PHPUnit\Framework\MockObject\MockObject */
 	protected $storage;
-	/** @var \OC\Files\Cache\Cache|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var \OC\Files\Cache\Cache|\PHPUnit\Framework\MockObject\MockObject */
 	protected $cache;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->storage = $this->getMockBuilder('\OCA\Files_Sharing\External\Storage')

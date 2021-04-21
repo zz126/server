@@ -17,7 +17,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -26,7 +26,6 @@ namespace OCP\Collaboration\Collaborators;
 /**
  * Interface ISearchResult
  *
- * @package OCP\Collaboration\Collaborators
  * @since 13.0.0
  */
 interface ISearchResult {
@@ -45,6 +44,14 @@ interface ISearchResult {
 	 * @since 13.0.0
 	 */
 	public function hasResult(SearchResultType $type, $collaboratorId);
+
+	/**
+	 * Removes all result where $collaborationId exactly matches shareWith of
+	 * any of wide and exact result matches of the given type.
+	 *
+	 * @since 22.0.0
+	 */
+	public function removeCollaboratorResult(SearchResultType $type, string $collaboratorId): bool;
 
 	/**
 	 * @param SearchResultType $type

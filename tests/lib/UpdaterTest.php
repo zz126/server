@@ -23,24 +23,24 @@
 namespace Test;
 
 use OC\Installer;
+use OC\IntegrityCheck\Checker;
 use OC\Updater;
 use OCP\IConfig;
 use OCP\ILogger;
-use OC\IntegrityCheck\Checker;
 
 class UpdaterTest extends TestCase {
-	/** @var IConfig | \PHPUnit_Framework_MockObject_MockObject */
+	/** @var IConfig | \PHPUnit\Framework\MockObject\MockObject */
 	private $config;
-	/** @var ILogger | \PHPUnit_Framework_MockObject_MockObject */
+	/** @var ILogger | \PHPUnit\Framework\MockObject\MockObject */
 	private $logger;
 	/** @var Updater */
 	private $updater;
-	/** @var Checker | \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Checker | \PHPUnit\Framework\MockObject\MockObject */
 	private $checker;
-	/** @var Installer|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var Installer|\PHPUnit\Framework\MockObject\MockObject */
 	private $installer;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 		$this->config = $this->getMockBuilder(IConfig::class)
 			->disableOriginalConstructor()
@@ -114,5 +114,4 @@ class UpdaterTest extends TestCase {
 
 		$this->assertSame($result, $this->updater->isUpgradePossible($oldVersion, $newVersion, $allowedVersions));
 	}
-
 }

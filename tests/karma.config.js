@@ -33,6 +33,10 @@
  * preprocessor, which is needed to be able to debug tests properly in a browser.
  */
 
+if (!process.env.CHROMIUM_BIN) {
+	process.env.CHROMIUM_BIN = require('puppeteer').executablePath()
+}
+
 /* jshint node: true */
 module.exports = function(config) {
 	function findApps() {
@@ -45,18 +49,20 @@ module.exports = function(config) {
 		return [
 			'files',
 			'files_trashbin',
+			'files_versions',
+			'systemtags',
 			{
 				name: 'files_sharing',
 				srcFiles: [
 					// only test these files, others are not ready and mess
 					// up with the global namespace/classes/state
-					'apps/files_sharing/js/app.js',
-					'apps/files_sharing/js/sharedfilelist.js',
-					'apps/files_sharing/js/share.js',
-					'apps/files_sharing/js/sharebreadcrumbview.js',
-					'apps/files_sharing/js/public.js',
-					'apps/files_sharing/js/sharetabview.js',
+					'apps/files_sharing/js/dist/additionalScripts.js',
+					'apps/files_sharing/js/dist/files_sharing_tab.js',
+					'apps/files_sharing/js/dist/files_sharing.js',
+					'apps/files_sharing/js/dist/main.js',
 					'apps/files_sharing/js/files_drop.js',
+					'apps/files_sharing/js/public.js',
+					'apps/files_sharing/js/sharedfilelist.js',
 					'apps/files_sharing/js/templates.js',
 				],
 				testFiles: ['apps/files_sharing/tests/js/*.js']
@@ -75,51 +81,11 @@ module.exports = function(config) {
 				testFiles: ['apps/files_external/tests/js/*.js']
 			},
 			{
-				name: 'files_versions',
-				srcFiles: [
-					// need to enforce loading order...
-					'apps/files_versions/js/versionmodel.js',
-					'apps/files_versions/js/templates.js',
-					'apps/files_versions/js/versioncollection.js',
-					'apps/files_versions/js/versionstabview.js'
-				],
-				testFiles: ['apps/files_versions/tests/js/**/*.js']
-			},
-			{
 				name: 'comments',
 				srcFiles: [
-					// need to enforce loading order...
-					'apps/comments/js/app.js',
-					'apps/comments/js/templates.js',
-					'apps/comments/js/vendor/Caret.js/dist/jquery.caret.min.js',
-					'apps/comments/js/vendor/At.js/dist/js/jquery.atwho.min.js',
-					'apps/comments/js/commentmodel.js',
-					'apps/comments/js/commentcollection.js',
-					'apps/comments/js/commentsummarymodel.js',
-					'apps/comments/js/commentsmodifymenu.js',
-					'apps/comments/js/commentstabview.js',
-					'apps/comments/js/filesplugin.js'
+					'apps/comments/js/comments.js'
 				],
 				testFiles: ['apps/comments/tests/js/**/*.js']
-			},
-			{
-				name: 'systemtags',
-				srcFiles: [
-					// need to enforce loading order...
-					'apps/systemtags/js/app.js',
-					'apps/systemtags/js/systemtagsinfoview.js',
-					'apps/systemtags/js/systemtagsinfoviewtoggleview.js',
-					'apps/systemtags/js/systemtagsfilelist.js',
-					'apps/systemtags/js/filesplugin.js'
-				],
-				testFiles: ['apps/systemtags/tests/js/**/*.js']
-			},
-			{
-				name: 'settings',
-				srcFiles: [
-					'settings/js/apps.js',
-					'core/vendor/marked/marked.min.js'
-				]
 			}
 		];
 	}
@@ -161,7 +127,11 @@ module.exports = function(config) {
 		testCore = true;
 	}
 
+	files.push(corePath + 'tests/html-domparser.js');
 	files.push('core/js/dist/main.js');
+	files.push('core/js/dist/files_fileinfo.js');
+	files.push('core/js/dist/files_client.js');
+	files.push('core/js/dist/systemtags.js');
 	// core mocks
 	files.push(corePath + 'tests/specHelper.js');
 
@@ -222,12 +192,6 @@ module.exports = function(config) {
 		included: false,
 		served: true
 	});
-	files.push({
-		pattern: 'core/css/images/*',
-		watched: false,
-		included: false,
-		served: true
-	});
 
 	// include core CSS
 	files.push({
@@ -270,12 +234,22 @@ module.exports = function(config) {
 			'/base/tests/css/': 'http://localhost:9876/base/core/css/',
 			'/base/core/css/images/': 'http://localhost:9876/base/core/css/images/',
 			'/actions/': 'http://localhost:9876/base/core/img/actions/',
-			'/base/core/fonts/': 'http://localhost:9876/base/core/fonts/'
+			'/base/core/fonts/': 'http://localhost:9876/base/core/fonts/',
+			'/svg/': '../core/img/'
 		},
 
 		// test results reporter to use
 		// possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'
-		reporters: ['dots', 'junit', 'coverage'],
+		reporters: ['spec'],
+
+		specReporter: {
+			maxLogLines: 5,
+			suppressErrorSummary: false,
+			suppressFailed: false,
+			suppressPassed: true,
+			suppressSkipped: true,
+			showSpecTiming: false,
+		},
 
 		junitReporter: {
 			outputFile: 'tests/autotest-results-js.xml'
@@ -314,16 +288,8 @@ module.exports = function(config) {
 		// - PhantomJS
 		// - IE (only Windows; has to be installed with `npm install karma-ie-launcher`)
 		// use PhantomJS_debug for extra local debug
-		browsers: ['PhantomJS'],
+		browsers: ['ChromiumHeadless'],
 
-		plugins: [
-			'karma-phantomjs-launcher',
-			'karma-coverage',
-			'karma-jasmine',
-			'karma-jasmine-sinon',
-			'karma-viewport',
-			'karma-junit-reporter'
-		],
 		// you can define custom flags
 		customLaunchers: {
 			PhantomJS_debug: {

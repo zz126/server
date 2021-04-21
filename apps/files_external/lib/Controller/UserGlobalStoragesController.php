@@ -2,10 +2,12 @@
 /**
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Joas Schilling <coding@schilljs.com>
  * @author Juan Pablo Villafáñez <jvillafanez@solidgear.es>
  * @author Robin Appelman <robin@icewind.nl>
  * @author Robin McCorkell <robin@mccorkell.me.uk>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license AGPL-3.0
  *
@@ -19,7 +21,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -27,16 +29,18 @@ namespace OCA\Files_External\Controller;
 
 use OCA\Files_External\Lib\Auth\AuthMechanism;
 use OCA\Files_External\Lib\Auth\IUserProvided;
+use OCA\Files_External\Lib\Auth\Password\UserGlobalAuth;
+use OCA\Files_External\Lib\Backend\Backend;
 use OCA\Files_External\Lib\InsufficientDataForMeaningfulAnswerException;
-use OCP\ILogger;
-use \OCP\IRequest;
-use \OCP\IL10N;
-use \OCP\AppFramework\Http\DataResponse;
-use \OCP\AppFramework\Http;
-use OCA\Files_External\Service\UserGlobalStoragesService;
-use OCA\Files_External\NotFoundException;
 use OCA\Files_External\Lib\StorageConfig;
-use \OCA\Files_External\Lib\Backend\Backend;
+use OCA\Files_External\NotFoundException;
+use OCA\Files_External\Service\UserGlobalStoragesService;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\DataResponse;
+use OCP\IGroupManager;
+use OCP\IL10N;
+use OCP\ILogger;
+use OCP\IRequest;
 use OCP\IUserSession;
 
 /**
@@ -44,35 +48,34 @@ use OCP\IUserSession;
  */
 class UserGlobalStoragesController extends StoragesController {
 	/**
-	 * @var IUserSession
-	 */
-	private $userSession;
-
-	/**
 	 * Creates a new user global storages controller.
 	 *
 	 * @param string $AppName application name
 	 * @param IRequest $request request object
 	 * @param IL10N $l10n l10n service
 	 * @param UserGlobalStoragesService $userGlobalStoragesService storage service
+	 * @param ILogger $logger
 	 * @param IUserSession $userSession
+	 * @param IGroupManager $groupManager
 	 */
 	public function __construct(
 		$AppName,
 		IRequest $request,
 		IL10N $l10n,
 		UserGlobalStoragesService $userGlobalStoragesService,
+		ILogger $logger,
 		IUserSession $userSession,
-		ILogger $logger
+		IGroupManager $groupManager
 	) {
 		parent::__construct(
 			$AppName,
 			$request,
 			$l10n,
 			$userGlobalStoragesService,
-			$logger
+			$logger,
+			$userSession,
+			$groupManager
 		);
-		$this->userSession = $userSession;
 	}
 
 	/**
@@ -83,7 +86,7 @@ class UserGlobalStoragesController extends StoragesController {
 	 * @NoAdminRequired
 	 */
 	public function index() {
-		$storages = $this->service->getUniqueStorages();
+		$storages = $this->formatStoragesForUI($this->service->getUniqueStorages());
 
 		// remove configuration data, this must be kept private
 		foreach ($storages as $storage) {
@@ -122,7 +125,7 @@ class UserGlobalStoragesController extends StoragesController {
 		} catch (NotFoundException $e) {
 			return new DataResponse(
 				[
-					'message' => (string)$this->l10n->t('Storage with ID "%d" not found', array($id))
+					'message' => $this->l10n->t('Storage with ID "%d" not found', [$id])
 				],
 				Http::STATUS_NOT_FOUND
 			);
@@ -130,8 +133,12 @@ class UserGlobalStoragesController extends StoragesController {
 
 		$this->sanitizeStorage($storage);
 
+		$data = $this->formatStorageForUI($storage)->jsonSerialize();
+		$isAdmin = $this->groupManager->isAdmin($this->userSession->getUser()->getUID());
+		$data['can_edit'] = $storage->getType() === StorageConfig::MOUNT_TYPE_PERSONAl || $isAdmin;
+
 		return new DataResponse(
-			$storage,
+			$data,
 			Http::STATUS_OK
 		);
 	}
@@ -156,13 +163,13 @@ class UserGlobalStoragesController extends StoragesController {
 		try {
 			$storage = $this->service->getStorage($id);
 			$authMechanism = $storage->getAuthMechanism();
-			if ($authMechanism instanceof IUserProvided) {
+			if ($authMechanism instanceof IUserProvided || $authMechanism instanceof  UserGlobalAuth) {
 				$authMechanism->saveBackendOptions($this->userSession->getUser(), $id, $backendOptions);
 				$authMechanism->manipulateStorageConfig($storage, $this->userSession->getUser());
 			} else {
 				return new DataResponse(
 					[
-						'message' => (string)$this->l10n->t('Storage with ID "%d" is not user editable', array($id))
+						'message' => $this->l10n->t('Storage with ID "%d" is not user editable', [$id])
 					],
 					Http::STATUS_FORBIDDEN
 				);
@@ -170,7 +177,7 @@ class UserGlobalStoragesController extends StoragesController {
 		} catch (NotFoundException $e) {
 			return new DataResponse(
 				[
-					'message' => (string)$this->l10n->t('Storage with ID "%d" not found', array($id))
+					'message' => $this->l10n->t('Storage with ID "%d" not found', [$id])
 				],
 				Http::STATUS_NOT_FOUND
 			);
@@ -180,10 +187,9 @@ class UserGlobalStoragesController extends StoragesController {
 		$this->sanitizeStorage($storage);
 
 		return new DataResponse(
-			$storage,
+			$this->formatStorageForUI($storage),
 			Http::STATUS_OK
 		);
-
 	}
 
 	/**
@@ -203,5 +209,4 @@ class UserGlobalStoragesController extends StoragesController {
 			}
 		}
 	}
-
 }

@@ -25,11 +25,11 @@ use OCP\IL10N;
 
 class RequestTimeTest extends \Test\TestCase {
 
-	/** @var \OCP\AppFramework\Utility\ITimeFactory|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var \OCP\AppFramework\Utility\ITimeFactory|\PHPUnit\Framework\MockObject\MockObject */
 	protected $timeFactory;
 
 	/**
-	 * @return \OCP\IL10N|\PHPUnit_Framework_MockObject_MockObject
+	 * @return \OCP\IL10N|\PHPUnit\Framework\MockObject\MockObject
 	 */
 	protected function getL10NMock() {
 		$l = $this->getMockBuilder(IL10N::class)
@@ -43,7 +43,7 @@ class RequestTimeTest extends \Test\TestCase {
 		return $l;
 	}
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->timeFactory = $this->getMockBuilder('OCP\AppFramework\Utility\ITimeFactory')

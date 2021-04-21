@@ -1,7 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author Joas Schilling <coding@schilljs.com>
+ * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -16,7 +21,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -38,10 +43,10 @@ class BackupCodeStorageTest extends TestCase {
 	/** @var string */
 	private $testUID = 'test123456789';
 
-	/** @var IManager|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IManager|\PHPUnit\Framework\MockObject\MockObject */
 	private $notificationManager;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->storage = \OC::$server->query(BackupCodeStorage::class);
@@ -56,7 +61,7 @@ class BackupCodeStorageTest extends TestCase {
 		$user = $this->getMockBuilder(\OCP\IUser::class)->getMock();
 		$user->expects($this->any())
 			->method('getUID')
-			->will($this->returnValue($this->testUID));
+			->willReturn($this->testUID);
 
 		$this->notificationManager->expects($this->once())
 			->method('markProcessed')
@@ -104,5 +109,4 @@ class BackupCodeStorageTest extends TestCase {
 		];
 		$this->assertEquals($stateAllUsed, $this->storage->getBackupCodesState($user));
 	}
-
 }

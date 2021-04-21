@@ -1,11 +1,14 @@
 <?php
+
 declare(strict_types=1);
+
 /**
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
  * @author Arthur Schiwon <blizzz@arthur-schiwon.de>
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Joas Schilling <coding@schilljs.com>
- * @author Lukas Reschke <lukas@statuscode.ch>
+ * @author Julius Härtl <jus@bitgrid.net>
  * @author Morris Jobke <hey@morrisjobke.de>
  *
  * @license AGPL-3.0
@@ -20,7 +23,7 @@ declare(strict_types=1);
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -31,9 +34,9 @@ use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IConfig;
 use OCP\IDateTimeFormatter;
 use OCP\IGroupManager;
-use OCP\IUserSession;
 use OCP\L10N\IFactory;
 use OCP\Settings\ISettings;
+use OCP\Support\Subscription\IRegistry;
 use OCP\Util;
 
 class Admin implements ISettings {
@@ -45,25 +48,25 @@ class Admin implements ISettings {
 	private $groupManager;
 	/** @var IDateTimeFormatter */
 	private $dateTimeFormatter;
-	/** @var IUserSession */
-	private $session;
 	/** @var IFactory */
 	private $l10nFactory;
+	/** @var IRegistry */
+	private $subscriptionRegistry;
 
 	public function __construct(
 		IConfig $config,
 		UpdateChecker $updateChecker,
 		IGroupManager $groupManager,
 		IDateTimeFormatter $dateTimeFormatter,
-		IUserSession $session,
-		IFactory $l10nFactory
+		IFactory $l10nFactory,
+		IRegistry $subscriptionRegistry
 	) {
 		$this->config = $config;
 		$this->updateChecker = $updateChecker;
 		$this->groupManager = $groupManager;
 		$this->dateTimeFormatter = $dateTimeFormatter;
-		$this->session = $session;
 		$this->l10nFactory = $l10nFactory;
+		$this->subscriptionRegistry = $subscriptionRegistry;
 	}
 
 	/**
@@ -90,6 +93,12 @@ class Admin implements ISettings {
 
 		$defaultUpdateServerURL = 'https://updates.nextcloud.com/updater_server/';
 		$updateServerURL = $this->config->getSystemValue('updater.server.url', $defaultUpdateServerURL);
+		$defaultCustomerUpdateServerURLPrefix = 'https://updates.nextcloud.com/customers/';
+
+		$isDefaultUpdateServerURL = $updateServerURL === $defaultUpdateServerURL
+			|| strpos($updateServerURL, $defaultCustomerUpdateServerURLPrefix) === 0;
+
+		$hasValidSubscription = $this->subscriptionRegistry->delegateHasValidSubscription();
 
 		$params = [
 			'isNewVersionAvailable' => !empty($updateState['updateAvailable']),
@@ -101,11 +110,13 @@ class Admin implements ISettings {
 			'newVersionString' => empty($updateState['updateVersionString']) ? '' : $updateState['updateVersionString'],
 			'downloadLink' => empty($updateState['downloadLink']) ? '' : $updateState['downloadLink'],
 			'changes' => $this->filterChanges($updateState['changes'] ?? []),
+			'webUpdaterEnabled' => !$this->config->getSystemValue('upgrade.disable-web', false),
 			'updaterEnabled' => empty($updateState['updaterEnabled']) ? false : $updateState['updaterEnabled'],
 			'versionIsEol' => empty($updateState['versionIsEol']) ? false : $updateState['versionIsEol'],
-			'isDefaultUpdateServerURL' => $updateServerURL === $defaultUpdateServerURL,
+			'isDefaultUpdateServerURL' => $isDefaultUpdateServerURL,
 			'updateServerURL' => $updateServerURL,
 			'notifyGroups' => $this->getSelectedGroups($notifyGroups),
+			'hasValidSubscription' => $hasValidSubscription,
 		];
 
 		$params = [
@@ -117,22 +128,22 @@ class Admin implements ISettings {
 
 	protected function filterChanges(array $changes): array {
 		$filtered = [];
-		if(isset($changes['changelogURL'])) {
+		if (isset($changes['changelogURL'])) {
 			$filtered['changelogURL'] = $changes['changelogURL'];
 		}
-		if(!isset($changes['whatsNew'])) {
+		if (!isset($changes['whatsNew'])) {
 			return $filtered;
 		}
 
 		$iterator = $this->l10nFactory->getLanguageIterator();
 		do {
 			$lang = $iterator->current();
-			if(isset($changes['whatsNew'][$lang])) {
+			if (isset($changes['whatsNew'][$lang])) {
 				$filtered['whatsNew'] = $changes['whatsNew'][$lang];
 				return $filtered;
 			}
 			$iterator->next();
-		} while($lang !== 'en' && $iterator->valid());
+		} while ($lang !== 'en' && $iterator->valid());
 
 		return $filtered;
 	}

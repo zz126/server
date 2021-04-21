@@ -3,8 +3,9 @@
  * @copyright Copyright (c) 2016 Arthur Schiwon <blizzz@arthur-schiwon.de>
  *
  * @author Arthur Schiwon <blizzz@arthur-schiwon.de>
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author Joas Schilling <coding@schilljs.com>
  * @author Lukas Reschke <lukas@statuscode.ch>
- * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -19,7 +20,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -47,9 +48,9 @@ class Admin implements ISettings {
 	 * @return TemplateResponse
 	 */
 	public function getForm() {
-		$helper = new Helper(\OC::$server->getConfig());
+		$helper = new Helper(\OC::$server->getConfig(), \OC::$server->getDatabaseConnection());
 		$prefixes = $helper->getServerConfigurationPrefixes();
-		if(count($prefixes) === 0) {
+		if (count($prefixes) === 0) {
 			$newPrefix = $helper->getNextServerConfigurationPrefix();
 			$config = new Configuration($newPrefix, false);
 			$config->setConfiguration($config->getDefaults());
@@ -70,11 +71,11 @@ class Admin implements ISettings {
 		$parameters['wizardControls'] = $wControls;
 
 		// assign default values
-		if(!isset($config)) {
+		if (!isset($config)) {
 			$config = new Configuration('', false);
 		}
 		$defaults = $config->getDefaults();
-		foreach($defaults as $key => $default) {
+		foreach ($defaults as $key => $default) {
 			$parameters[$key.'_default'] = $default;
 		}
 

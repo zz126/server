@@ -1,15 +1,9 @@
 OC.L10N.register(
     "systemtags",
     {
-    "Tags" : "Mærker",
     "Update" : "Opdater",
     "Create" : "Opret",
-    "Select tag…" : "Vælg tag...",
-    "Tagged files" : "Mærkede filer",
-    "Select tags to filter by" : "Vælg de mærker, der skal filtreres efter",
-    "No tags found" : "Ingen tags fundet",
-    "Please select tags to filter by" : "Vælg de mærker, der skal filtreres efter",
-    "No files found for the selected tags" : "Der blev ikke fundet filer, som matcher de valgte mærker",
+    "Select tag …" : "Vælg tag...",
     "Added system tag {systemtag}" : "Tilføjede systemtag {systemtag}",
     "Added system tag %1$s" : "Tilføjede systemtag %1$s",
     "%1$s added system tag %2$s" : "%1$s tilføjede systemtag %2$s",
@@ -41,8 +35,14 @@ OC.L10N.register(
     "%s (restricted)" : "%s (begrænset)",
     "%s (invisible)" : "%s (usynlig)",
     "<strong>System tags</strong> for a file have been modified" : "En fils <strong>systemmærkning</strong> er blevet ændret",
+    "Tags" : "Mærker",
     "Collaborative tags" : "Kollaborativ tags",
-    "Select tag …" : "Vælg tag...",
+    "Tagged files" : "Mærkede filer",
+    "Select tags to filter by" : "Vælg de mærker, der skal filtreres efter",
+    "No tags found" : "Ingen tags fundet",
+    "Please select tags to filter by" : "Vælg de mærker, der skal filtreres efter",
+    "No files found for the selected tags" : "Der blev ikke fundet filer, som matcher de valgte mærker",
+    "Create a new tag" : "Opret et nyt mærkat",
     "Name" : "Navn",
     "Public" : "Offentlig",
     "Restricted" : "Begrænset",
@@ -52,7 +52,6 @@ OC.L10N.register(
     "No files in here" : "Her er ingen filer",
     "No entries found in this folder" : "Der blev ikke fundet poster i denne mappe",
     "Size" : "Størrelse",
-    "Modified" : "Ændret",
-    "Create and edit collaborative tags. These tags affect all users." : "Tilføj og rediger kollaborative tags. Disse tags berøre alle brugere."
+    "Modified" : "Ændret"
 },
 "nplurals=2; plural=(n != 1);");

@@ -17,18 +17,15 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
 namespace OCA\User_LDAP\Tests;
 
-
 use OCA\User_LDAP\ILDAPGroupPlugin;
 
 class LDAPGroupPluginDummy implements ILDAPGroupPlugin {
-
-
 	public function respondToActions() {
 		return null;
 	}

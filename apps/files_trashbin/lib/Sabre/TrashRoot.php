@@ -1,8 +1,11 @@
 <?php
+
 declare(strict_types=1);
+
 /**
  * @copyright 2018, Roeland Jago Douma <roeland@famdouma.nl>
  *
+ * @author Robin Appelman <robin@icewind.nl>
  * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
@@ -18,9 +21,10 @@ declare(strict_types=1);
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 namespace OCA\Files_Trashbin\Sabre;
 
 use OCA\Files_Trashbin\Trash\ITrashItem;
@@ -46,6 +50,9 @@ class TrashRoot implements ICollection {
 
 	public function delete() {
 		\OCA\Files_Trashbin\Trashbin::deleteAll();
+		foreach ($this->trashManager->listTrashRoot($this->user) as $trashItem) {
+			$this->trashManager->removeItem($trashItem);
+		}
 	}
 
 	public function getName(): string {

@@ -2,11 +2,13 @@
 /**
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Joas Schilling <coding@schilljs.com>
  * @author Juan Pablo Villafáñez <jvillafanez@solidgear.es>
  * @author Robin Appelman <robin@icewind.nl>
  * @author Robin McCorkell <robin@mccorkell.me.uk>
- * @author Vincent Petry <pvince81@owncloud.com>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
+ * @author Vincent Petry <vincent@nextcloud.com>
  *
  * @license AGPL-3.0
  *
@@ -20,20 +22,21 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
 namespace OCA\Files_External\Controller;
 
-
-use OCP\ILogger;
-use \OCP\IRequest;
-use \OCP\IL10N;
-use \OCP\AppFramework\Http\DataResponse;
-use \OCP\AppFramework\Http;
-use OCA\Files_External\Service\GlobalStoragesService;
 use OCA\Files_External\NotFoundException;
+use OCA\Files_External\Service\GlobalStoragesService;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\DataResponse;
+use OCP\IGroupManager;
+use OCP\IL10N;
+use OCP\ILogger;
+use OCP\IRequest;
+use OCP\IUserSession;
 
 /**
  * Global storages controller
@@ -47,20 +50,26 @@ class GlobalStoragesController extends StoragesController {
 	 * @param IL10N $l10n l10n service
 	 * @param GlobalStoragesService $globalStoragesService storage service
 	 * @param ILogger $logger
+	 * @param IUserSession $userSession
+	 * @param IGroupManager $groupManager
 	 */
 	public function __construct(
 		$AppName,
 		IRequest $request,
 		IL10N $l10n,
 		GlobalStoragesService $globalStoragesService,
-		ILogger $logger
+		ILogger $logger,
+		IUserSession $userSession,
+		IGroupManager $groupManager
 	) {
 		parent::__construct(
 			$AppName,
 			$request,
 			$l10n,
 			$globalStoragesService,
-			$logger
+			$logger,
+			$userSession,
+			$groupManager
 		);
 	}
 
@@ -112,7 +121,7 @@ class GlobalStoragesController extends StoragesController {
 		$this->updateStorageStatus($newStorage);
 
 		return new DataResponse(
-			$newStorage,
+			$this->formatStorageForUI($newStorage),
 			Http::STATUS_CREATED
 		);
 	}
@@ -170,7 +179,7 @@ class GlobalStoragesController extends StoragesController {
 		} catch (NotFoundException $e) {
 			return new DataResponse(
 				[
-					'message' => (string)$this->l10n->t('Storage with ID "%d" not found', array($id))
+					'message' => $this->l10n->t('Storage with ID "%d" not found', [$id])
 				],
 				Http::STATUS_NOT_FOUND
 			);
@@ -179,11 +188,8 @@ class GlobalStoragesController extends StoragesController {
 		$this->updateStorageStatus($storage, $testOnly);
 
 		return new DataResponse(
-			$storage,
+			$this->formatStorageForUI($storage),
 			Http::STATUS_OK
 		);
-
 	}
-
-
 }

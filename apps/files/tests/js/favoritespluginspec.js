@@ -1,10 +1,23 @@
-/*
+/**
  * Copyright (c) 2014 Vincent Petry <pvince81@owncloud.com>
  *
- * This file is licensed under the Affero General Public License version 3
- * or later.
+ * @author John Molakvoæ <skjnldsv@protonmail.com>
+ * @author Vincent Petry <vincent@nextcloud.com>
  *
- * See the COPYING-README file.
+ * @license GNU AGPL version 3 or any later version
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -42,16 +55,6 @@ describe('OCA.Files.FavoritesPlugin tests', function() {
 		});
 	});
 	describe('file actions', function() {
-		var oldLegacyFileActions;
-
-		beforeEach(function() {
-			oldLegacyFileActions = window.FileActions;
-			window.FileActions = new OCA.Files.FileActions();
-		});
-
-		afterEach(function() {
-			window.FileActions = oldLegacyFileActions;
-		});
 		it('provides default file actions', function() {
 			var fileActions = fileList.fileActions;
 
@@ -77,22 +80,6 @@ describe('OCA.Files.FavoritesPlugin tests', function() {
 			fileList = Plugin.showFileList($('#app-content-favorites'));
 
 			expect(fileList.fileActions.actions.all.RegularTest).toBeDefined();
-		});
-		it('does not provide legacy file actions', function() {
-			var actionStub = sinon.stub();
-			// legacy file action
-			window.FileActions.register(
-					'all',
-					'LegacyTest',
-					OC.PERMISSION_READ,
-					OC.imagePath('core', 'actions/shared'),
-					actionStub
-			);
-
-			Plugin.favoritesFileList = null;
-			fileList = Plugin.showFileList($('#app-content-favorites'));
-
-			expect(fileList.fileActions.actions.all.LegacyTest).not.toBeDefined();
 		});
 		it('redirects to files app when opening a directory', function() {
 			var oldList = OCA.Files.App.fileList;

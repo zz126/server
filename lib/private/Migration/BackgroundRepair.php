@@ -2,7 +2,10 @@
 /**
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author Daniel Kesselberg <mail@danielkesselberg.de>
  * @author Lukas Reschke <lukas@statuscode.ch>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
  * @license AGPL-3.0
@@ -17,9 +20,10 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
+
 namespace OC\Migration;
 
 use OC\BackgroundJob\JobList;
@@ -29,7 +33,8 @@ use OC\Repair;
 use OC_App;
 use OCP\BackgroundJob\IJobList;
 use OCP\ILogger;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Class BackgroundRepair
@@ -44,12 +49,13 @@ class BackgroundRepair extends TimedJob {
 	/** @var ILogger */
 	private $logger;
 
-	/** @var EventDispatcher */
+	/** @var EventDispatcherInterface */
 	private $dispatcher;
 
-	public function setDispatcher(EventDispatcher $dispatcher) {
+	public function __construct(EventDispatcherInterface $dispatcher) {
 		$this->dispatcher = $dispatcher;
 	}
+
 	/**
 	 * run the job, then remove it from the job list
 	 *
@@ -58,7 +64,7 @@ class BackgroundRepair extends TimedJob {
 	 */
 	public function execute($jobList, ILogger $logger = null) {
 		// add an interval of 15 mins
-		$this->setInterval(15*60);
+		$this->setInterval(15 * 60);
 
 		$this->jobList = $jobList;
 		$this->logger = $logger;
@@ -87,7 +93,7 @@ class BackgroundRepair extends TimedJob {
 		}
 
 		$step = $argument['step'];
-		$repair = new Repair([], $this->dispatcher);
+		$repair = new Repair([], $this->dispatcher, \OC::$server->get(LoggerInterface::class));
 		try {
 			$repair->addStep($step);
 		} catch (\Exception $ex) {

@@ -1,8 +1,10 @@
 <?php
 /**
  * @copyright Copyright (c) 2018 John Molakvoæ <skjnldsv@protonmail.com>
+ * @copyright Copyright (c) 2019 Janis Köhr <janiskoehr@icloud.com>
  *
- * @author John Molakvoæ <skjnldsv@protonmail.com>
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author John Molakvoæ (skjnldsv) <skjnldsv@protonmail.com>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -25,11 +27,13 @@ namespace OCA\Accessibility\Settings;
 
 use OCA\Accessibility\AccessibilityProvider;
 use OCP\AppFramework\Http\TemplateResponse;
+use OCP\AppFramework\Services\IInitialState;
 use OCP\IConfig;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\IUserSession;
 use OCP\Settings\ISettings;
+use OCP\Util;
 
 class Personal implements ISettings {
 
@@ -51,51 +55,56 @@ class Personal implements ISettings {
 	/** @var AccessibilityProvider */
 	private $accessibilityProvider;
 
-	/**
-	 * Settings constructor.
-	 *
-	 * @param string $appName
-	 * @param IConfig $config
-	 * @param IUserSession $userSession
-	 * @param IL10N $l
-	 * @param IURLGenerator $urlGenerator
-	 * @param AccessibilityProvider $accessibilityProvider
-	 */
+	/** @var IInitialState */
+	private $initialStateService;
+
 	public function __construct(string $appName,
 								IConfig $config,
 								IUserSession $userSession,
 								IL10N $l,
 								IURLGenerator $urlGenerator,
-								AccessibilityProvider $accessibilityProvider) {
-		$this->appName               = $appName;
-		$this->config                = $config;
-		$this->userSession           = $userSession;
-		$this->l                     = $l;
-		$this->urlGenerator          = $urlGenerator;
+								AccessibilityProvider $accessibilityProvider,
+								IInitialState $initialStateService) {
+		$this->appName = $appName;
+		$this->config = $config;
+		$this->userSession = $userSession;
+		$this->l = $l;
+		$this->urlGenerator = $urlGenerator;
 		$this->accessibilityProvider = $accessibilityProvider;
+		$this->initialStateService = $initialStateService;
 	}
 
 	/**
 	 * @return TemplateResponse returns the instance with all parameters set, ready to be rendered
 	 * @since 9.1
 	 */
-	public function getForm() {
+	public function getForm(): TemplateResponse {
+		Util::addScript('accessibility', 'accessibility');
+		Util::addStyle('accessibility', 'style');
 
-		$serverData = [
+		$availableConfig = [
 			'themes' => $this->accessibilityProvider->getThemes(),
-			'fonts'  => $this->accessibilityProvider->getFonts(),
-			'theme'  => $this->config->getUserValue($this->userSession->getUser()->getUID(), $this->appName, 'theme', false),
-			'font'   => $this->config->getUserValue($this->userSession->getUser()->getUID(), $this->appName, 'font', false)
+			'fonts' => $this->accessibilityProvider->getFonts(),
+			'highcontrast' => $this->accessibilityProvider->getHighContrast()
 		];
 
-		return new TemplateResponse($this->appName, 'settings-personal', ['serverData' => $serverData]);
+		$userConfig = [
+			'highcontrast' => $this->config->getUserValue($this->userSession->getUser()->getUID(), $this->appName, 'highcontrast', false),
+			'theme' => $this->config->getUserValue($this->userSession->getUser()->getUID(), $this->appName, 'theme', false),
+			'font' => $this->config->getUserValue($this->userSession->getUser()->getUID(), $this->appName, 'font', false)
+		];
+
+		$this->initialStateService->provideInitialState('available-config', $availableConfig);
+		$this->initialStateService->provideInitialState('user-config', $userConfig);
+
+		return new TemplateResponse($this->appName, 'settings-personal');
 	}
 
 	/**
 	 * @return string the section ID, e.g. 'sharing'
 	 * @since 9.1
 	 */
-	public function getSection() {
+	public function getSection(): string {
 		return $this->appName;
 	}
 
@@ -107,7 +116,7 @@ class Personal implements ISettings {
 	 * E.g.: 70
 	 * @since 9.1
 	 */
-	public function getPriority() {
+	public function getPriority(): int {
 		return 40;
 	}
 }

@@ -2,7 +2,10 @@
 /**
  * @copyright Copyright (c) 2018 John Molakvoæ <skjnldsv@protonmail.com>
  *
- * @author John Molakvoæ <skjnldsv@protonmail.com>
+ * @author Alexey Pyltsyn <lex61rus@gmail.com>
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author John Molakvoæ (skjnldsv) <skjnldsv@protonmail.com>
+ * @author Julius Härtl <jus@bitgrid.net>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -23,19 +26,23 @@
 
 return [
 	'routes' => [
-		['name' => 'accessibility#getCss', 'url' => '/css/user-{md5}.css', 'verb' => 'GET'],
-		['name' => 'accessibility#getJavascript', 'url' => '/js/accessibility', 'verb' => 'GET'],
-    ],
-    'ocs' => [
+		['name' => 'accessibility#getCss', 'url' => '/css/user-{md5}', 'verb' => 'GET'],
+	],
+	'ocs' => [
 		[
 			'name' => 'Config#getConfig',
-			'url'  => '/api/v1/config',
+			'url' => '/api/v1/config',
 			'verb' => 'GET',
-        ],
+		],
 		[
 			'name' => 'Config#setConfig',
-			'url'  => '/api/v1/config/{key}',
-			'verb' => 'POST',
+			'url' => '/api/v1/config/{key}',
+			'verb' => 'PUT',
 		],
-    ]
+		[
+			'name' => 'Config#deleteConfig',
+			'url' => '/api/v1/config/{key}',
+			'verb' => 'DELETE',
+		],
+	]
 ];

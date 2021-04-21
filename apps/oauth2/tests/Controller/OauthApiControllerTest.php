@@ -2,6 +2,11 @@
 /**
  * @copyright Copyright (c) 2017 Lukas Reschke <lukas@statuscode.ch>
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author Lukas Reschke <lukas@statuscode.ch>
+ * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
+ *
  * @license GNU AGPL version 3 or any later version
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,14 +20,14 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
 namespace OCA\OAuth2\Tests\Controller;
 
-use OC\Authentication\Exceptions\InvalidTokenException;
 use OC\Authentication\Exceptions\ExpiredTokenException;
+use OC\Authentication\Exceptions\InvalidTokenException;
 use OC\Authentication\Token\DefaultToken;
 use OC\Authentication\Token\IProvider as TokenProvider;
 use OC\Security\Bruteforce\Throttler;
@@ -42,26 +47,26 @@ use OCP\Security\ISecureRandom;
 use Test\TestCase;
 
 class OauthApiControllerTest extends TestCase {
-	/** @var IRequest|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IRequest|\PHPUnit\Framework\MockObject\MockObject */
 	private $request;
-	/** @var ICrypto|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ICrypto|\PHPUnit\Framework\MockObject\MockObject */
 	private $crypto;
-	/** @var AccessTokenMapper|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var AccessTokenMapper|\PHPUnit\Framework\MockObject\MockObject */
 	private $accessTokenMapper;
-	/** @var ClientMapper|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ClientMapper|\PHPUnit\Framework\MockObject\MockObject */
 	private $clientMapper;
-	/** @var TokenProvider|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var TokenProvider|\PHPUnit\Framework\MockObject\MockObject */
 	private $tokenProvider;
-	/** @var ISecureRandom|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ISecureRandom|\PHPUnit\Framework\MockObject\MockObject */
 	private $secureRandom;
-	/** @var ITimeFactory|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ITimeFactory|\PHPUnit\Framework\MockObject\MockObject */
 	private $time;
-	/** @var Throttler|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var Throttler|\PHPUnit\Framework\MockObject\MockObject */
 	private $throttler;
 	/** @var OauthApiController */
 	private $oauthApiController;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->request = $this->createMock(IRequest::class);
@@ -245,9 +250,9 @@ class OauthApiControllerTest extends TestCase {
 			->with($accessToken);
 
 		$this->secureRandom->method('generate')
-			->will($this->returnCallback(function ($len) {
+			->willReturnCallback(function ($len) {
 				return 'random'.$len;
-			}));
+			});
 
 		$this->tokenProvider->expects($this->once())
 			->method('rotate')
@@ -337,9 +342,9 @@ class OauthApiControllerTest extends TestCase {
 			->with($accessToken);
 
 		$this->secureRandom->method('generate')
-			->will($this->returnCallback(function ($len) {
+			->willReturnCallback(function ($len) {
 				return 'random'.$len;
-			}));
+			});
 
 		$this->tokenProvider->expects($this->once())
 			->method('rotate')
@@ -432,9 +437,9 @@ class OauthApiControllerTest extends TestCase {
 			->with($accessToken);
 
 		$this->secureRandom->method('generate')
-			->will($this->returnCallback(function ($len) {
+			->willReturnCallback(function ($len) {
 				return 'random'.$len;
-			}));
+			});
 
 		$this->tokenProvider->expects($this->once())
 			->method('rotate')

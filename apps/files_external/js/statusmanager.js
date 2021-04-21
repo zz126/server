@@ -93,7 +93,9 @@ OCA.Files_External.StatusManager = {
 							status: statusCode,
 							id: mountData.id,
 							error: statusMessage,
-							userProvided: response.userProvided
+							userProvided: response.userProvided,
+							authMechanism: response.authMechanism,
+							canEdit: response.can_edit,
 						};
 					}
 					afterCallback(mountData, self.mountStatus[mountData.mount_point]);
@@ -124,7 +126,7 @@ OCA.Files_External.StatusManager = {
 
 	/**
 	 * Function to get external mount point list from the files_external API
-	 * @param {function} afterCallback function to be executed
+	 * @param {Function} afterCallback function to be executed
 	 */
 
 	getMountPointList: function (afterCallback) {
@@ -178,15 +180,17 @@ OCA.Files_External.StatusManager = {
 			if (allMountStatus.hasOwnProperty(name) && allMountStatus[name].status > 0 && allMountStatus[name].status < 7) {
 				var mountData = allMountStatus[name];
 				if (mountData.type === "system") {
-					if (mountData.userProvided) {
+					if (mountData.userProvided || mountData.authMechanism === 'password::global::user') {
 						// personal mount whit credentials problems
 						this.showCredentialsDialog(name, mountData);
-					} else {
+					} else if (mountData.canEdit) {
 						OC.dialogs.confirm(t('files_external', 'There was an error with message: ') + mountData.error + '. Do you want to review mount point config in admin settings page?', t('files_external', 'External mount error'), function (e) {
 							if (e === true) {
 								OC.redirect(OC.generateUrl('/settings/admin/externalstorages'));
 							}
 						});
+					} else {
+						OC.dialogs.info(t('files_external', 'There was an error with message: ') + mountData.error + '. Please contact your system administrator.', t('files_external', 'External mount error'), () => {});
 					}
 				} else {
 					OC.dialogs.confirm(t('files_external', 'There was an error with message: ') + mountData.error + '. Do you want to review mount point config in personal settings page?', t('files_external', 'External mount error'), function (e) {
@@ -291,18 +295,11 @@ OCA.Files_External.StatusManager = {
 
 				var rolQueue = new OCA.Files_External.StatusManager.RollingQueue(ajaxQueue, 4, function () {
 					if (!self.notificationHasShown) {
-						var showNotification = false;
 						$.each(self.mountStatus, function (key, value) {
 							if (value.status === 1) {
 								self.notificationHasShown = true;
-								showNotification = true;
 							}
 						});
-						if (showNotification) {
-							OC.Notification.show(t('files_external', 'Some of the configured external mount points are not connected. Please click on the red row(s) for more information'), 
-								{type: 'error'}
-							);
-						}
 					}
 				});
 				rolQueue.runQueue();
@@ -419,7 +416,7 @@ OCA.Files_External.StatusManager = {
 					}
 				},
 				success: function (data) {
-					OC.Notification.show(t('files_external', 'Credentials saved'), {type: 'error'});
+					OC.Notification.show(t('files_external', 'Credentials saved'), {type: 'success'});
 					dialog.ocdialog('close');
 					/* Trigger status check again */
 					OCA.Files_External.StatusManager.recheckConnectivityForMount([OC.basename(data.mountPoint)], true);

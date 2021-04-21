@@ -1,15 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
-
 /**
- * FullTextSearch - Full text search framework for Nextcloud
- *
- * This file is licensed under the Affero General Public License version 3 or
- * later. See the COPYING file.
+ * @copyright 2018
  *
  * @author Maxence Lange <maxence@artificial-owl.com>
- * @copyright 2018
+ *
  * @license GNU AGPL version 3 or any later version
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,16 +20,13 @@ declare(strict_types=1);
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
-
 namespace OCP\FullTextSearch\Model;
 
-
 use OCP\FullTextSearch\IFullTextSearchProvider;
-
 
 /**
  * Interface ISearchResult
@@ -51,7 +45,6 @@ use OCP\FullTextSearch\IFullTextSearchProvider;
  *
  * @since 15.0.0
  *
- * @package OCP\FullTextSearch\Model
  */
 interface ISearchResult {
 
@@ -78,31 +71,31 @@ interface ISearchResult {
 
 
 	/**
-	 * Add an IndexDocument as one of the result of the search request.
+	 * Add an IIndexDocument as one of the result of the search request.
 	 *
 	 * @since 15.0.0
 	 *
-	 * @param IndexDocument $document
+	 * @param IIndexDocument $document
 	 *
 	 * @return ISearchResult
 	 */
-	public function addDocument(IndexDocument $document): ISearchResult;
+	public function addDocument(IIndexDocument $document): ISearchResult;
 
 	/**
-	 * Returns all result of the search request, in an array of IndexDocument.
+	 * Returns all result of the search request, in an array of IIndexDocument.
 	 *
 	 * @since 15.0.0
 	 *
-	 * @return array
+	 * @return IIndexDocument[]
 	 */
 	public function getDocuments(): array;
 
 	/**
-	 * Set an array of IndexDocument as the result of the search request.
+	 * Set an array of IIndexDocument as the result of the search request.
 	 *
 	 * @since 15.0.0
 	 *
-	 * @param IndexDocument[] $documents
+	 * @param IIndexDocument[] $documents
 	 *
 	 * @return ISearchResult
 	 */
@@ -193,6 +186,4 @@ interface ISearchResult {
 	 * @return ISearchResult
 	 */
 	public function setTimedOut(bool $timedOut): ISearchResult;
-
 }
-

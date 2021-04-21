@@ -4,12 +4,17 @@
  *
  * @author Arthur Schiwon <blizzz@arthur-schiwon.de>
  * @author Bjoern Schiessle <bjoern@schiessle.org>
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author Guillaume COMPAGNON <gcompagnon@outlook.com>
  * @author Jan-Christoph Borchardt <hey@jancborchardt.net>
  * @author Joas Schilling <coding@schilljs.com>
+ * @author John Molakvoæ (skjnldsv) <skjnldsv@protonmail.com>
  * @author Julius Haertl <jus@bitgrid.net>
  * @author Julius Härtl <jus@bitgrid.net>
  * @author Lukas Reschke <lukas@statuscode.ch>
+ * @author Michael Weimann <mail@michael-weimann.eu>
  * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -24,51 +29,53 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 namespace OCA\Theming\Tests;
 
 use OCA\Theming\ImageManager;
 use OCA\Theming\ThemingDefaults;
+use OCA\Theming\Util;
 use OCP\App\IAppManager;
 use OCP\Files\IAppData;
-use OCA\Theming\Util;
 use OCP\Files\NotFoundException;
-use OCP\Files\SimpleFS\ISimpleFile;
-use OCP\Files\SimpleFS\ISimpleFolder;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use OCP\IConfig;
 use OCP\IL10N;
+use OCP\INavigationManager;
 use OCP\IURLGenerator;
 use Test\TestCase;
 
 class ThemingDefaultsTest extends TestCase {
-	/** @var IConfig|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IConfig|\PHPUnit\Framework\MockObject\MockObject */
 	private $config;
-	/** @var IL10N|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IL10N|\PHPUnit\Framework\MockObject\MockObject */
 	private $l10n;
-	/** @var IURLGenerator|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IURLGenerator|\PHPUnit\Framework\MockObject\MockObject */
 	private $urlGenerator;
-	/** @var \OC_Defaults|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var \OC_Defaults|\PHPUnit\Framework\MockObject\MockObject */
 	private $defaults;
-	/** @var IAppData|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IAppData|\PHPUnit\Framework\MockObject\MockObject */
 	private $appData;
-	/** @var ICacheFactory|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ICacheFactory|\PHPUnit\Framework\MockObject\MockObject */
 	private $cacheFactory;
 	/** @var ThemingDefaults */
 	private $template;
-	/** @var Util|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var Util|\PHPUnit\Framework\MockObject\MockObject */
 	private $util;
-	/** @var ICache|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ICache|\PHPUnit\Framework\MockObject\MockObject */
 	private $cache;
-	/** @var IAppManager|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IAppManager|\PHPUnit\Framework\MockObject\MockObject */
 	private $appManager;
-	/** @var ImageManager|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var ImageManager|\PHPUnit\Framework\MockObject\MockObject */
 	private $imageManager;
+	/** @var INavigationManager|\PHPUnit\Framework\MockObject\MockObject */
+	private $navigationManager;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 		$this->config = $this->createMock(IConfig::class);
 		$this->l10n = $this->createMock(IL10N::class);
@@ -78,6 +85,7 @@ class ThemingDefaultsTest extends TestCase {
 		$this->util = $this->createMock(Util::class);
 		$this->imageManager = $this->createMock(ImageManager::class);
 		$this->appManager = $this->createMock(IAppManager::class);
+		$this->navigationManager = $this->createMock(INavigationManager::class);
 		$this->defaults = new \OC_Defaults();
 		$this->urlGenerator
 			->expects($this->any())
@@ -90,7 +98,8 @@ class ThemingDefaultsTest extends TestCase {
 			$this->cacheFactory,
 			$this->util,
 			$this->imageManager,
-			$this->appManager
+			$this->appManager,
+			$this->navigationManager
 		);
 	}
 
@@ -266,6 +275,7 @@ class ThemingDefaultsTest extends TestCase {
 	}
 
 	public function testGetShortFooterEmptyUrl() {
+		$this->navigationManager->expects($this->once())->method('getAll')->with(INavigationManager::TYPE_GUEST)->willReturn([]);
 		$this->config
 			->expects($this->exactly(5))
 			->method('getAppValue')
@@ -281,6 +291,7 @@ class ThemingDefaultsTest extends TestCase {
 	}
 
 	public function testGetShortFooterEmptySlogan() {
+		$this->navigationManager->expects($this->once())->method('getAll')->with(INavigationManager::TYPE_GUEST)->willReturn([]);
 		$this->config
 			->expects($this->exactly(5))
 			->method('getAppValue')
@@ -296,6 +307,7 @@ class ThemingDefaultsTest extends TestCase {
 	}
 
 	public function testGetShortFooterImprint() {
+		$this->navigationManager->expects($this->once())->method('getAll')->with(INavigationManager::TYPE_GUEST)->willReturn([]);
 		$this->config
 			->expects($this->exactly(5))
 			->method('getAppValue')
@@ -316,6 +328,7 @@ class ThemingDefaultsTest extends TestCase {
 	}
 
 	public function testGetShortFooterPrivacy() {
+		$this->navigationManager->expects($this->once())->method('getAll')->with(INavigationManager::TYPE_GUEST)->willReturn([]);
 		$this->config
 			->expects($this->exactly(5))
 			->method('getAppValue')
@@ -336,6 +349,7 @@ class ThemingDefaultsTest extends TestCase {
 	}
 
 	public function testGetShortFooterAllLegalLinks() {
+		$this->navigationManager->expects($this->once())->method('getAll')->with(INavigationManager::TYPE_GUEST)->willReturn([]);
 		$this->config
 			->expects($this->exactly(5))
 			->method('getAppValue')
@@ -367,6 +381,7 @@ class ThemingDefaultsTest extends TestCase {
 	 * @dataProvider invalidLegalUrlProvider
 	 */
 	public function testGetShortFooterInvalidImprint($invalidImprintUrl) {
+		$this->navigationManager->expects($this->once())->method('getAll')->with(INavigationManager::TYPE_GUEST)->willReturn([]);
 		$this->config
 			->expects($this->exactly(5))
 			->method('getAppValue')
@@ -386,6 +401,7 @@ class ThemingDefaultsTest extends TestCase {
 	 * @dataProvider invalidLegalUrlProvider
 	 */
 	public function testGetShortFooterInvalidPrivacy($invalidPrivacyUrl) {
+		$this->navigationManager->expects($this->once())->method('getAll')->with(INavigationManager::TYPE_GUEST)->willReturn([]);
 		$this->config
 			->expects($this->exactly(5))
 			->method('getAppValue')
@@ -601,11 +617,6 @@ class ThemingDefaultsTest extends TestCase {
 	}
 
 	public function testGetLogoCustom() {
-		$file = $this->createMock(ISimpleFile::class);
-		$this->imageManager->expects($this->once())
-			->method('getImage')
-			->with('logo')
-			->willReturn($file);
 		$this->config
 			->expects($this->at(0))
 			->method('getAppValue')
@@ -624,12 +635,13 @@ class ThemingDefaultsTest extends TestCase {
 	}
 
 	public function testGetScssVariablesCached() {
+		$this->config->expects($this->any())->method('getAppValue')->with('theming', 'cachebuster', '0')->willReturn('1');
 		$this->cacheFactory->expects($this->once())
 			->method('createDistributed')
-			->with('theming-')
+			->with('theming-1-')
 			->willReturn($this->cache);
-		$this->cache->expects($this->once())->method('get')->with('getScssVariables')->willReturn(['foo'=>'bar']);
-		$this->assertEquals(['foo'=>'bar'], $this->template->getScssVariables());
+		$this->cache->expects($this->once())->method('get')->with('getScssVariables')->willReturn(['foo' => 'bar']);
+		$this->assertEquals(['foo' => 'bar'], $this->template->getScssVariables());
 	}
 
 	public function testGetScssVariables() {
@@ -648,7 +660,7 @@ class ThemingDefaultsTest extends TestCase {
 		$this->util->expects($this->any())->method('elementColor')->with($this->defaults->getColorPrimary())->willReturn('#aaaaaa');
 		$this->cacheFactory->expects($this->once())
 			->method('createDistributed')
-			->with('theming-')
+			->with('theming-0-')
 			->willReturn($this->cache);
 		$this->cache->expects($this->once())->method('get')->with('getScssVariables')->willReturn(null);
 		$this->imageManager->expects($this->at(0))->method('getImageUrl')->with('logo')->willReturn('custom-logo?v=0');
@@ -668,8 +680,8 @@ class ThemingDefaultsTest extends TestCase {
 			'color-primary-element' => '#aaaaaa',
 			'theming-logoheader-mime' => '\'jpeg\'',
 			'theming-favicon-mime' => '\'jpeg\'',
-			'image-logoheader' => '\'custom-logoheader?v=0\'',
-			'image-favicon' => '\'custom-favicon?v=0\'',
+			'image-logoheader' => "url('custom-logoheader?v=0')",
+			'image-favicon' => "url('custom-favicon?v=0')",
 			'has-legal-links' => 'false'
 		];
 		$this->assertEquals($expected, $this->template->getScssVariables());
@@ -761,5 +773,4 @@ class ThemingDefaultsTest extends TestCase {
 			->willReturn('themingRoute');
 		$this->assertEquals($result, $this->template->replaceImagePath($app, $image));
 	}
-
 }

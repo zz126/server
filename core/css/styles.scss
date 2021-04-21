@@ -8,6 +8,7 @@
  * @copyright Copyright (c) 2016, Christoph Wurst <christoph@winzerhof-wurst.at>
  * @copyright Copyright (c) 2016, Raghu Nayyar <hey@raghunayyar.com>
  * @copyright Copyright (c) 2011-2017, Jan-Christoph Borchardt <hey@jancborchardt.net>
+ * @copyright Copyright (c) 2019-2020, Gary Kim <gary@garykim.dev>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -23,6 +24,8 @@ html, body, div, span, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pr
 	font-family: inherit;
 	vertical-align: baseline;
 	cursor: default;
+	scrollbar-color: var(--color-border-dark) transparent;
+	scrollbar-width: thin;
 }
 
 html, body {
@@ -85,8 +88,9 @@ ul {
 body {
 	background-color: var(--color-main-background);
 	font-weight: normal;
-	font-size: .8em;
-	line-height: 1.6em;
+	/* bring the default font size up to 15px */
+	font-size: var(--default-font-size);
+	line-height: var(--default-line-height);
 	font-family: var(--font-face);
 	color: var(--color-main-text);
 }
@@ -119,6 +123,7 @@ body {
 	position: fixed;
 	top: 0;
 	bottom: 0;
+	left: 0;
 	height: 100%;
 	width: 100%;
 	z-index: 9000;
@@ -146,8 +151,8 @@ body {
 /* SCROLLING */
 
 ::-webkit-scrollbar {
-	width: 9px;
-	height: 5px;
+	width: 12px;
+	height: 12px
 }
 
 ::-webkit-scrollbar-track-piece {
@@ -155,9 +160,20 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-	background: var(--color-background-darker);
-	border-radius: var(--border-radius);
+	background: var(--color-border-dark);
+	border-radius: var(--border-radius-large);
+	border: 2px solid transparent;
+	background-clip: content-box;
 }
+
+
+/* SELECTION */
+
+::selection {
+	background-color: var(--color-primary-element);
+	color: var(--color-primary-text);
+}
+
 
 /* CONTENT ------------------------------------------------------------------ */
 
@@ -168,7 +184,7 @@ body {
 	padding: 0;
 	margin: 0;
 	background-color: var(--color-main-background-translucent);
-	z-index: 60;
+	z-index: 61; /* must be above the filelist sticky header */
 	-webkit-user-select: none;
 	-moz-user-select: none;
 	-ms-user-select: none;
@@ -256,12 +272,6 @@ body {
 	user-select: none;
 }
 
-/* keep the labels for screen readers but hide them since we use placeholders */
-
-label.infield {
-	display: none;
-}
-
 /* Show password toggle */
 
 #show, #dbpassword {
@@ -269,10 +279,6 @@ label.infield {
 	right: 1em;
 	top: .8em;
 	float: right;
-}
-
-#show, #dbpassword, #personal-show {
-	display: none;
 }
 
 #show + label, #dbpassword + label {
@@ -290,10 +296,22 @@ label.infield {
 	position: absolute !important;
 	height: 20px;
 	width: 24px;
-	background-image: url('../img/actions/toggle.svg?v=1');
+	background-image: var(--icon-toggle-000);
 	background-repeat: no-repeat;
 	background-position: center;
 	opacity: .3;
+}
+
+/* Feedback for keyboard focus and mouse hover */
+#show,
+#dbpassword,
+#personal-show {
+	&:focus + label {
+		opacity: 1;
+	}
+	+ label:hover {
+		opacity: 1;
+	}
 }
 
 #show + label:before, #dbpassword + label:before, #personal-show + label:before {
@@ -312,8 +330,9 @@ label.infield {
 #personal-show + label {
 	display: block;
 	right: 0;
-	margin-top: -36px;
-    padding: 6px 4px;
+	margin-top: -43px;
+	margin-right: -4px;
+	padding: 22px;
 }
 
 /* Warnings and errors are the same */
@@ -322,6 +341,8 @@ label.infield {
 	margin-top: 8px;
 	padding: 5px;
 	border-radius: var(--border-radius);
+	color: var(--color-primary-text);
+	background-color: var(--color-warning);
 }
 
 .warning {
@@ -331,9 +352,9 @@ label.infield {
 	}
 }
 
-.error {
+.error:not(.toastify) {
 	a {
-		color: var(--color-primary-text) !important;
+		color: white !important;
 		font-weight: bold !important;
 		&.button {
 			color: var(--color-text-lighter) !important;
@@ -388,7 +409,7 @@ label.infield {
 .avatar, .avatardiv {
 	border-radius: 50%;
 	flex-shrink: 0;
-	img {
+	&> img {
 		border-radius: 50%;
 		flex-shrink: 0;
 	}
@@ -448,7 +469,9 @@ tr .action:not(.permanent), .selectedActions a {
 }
 
 tr {
-	&:hover .action, &:focus .action, .action.permanent {
+	&:hover .action:not(.menuitem),
+	&:focus .action:not(.menuitem),
+	.action.permanent:not(.menuitem) {
 		opacity: .5;
 	}
 }
@@ -699,6 +722,8 @@ code {
 /* ---- DIALOGS ---- */
 #oc-dialog-filepicker-content {
 	position: relative;
+	display: flex;
+	flex-direction:column;
 
 	.dirtree {
 		flex-wrap: wrap;
@@ -707,7 +732,7 @@ code {
 		box-sizing: border-box;
 
 		div:first-child a {
-			background-image: url('../img/places/home.svg?v=1');
+			background-image: var(--icon-home-000);
 			background-repeat: no-repeat;
 			background-position: left center;
 		}
@@ -741,11 +766,12 @@ code {
 			opacity: 1;
 		}
 	}
+
 	// keyboard focus
 	#picker-showgridview:focus + #picker-view-toggle {
 		opacity: 1;
 	}
-	
+
 	.actions.creatable {
 		flex-wrap: wrap;
 		padding: 0px;
@@ -757,16 +783,18 @@ code {
 		background-color: var(--color-background-dark);
 		border: 1px solid var(--color-border-dark);
 		border-radius: var(--border-radius-pill);
-		position: absolute;
-		top: 4px;
-		
+		position: relative;
+		left: 15px;
+		top:3px;
+		order:1;
+
 		.icon.icon-add{
 			background-image: var(--icon-add-000);
 			background-size: 16px 16px;
-			max-height:36px;
-			width:36px;
-			margin:0px;
-			
+			width: 34px;
+			height: 34px;
+			margin: 0px;
+			opacity: 0.5;
 		}
 
 		a {
@@ -778,7 +806,7 @@ code {
 		.menu {
 			top:100%;
 			margin:10px;
-			margin-left: 0px;
+			margin-left: 1px;
 			form {
 				display:flex;
 				margin:10px;
@@ -791,13 +819,14 @@ code {
 		box-sizing: border-box;
 		display: inline-block;
 		overflow-y: auto;
-		height: 100%;
+		flex: 1;
+		/*height: 100%;*/
 		/* overflow under the button row */
 		width: 100%;
 		overflow-x: hidden;
 	}
 	.emptycontent {
-		color: var(--color-text-details);
+		color: var(--color-text-maxcontrast);
 		text-align: center;
 		margin-top: 80px;
 		width: 100%;
@@ -868,6 +897,19 @@ code {
 			padding-left: 51px;
 			background-position: 7px 7px;
 			cursor: pointer;
+			// avoid taking full width
+			max-width: 0;
+			.filename-parts {
+				display: flex;
+				&__first {
+					overflow: hidden;
+					white-space: pre;
+					text-overflow: ellipsis;
+				}
+				&__last {
+					white-space: pre;
+				}
+			}
 		}
 		.filesize, .date {
 			width: 80px;
@@ -911,6 +953,9 @@ code {
 							background-size: contain;
 							line-height: $name-height;
 							max-width: none;
+							.filename-parts {
+								justify-content: center;
+							}
 						}
 						&.filesize {
 							line-height: $name-height / 3;
@@ -954,16 +999,12 @@ span.ui-icon {
 	}
 }
 
-#contactsmenu > .menu {
-	/* show ~4.5 entries */
-	height: 278px;
+#header .header-right > div#contactsmenu > .menu {
+	/* show 2.5 to 4.5 entries depending on the screen height */
+	height: calc(100vh - 50px * 3);
+	max-height: calc(50px * 4.5 + 50px);
+	min-height: calc(50px * 3.5);
 	width: 350px;
-	max-width: 90%;
-	right: 13px;
-
-	&::after {
-		right: 61px;
-	}
 
 	.emptycontent {
 		margin-top: 5vh !important;
@@ -975,8 +1016,10 @@ span.ui-icon {
 	}
 
 	.content {
-		max-height: calc(100% - #{$header-height});
-		height: 100%;
+		/* fixed max height of the parent container without the search input */
+		height: calc(100vh - 50px * 3 - 50px);
+		max-height: calc(50px * 4.5);
+		min-height: calc(50px * 3.5 - 50px);
 		overflow-y: auto;
 
 		.footer {
@@ -1165,7 +1208,8 @@ div.crumb {
 		// Some sane max-width for each folder name
 		max-width: 200px;
 
-		&.icon-home {
+		&.icon-home,
+		&.icon-delete {
 			// Hide home text
 			text-indent: -9999px;
 		}

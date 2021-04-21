@@ -26,7 +26,7 @@ trait ActorAware {
 	/**
 	 * @var Actor
 	 */
-	private $actor;
+	protected $actor;
 
 	/**
 	 * @param Actor $actor
@@ -34,5 +34,4 @@ trait ActorAware {
 	public function setCurrentActor(Actor $actor) {
 		$this->actor = $actor;
 	}
-
 }

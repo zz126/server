@@ -38,14 +38,14 @@ class IntegrationTest extends \Test\TestCase {
 	 */
 	private $view;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$manager = \OC\Files\Filesystem::getMountManager();
 
 		\OC_Hook::clear('OC_Filesystem');
 
-		$user = new User($this->getUniqueID('user'), new \Test\Util\User\Dummy);
+		$user = new User($this->getUniqueID('user'), new \Test\Util\User\Dummy, \OC::$server->getEventDispatcher());
 		$this->loginAsUser($user->getUID());
 
 		$this->view = new View();
@@ -57,15 +57,15 @@ class IntegrationTest extends \Test\TestCase {
 			$this->createMock(ILogger::class),
 			$this->createMock(IUserManager::class)
 		);
-		$storage = new Temporary(array());
-		$subStorage = new Temporary(array());
+		$storage = new Temporary([]);
+		$subStorage = new Temporary([]);
 		$this->storages[] = $storage;
 		$this->storages[] = $subStorage;
 		$this->root->mount($storage, '/');
 		$this->root->mount($subStorage, '/substorage/');
 	}
 
-	protected function tearDown() {
+	protected function tearDown(): void {
 		foreach ($this->storages as $storage) {
 			$storage->getCache()->clear();
 		}

@@ -3,12 +3,14 @@
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
  * @author Bjoern Schiessle <bjoern@schiessle.org>
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Joas Schilling <coding@schilljs.com>
  * @author John Molakvoæ (skjnldsv) <skjnldsv@protonmail.com>
  * @author Lukas Reschke <lukas@statuscode.ch>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <robin@icewind.nl>
- * @author Thomas Citharel <tcit@tcit.fr>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
+ * @author Thomas Citharel <nextcloud@tcit.fr>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
  * @license AGPL-3.0
@@ -23,7 +25,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -36,26 +38,26 @@ use OCA\DAV\HookManager;
 use OCP\IL10N;
 use OCP\IUser;
 use OCP\IUserManager;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Test\TestCase;
 
 class HookManagerTest extends TestCase {
 	/** @var IL10N */
 	private $l10n;
 
-	/** @var  EventDispatcher | \PHPUnit_Framework_MockObject_MockObject  */
+	/** @var  EventDispatcherInterface | \PHPUnit\Framework\MockObject\MockObject  */
 	private $eventDispatcher;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
-		$this->eventDispatcher = $this->getMockBuilder(EventDispatcher::class)->disableOriginalConstructor()->getMock();
+		$this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 		$this->l10n = $this->createMock(IL10N::class);
 		$this->l10n
 			->expects($this->any())
 			->method('t')
-			->will($this->returnCallback(function ($text, $parameters = []) {
+			->willReturnCallback(function ($text, $parameters = []) {
 				return vsprintf($text, $parameters);
-			}));
+			});
 	}
 
 	public function test() {
@@ -64,17 +66,17 @@ class HookManagerTest extends TestCase {
 			->getMock();
 		$user->expects($this->once())->method('getUID')->willReturn('newUser');
 
-		/** @var IUserManager | \PHPUnit_Framework_MockObject_MockObject $userManager */
+		/** @var IUserManager | \PHPUnit\Framework\MockObject\MockObject $userManager */
 		$userManager = $this->getMockBuilder(IUserManager::class)
 			->disableOriginalConstructor()
 			->getMock();
 
-		/** @var SyncService | \PHPUnit_Framework_MockObject_MockObject $syncService */
+		/** @var SyncService | \PHPUnit\Framework\MockObject\MockObject $syncService */
 		$syncService = $this->getMockBuilder(SyncService::class)
 			->disableOriginalConstructor()
 			->getMock();
 
-		/** @var CalDavBackend | \PHPUnit_Framework_MockObject_MockObject $cal */
+		/** @var CalDavBackend | \PHPUnit\Framework\MockObject\MockObject $cal */
 		$cal = $this->getMockBuilder(CalDavBackend::class)
 			->disableOriginalConstructor()
 			->getMock();
@@ -83,7 +85,7 @@ class HookManagerTest extends TestCase {
 			'principals/users/newUser',
 			'personal', ['{DAV:}displayname' => 'Personal']);
 
-		/** @var CardDavBackend | \PHPUnit_Framework_MockObject_MockObject $card */
+		/** @var CardDavBackend | \PHPUnit\Framework\MockObject\MockObject $card */
 		$card = $this->getMockBuilder(CardDavBackend::class)
 			->disableOriginalConstructor()
 			->getMock();
@@ -102,24 +104,24 @@ class HookManagerTest extends TestCase {
 			->getMock();
 		$user->expects($this->once())->method('getUID')->willReturn('newUser');
 
-		/** @var IUserManager | \PHPUnit_Framework_MockObject_MockObject $userManager */
+		/** @var IUserManager | \PHPUnit\Framework\MockObject\MockObject $userManager */
 		$userManager = $this->getMockBuilder(IUserManager::class)
 			->disableOriginalConstructor()
 			->getMock();
 
-		/** @var SyncService | \PHPUnit_Framework_MockObject_MockObject $syncService */
+		/** @var SyncService | \PHPUnit\Framework\MockObject\MockObject $syncService */
 		$syncService = $this->getMockBuilder(SyncService::class)
 			->disableOriginalConstructor()
 			->getMock();
 
-		/** @var CalDavBackend | \PHPUnit_Framework_MockObject_MockObject $cal */
+		/** @var CalDavBackend | \PHPUnit\Framework\MockObject\MockObject $cal */
 		$cal = $this->getMockBuilder(CalDavBackend::class)
 			->disableOriginalConstructor()
 			->getMock();
 		$cal->expects($this->once())->method('getCalendarsForUserCount')->willReturn(1);
 		$cal->expects($this->never())->method('createCalendar');
 
-		/** @var CardDavBackend | \PHPUnit_Framework_MockObject_MockObject $card */
+		/** @var CardDavBackend | \PHPUnit\Framework\MockObject\MockObject $card */
 		$card = $this->getMockBuilder(CardDavBackend::class)
 			->disableOriginalConstructor()
 			->getMock();
@@ -136,17 +138,17 @@ class HookManagerTest extends TestCase {
 			->getMock();
 		$user->expects($this->once())->method('getUID')->willReturn('newUser');
 
-		/** @var IUserManager | \PHPUnit_Framework_MockObject_MockObject $userManager */
+		/** @var IUserManager | \PHPUnit\Framework\MockObject\MockObject $userManager */
 		$userManager = $this->getMockBuilder(IUserManager::class)
 			->disableOriginalConstructor()
 			->getMock();
 
-		/** @var SyncService | \PHPUnit_Framework_MockObject_MockObject $syncService */
+		/** @var SyncService | \PHPUnit\Framework\MockObject\MockObject $syncService */
 		$syncService = $this->getMockBuilder(SyncService::class)
 			->disableOriginalConstructor()
 			->getMock();
 
-		/** @var CalDavBackend | \PHPUnit_Framework_MockObject_MockObject $cal */
+		/** @var CalDavBackend | \PHPUnit\Framework\MockObject\MockObject $cal */
 		$cal = $this->getMockBuilder(CalDavBackend::class)
 			->disableOriginalConstructor()
 			->getMock();
@@ -155,7 +157,7 @@ class HookManagerTest extends TestCase {
 			'principals/users/newUser',
 			'personal', ['{DAV:}displayname' => 'Personal']);
 
-		/** @var CardDavBackend | \PHPUnit_Framework_MockObject_MockObject $card */
+		/** @var CardDavBackend | \PHPUnit\Framework\MockObject\MockObject $card */
 		$card = $this->getMockBuilder(CardDavBackend::class)
 			->disableOriginalConstructor()
 			->getMock();
@@ -173,20 +175,20 @@ class HookManagerTest extends TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		/** @var IUserManager | \PHPUnit_Framework_MockObject_MockObject $userManager */
+		/** @var IUserManager | \PHPUnit\Framework\MockObject\MockObject $userManager */
 		$userManager = $this->getMockBuilder(IUserManager::class)
 			->disableOriginalConstructor()
 			->getMock();
 		$userManager->expects($this->once())->method('get')->willReturn($user);
 
-		/** @var SyncService | \PHPUnit_Framework_MockObject_MockObject $syncService */
+		/** @var SyncService | \PHPUnit\Framework\MockObject\MockObject $syncService */
 		$syncService = $this->getMockBuilder(SyncService::class)
 			->disableOriginalConstructor()
 			->getMock();
 		$syncService->expects($this->once())
 			->method('deleteUser');
 
-		/** @var CalDavBackend | \PHPUnit_Framework_MockObject_MockObject $cal */
+		/** @var CalDavBackend | \PHPUnit\Framework\MockObject\MockObject $cal */
 		$cal = $this->getMockBuilder(CalDavBackend::class)
 			->disableOriginalConstructor()
 			->getMock();
@@ -196,7 +198,7 @@ class HookManagerTest extends TestCase {
 		$cal->expects($this->once())->method('deleteCalendar');
 		$cal->expects($this->once())->method('deleteAllSharesByUser');
 
-		/** @var CardDavBackend | \PHPUnit_Framework_MockObject_MockObject $card */
+		/** @var CardDavBackend | \PHPUnit\Framework\MockObject\MockObject $card */
 		$card = $this->getMockBuilder(CardDavBackend::class)
 			->disableOriginalConstructor()
 			->getMock();

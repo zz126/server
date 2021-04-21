@@ -2,6 +2,12 @@
 /**
  *
  *
+ * @author Arthur Schiwon <blizzz@arthur-schiwon.de>
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author Daniel Kesselberg <mail@danielkesselberg.de>
+ * @author Jacob Neplokh <me@jacobneplokh.com>
+ * @author Joas Schilling <coding@schilljs.com>
+ * @author John Molakvoæ (skjnldsv) <skjnldsv@protonmail.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
@@ -18,22 +24,32 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 namespace OCA\DAV\CardDAV;
 
 use OCP\Files\IAppData;
-use OCP\ILogger;
 use OCP\Files\NotFoundException;
 use OCP\Files\NotPermittedException;
 use OCP\Files\SimpleFS\ISimpleFile;
 use OCP\Files\SimpleFS\ISimpleFolder;
+use OCP\ILogger;
 use Sabre\CardDAV\Card;
+use Sabre\VObject\Parameter;
 use Sabre\VObject\Property\Binary;
 use Sabre\VObject\Reader;
 
 class PhotoCache {
+
+	/** @var array  */
+	public const ALLOWED_CONTENT_TYPES = [
+		'image/png' => 'png',
+		'image/jpeg' => 'jpg',
+		'image/gif' => 'gif',
+		'image/vnd.microsoft.icon' => 'ico',
+	];
 
 	/** @var IAppData */
 	protected $appData;
@@ -90,27 +106,26 @@ class PhotoCache {
 	/**
 	 * @param ISimpleFolder $folder
 	 * @param Card $card
+	 * @throws NotPermittedException
 	 */
-	private function init(ISimpleFolder $folder, Card $card) {
+	private function init(ISimpleFolder $folder, Card $card): void {
 		$data = $this->getPhoto($card);
 
-		if ($data === false) {
-			$folder->newFile('nophoto');
-		} else {
-			switch ($data['Content-Type']) {
-				case 'image/png':
-					$ext = 'png';
-					break;
-				case 'image/jpeg':
-					$ext = 'jpg';
-					break;
-				case 'image/gif':
-					$ext = 'gif';
-					break;
-			}
-			$file = $folder->newFile('photo.' . $ext);
-			$file->putContent($data['body']);
+		if ($data === false || !isset($data['Content-Type'])) {
+			$folder->newFile('nophoto', '');
+			return;
 		}
+
+		$contentType = $data['Content-Type'];
+		$extension = self::ALLOWED_CONTENT_TYPES[$contentType] ?? null;
+
+		if ($extension === null) {
+			$folder->newFile('nophoto', '');
+			return;
+		}
+
+		$file = $folder->newFile('photo.' . $extension);
+		$file->putContent($data['body']);
 	}
 
 	private function hasPhoto(ISimpleFolder $folder) {
@@ -147,12 +162,11 @@ class PhotoCache {
 			if ($size !== -1) {
 				$photo->resize($size);
 			}
-	
+
 			try {
 				$file = $folder->newFile($path);
 				$file->putContent($photo->data());
 			} catch (NotPermittedException $e) {
-
 			}
 		}
 
@@ -160,16 +174,19 @@ class PhotoCache {
 	}
 
 	/**
-	 * @param int $addressBookId
-	 * @param string $cardUri
-	 * @return ISimpleFolder
+	 * @throws NotFoundException
+	 * @throws NotPermittedException
 	 */
-	private function getFolder($addressBookId, $cardUri) {
+	private function getFolder(int $addressBookId, string $cardUri, bool $createIfNotExists = true): ISimpleFolder {
 		$hash = md5($addressBookId . ' ' . $cardUri);
 		try {
 			return $this->appData->getFolder($hash);
 		} catch (NotFoundException $e) {
-			return $this->appData->newFolder($hash);
+			if ($createIfNotExists) {
+				return $this->appData->newFolder($hash);
+			} else {
+				throw $e;
+			}
 		}
 	}
 
@@ -180,15 +197,14 @@ class PhotoCache {
 	 * @return string
 	 * @throws NotFoundException
 	 */
-	private function getExtension(ISimpleFolder $folder) {
-		if ($folder->fileExists('photo.jpg')) {
-			return 'jpg';
-		} elseif ($folder->fileExists('photo.png')) {
-			return 'png';
-		} elseif ($folder->fileExists('photo.gif')) {
-			return 'gif';
+	private function getExtension(ISimpleFolder $folder): string {
+		foreach (self::ALLOWED_CONTENT_TYPES as $extension) {
+			if ($folder->fileExists('photo.' . $extension)) {
+				return $extension;
+			}
 		}
-		throw new NotFoundException;
+
+		throw new NotFoundException('Avatar not found');
 	}
 
 	private function getPhoto(Card $node) {
@@ -210,7 +226,7 @@ class PhotoCache {
 					return false;
 				}
 				if (substr_count($parsed['path'], ';') === 1) {
-					list($type) = explode(';', $parsed['path']);
+					[$type] = explode(';', $parsed['path']);
 				}
 				$val = file_get_contents($val);
 			} else {
@@ -218,19 +234,13 @@ class PhotoCache {
 				$type = $this->getBinaryType($photo);
 			}
 
-			$allowedContentTypes = [
-				'image/png',
-				'image/jpeg',
-				'image/gif',
-			];
-
-			if (!in_array($type, $allowedContentTypes, true)) {
+			if (empty($type) || !isset(self::ALLOWED_CONTENT_TYPES[$type])) {
 				$type = 'application/octet-stream';
 			}
 
 			return [
 				'Content-Type' => $type,
-				'body'         => $val
+				'body' => $val
 			];
 		} catch (\Exception $e) {
 			$this->logger->logException($e, [
@@ -271,9 +281,14 @@ class PhotoCache {
 	/**
 	 * @param int $addressBookId
 	 * @param string $cardUri
+	 * @throws NotPermittedException
 	 */
 	public function delete($addressBookId, $cardUri) {
-		$folder = $this->getFolder($addressBookId, $cardUri);
-		$folder->delete();
+		try {
+			$folder = $this->getFolder($addressBookId, $cardUri, false);
+			$folder->delete();
+		} catch (NotFoundException $e) {
+			// that's OK, nothing to do
+		}
 	}
 }

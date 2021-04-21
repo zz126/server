@@ -1,15 +1,9 @@
 OC.L10N.register(
     "systemtags",
     {
-    "Tags" : "Sildid",
     "Update" : "Uuenda",
     "Create" : "Loo",
-    "Select tag…" : "Vali silt...",
-    "Tagged files" : "Sildistatud failid",
-    "Select tags to filter by" : "Vali sildid, mille järgi filtreerida",
-    "No tags found" : "Silte ei leitud",
-    "Please select tags to filter by" : "Palun vali sildid, mille järgi filtreerida",
-    "No files found for the selected tags" : "Valitud siltidega ei leitud ühtegi faili",
+    "Select tag …" : "Vali silt ...",
     "Added system tag {systemtag}" : "Lisas süsteemi sildi {systemtag}",
     "Added system tag %1$s" : "Lisas süsteemi sildi %1$s",
     "%1$s added system tag %2$s" : "%1$s lisas süsteemi sildi %2$s",
@@ -41,8 +35,13 @@ OC.L10N.register(
     "%s (restricted)" : "%s (piiratud)",
     "%s (invisible)" : "%s (nähtamatu)",
     "<strong>System tags</strong> for a file have been modified" : "<strong>Süsteemi sildid</strong> sellele failile on muudetud",
+    "Tags" : "Sildid",
     "Collaborative tags" : "Koostöö sildid",
-    "Select tag …" : "Vali silt ...",
+    "Tagged files" : "Sildistatud failid",
+    "Select tags to filter by" : "Vali sildid, mille järgi filtreerida",
+    "No tags found" : "Silte ei leitud",
+    "Please select tags to filter by" : "Palun vali sildid, mille järgi filtreerida",
+    "No files found for the selected tags" : "Valitud siltidega ei leitud ühtegi faili",
     "Name" : "Nimi",
     "Public" : "Avalik",
     "Restricted" : "Piiratud",
@@ -52,7 +51,6 @@ OC.L10N.register(
     "No files in here" : "Siin ei ole faile",
     "No entries found in this folder" : "Selles kaustast ei leitud kirjeid",
     "Size" : "Suurus",
-    "Modified" : "Muudetud",
-    "Create and edit collaborative tags. These tags affect all users." : "Loo ja muuda koostöö silte. Need sildid kohalduvad kõigile kasutajatele."
+    "Modified" : "Muudetud"
 },
 "nplurals=2; plural=(n != 1);");

@@ -3,11 +3,13 @@
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
  * @author Bart Visscher <bartv@thisnet.nl>
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Joas Schilling <coding@schilljs.com>
  * @author Jörn Friedrich Dreyer <jfd@butonic.de>
  * @author Lukas Reschke <lukas@statuscode.ch>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <robin@icewind.nl>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
  * @license AGPL-3.0
@@ -22,7 +24,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -34,6 +36,7 @@
 
 // use OCP namespace for all classes that are considered public.
 // This means that they should be used by apps instead of the internal ownCloud classes
+
 namespace OCP;
 
 /**
@@ -44,7 +47,7 @@ interface IConfig {
 	/**
 	 * @since 8.2.0
 	 */
-	const SENSITIVE_VALUE = '***REMOVED SENSITIVE VALUE***';
+	public const SENSITIVE_VALUE = '***REMOVED SENSITIVE VALUE***';
 
 	/**
 	 * Sets and deletes system wide values
@@ -73,6 +76,36 @@ interface IConfig {
 	 * @since 6.0.0 - parameter $default was added in 7.0.0
 	 */
 	public function getSystemValue($key, $default = '');
+
+	/**
+	 * Looks up a boolean system wide defined value
+	 *
+	 * @param string $key the key of the value, under which it was saved
+	 * @param bool $default the default value to be returned if the value isn't set
+	 * @return bool the value or $default
+	 * @since 16.0.0
+	 */
+	public function getSystemValueBool(string $key, bool $default = false): bool;
+
+	/**
+	 * Looks up an integer system wide defined value
+	 *
+	 * @param string $key the key of the value, under which it was saved
+	 * @param int $default the default value to be returned if the value isn't set
+	 * @return int the value or $default
+	 * @since 16.0.0
+	 */
+	public function getSystemValueInt(string $key, int $default = 0): int;
+
+	/**
+	 * Looks up a string system wide defined value
+	 *
+	 * @param string $key the key of the value, under which it was saved
+	 * @param string $default the default value to be returned if the value isn't set
+	 * @return string the value or $default
+	 * @since 16.0.0
+	 */
+	public function getSystemValueString(string $key, string $default = ''): string;
 
 	/**
 	 * Looks up a system wide defined value and filters out sensitive data

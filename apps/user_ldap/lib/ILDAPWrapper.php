@@ -3,6 +3,7 @@
  * @copyright Copyright (c) 2016, ownCloud, Inc.
  *
  * @author Arthur Schiwon <blizzz@arthur-schiwon.de>
+ * @author J0WI <J0WI@users.noreply.github.com>
  * @author Joas Schilling <coding@schilljs.com>
  * @author Jörn Friedrich Dreyer <jfd@butonic.de>
  * @author Lukas Reschke <lukas@statuscode.ch>
@@ -23,7 +24,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -60,7 +61,7 @@ interface ILDAPWrapper {
 	 * @param string $cookie structure sent by LDAP server
 	 * @return bool true on success, false otherwise
 	 */
-	public function controlPagedResult($link, $pageSize, $isCritical, $cookie);
+	public function controlPagedResult($link, $pageSize, $isCritical);
 
 	/**
 	 * Retrieve the LDAP pagination cookie
@@ -100,7 +101,7 @@ interface ILDAPWrapper {
 	 * @param string $dn
 	 * @param int @withAttrib
 	 * @return array|false
-	 * @link http://www.php.net/manual/en/function.ldap-explode-dn.php
+	 * @link https://www.php.net/manual/en/function.ldap-explode-dn.php
 	 */
 	public function explodeDN($dn, $withAttrib);
 
@@ -212,5 +213,4 @@ interface ILDAPWrapper {
 	 * @return bool true if it is a resource, false otherwise
 	 */
 	public function isResource($resource);
-
 }

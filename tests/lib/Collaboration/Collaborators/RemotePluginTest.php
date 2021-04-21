@@ -23,7 +23,6 @@
 
 namespace Test\Collaboration\Collaborators;
 
-
 use OC\Collaboration\Collaborators\RemotePlugin;
 use OC\Collaboration\Collaborators\SearchResult;
 use OC\Federation\CloudIdManager;
@@ -34,21 +33,21 @@ use OCP\IConfig;
 use OCP\IUser;
 use OCP\IUserManager;
 use OCP\IUserSession;
-use OCP\Share;
+use OCP\Share\IShare;
 use Test\TestCase;
 
 class RemotePluginTest extends TestCase {
 
-	/** @var IUserManager|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IUserManager|\PHPUnit\Framework\MockObject\MockObject */
 	protected $userManager;
 
-	/** @var  IConfig|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var  IConfig|\PHPUnit\Framework\MockObject\MockObject */
 	protected $config;
 
-	/** @var  IManager|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var  IManager|\PHPUnit\Framework\MockObject\MockObject */
 	protected $contactsManager;
 
-	/** @var  ICloudIdManager|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var  ICloudIdManager|\PHPUnit\Framework\MockObject\MockObject */
 	protected $cloudIdManager;
 
 	/** @var  RemotePlugin */
@@ -57,13 +56,13 @@ class RemotePluginTest extends TestCase {
 	/** @var  SearchResult */
 	protected $searchResult;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->userManager = $this->createMock(IUserManager::class);
 		$this->config = $this->createMock(IConfig::class);
 		$this->contactsManager = $this->createMock(IManager::class);
-		$this->cloudIdManager = new CloudIdManager();
+		$this->cloudIdManager = new CloudIdManager($this->contactsManager);
 		$this->searchResult = new SearchResult();
 	}
 
@@ -93,9 +92,7 @@ class RemotePluginTest extends TestCase {
 		$this->config->expects($this->any())
 			->method('getAppValue')
 			->willReturnCallback(
-				function($appName, $key, $default)
-				use ($shareeEnumeration)
-				{
+				function ($appName, $key, $default) use ($shareeEnumeration) {
 					if ($appName === 'core' && $key === 'shareapi_allow_share_dialog_user_enumeration') {
 						return $shareeEnumeration ? 'yes' : 'no';
 					}
@@ -107,8 +104,12 @@ class RemotePluginTest extends TestCase {
 
 		$this->contactsManager->expects($this->any())
 			->method('search')
-			->with($searchTerm, ['CLOUD', 'FN'])
-			->willReturn($contacts);
+			->willReturnCallback(function ($search, $searchAttributes) use ($searchTerm, $contacts) {
+				if ($search === $searchTerm) {
+					return $contacts;
+				}
+				return [];
+			});
 
 		$moreResults = $this->plugin->search($searchTerm, 2, 0, $this->searchResult);
 		$result = $this->searchResult->asArray();
@@ -128,7 +129,11 @@ class RemotePluginTest extends TestCase {
 	public function testSplitUserRemote($remote, $expectedUser, $expectedUrl) {
 		$this->instantiatePlugin();
 
-		list($remoteUser, $remoteUrl) = $this->plugin->splitUserRemote($remote);
+		$this->contactsManager->expects($this->any())
+			->method('search')
+			->willReturn([]);
+
+		[$remoteUser, $remoteUrl] = $this->plugin->splitUserRemote($remote);
 		$this->assertSame($expectedUser, $remoteUser);
 		$this->assertSame($expectedUrl, $remoteUrl);
 	}
@@ -137,9 +142,10 @@ class RemotePluginTest extends TestCase {
 	 * @dataProvider dataTestSplitUserRemoteError
 	 *
 	 * @param string $id
-	 * @expectedException \Exception
 	 */
 	public function testSplitUserRemoteError($id) {
+		$this->expectException(\Exception::class);
+
 		$this->instantiatePlugin();
 		$this->plugin->splitUserRemote($id);
 	}
@@ -152,7 +158,7 @@ class RemotePluginTest extends TestCase {
 				'test@remote',
 				[],
 				true,
-				['remotes' => [], 'exact' => ['remotes' => [['label' => 'test@remote', 'value' => ['shareType' => Share::SHARE_TYPE_REMOTE, 'shareWith' => 'test@remote']]]]],
+				['remotes' => [], 'exact' => ['remotes' => [['label' => 'test (remote)', 'value' => ['shareType' => IShare::TYPE_REMOTE, 'shareWith' => 'test@remote', 'server' => 'remote'], 'uuid' => 'test', 'name' => 'test']]]],
 				false,
 				true,
 			],
@@ -160,7 +166,7 @@ class RemotePluginTest extends TestCase {
 				'test@remote',
 				[],
 				false,
-				['remotes' => [], 'exact' => ['remotes' => [['label' => 'test@remote', 'value' => ['shareType' => Share::SHARE_TYPE_REMOTE, 'shareWith' => 'test@remote']]]]],
+				['remotes' => [], 'exact' => ['remotes' => [['label' => 'test (remote)', 'value' => ['shareType' => IShare::TYPE_REMOTE, 'shareWith' => 'test@remote', 'server' => 'remote'], 'uuid' => 'test', 'name' => 'test']]]],
 				false,
 				true,
 			],
@@ -186,7 +192,7 @@ class RemotePluginTest extends TestCase {
 					],
 				],
 				true,
-				['remotes' => [['name' => 'User @ Localhost', 'label' => 'User @ Localhost (username@localhost)', 'uuid' => 'uid1', 'type' => '', 'value' => ['shareType' => Share::SHARE_TYPE_REMOTE, 'shareWith' => 'username@localhost', 'server' => 'localhost']]], 'exact' => ['remotes' => []]],
+				['remotes' => [['name' => 'User @ Localhost', 'label' => 'User @ Localhost (username@localhost)', 'uuid' => 'uid1', 'type' => '', 'value' => ['shareType' => IShare::TYPE_REMOTE, 'shareWith' => 'username@localhost', 'server' => 'localhost']]], 'exact' => ['remotes' => []]],
 				false,
 				true,
 			],
@@ -238,7 +244,7 @@ class RemotePluginTest extends TestCase {
 					],
 				],
 				true,
-				['remotes' => [['name' => 'User @ Localhost', 'label' => 'User @ Localhost (username@localhost)', 'uuid' => 'uid', 'type' => '', 'value' => ['shareType' => Share::SHARE_TYPE_REMOTE, 'shareWith' => 'username@localhost', 'server' => 'localhost']]], 'exact' => ['remotes' => [['label' => 'test@remote', 'value' => ['shareType' => Share::SHARE_TYPE_REMOTE, 'shareWith' => 'test@remote']]]]],
+				['remotes' => [['name' => 'User @ Localhost', 'label' => 'User @ Localhost (username@localhost)', 'uuid' => 'uid', 'type' => '', 'value' => ['shareType' => IShare::TYPE_REMOTE, 'shareWith' => 'username@localhost', 'server' => 'localhost']]], 'exact' => ['remotes' => [['label' => 'test (remote)', 'value' => ['shareType' => IShare::TYPE_REMOTE, 'shareWith' => 'test@remote', 'server' => 'remote'], 'uuid' => 'test', 'name' => 'test']]]],
 				false,
 				true,
 			],
@@ -264,7 +270,7 @@ class RemotePluginTest extends TestCase {
 					],
 				],
 				false,
-				['remotes' => [], 'exact' => ['remotes' => [['label' => 'test@remote', 'value' => ['shareType' => Share::SHARE_TYPE_REMOTE, 'shareWith' => 'test@remote']]]]],
+				['remotes' => [], 'exact' => ['remotes' => [['label' => 'test (remote)', 'value' => ['shareType' => IShare::TYPE_REMOTE, 'shareWith' => 'test@remote', 'server' => 'remote'], 'uuid' => 'test', 'name' => 'test']]]],
 				false,
 				true,
 			],
@@ -290,7 +296,7 @@ class RemotePluginTest extends TestCase {
 					],
 				],
 				true,
-				['remotes' => [], 'exact' => ['remotes' => [['name' => 'User @ Localhost', 'label' => 'User @ Localhost (username@localhost)', 'uuid' => 'uid1', 'type' => '', 'value' => ['shareType' => Share::SHARE_TYPE_REMOTE, 'shareWith' => 'username@localhost', 'server' => 'localhost']]]]],
+				['remotes' => [], 'exact' => ['remotes' => [['name' => 'User @ Localhost', 'label' => 'User @ Localhost (username@localhost)', 'uuid' => 'uid1', 'type' => '', 'value' => ['shareType' => IShare::TYPE_REMOTE, 'shareWith' => 'username@localhost', 'server' => 'localhost']]]]],
 				true,
 				true,
 			],
@@ -316,7 +322,7 @@ class RemotePluginTest extends TestCase {
 					],
 				],
 				false,
-				['remotes' => [], 'exact' => ['remotes' => [['name' => 'User @ Localhost', 'label' => 'User @ Localhost (username@localhost)', 'uuid' => 'uid1', 'type' => '', 'value' => ['shareType' => Share::SHARE_TYPE_REMOTE, 'shareWith' => 'username@localhost', 'server' => 'localhost']]]]],
+				['remotes' => [], 'exact' => ['remotes' => [['name' => 'User @ Localhost', 'label' => 'User @ Localhost (username@localhost)', 'uuid' => 'uid1', 'type' => '', 'value' => ['shareType' => IShare::TYPE_REMOTE, 'shareWith' => 'username@localhost', 'server' => 'localhost']]]]],
 				true,
 				true,
 			],
@@ -343,7 +349,7 @@ class RemotePluginTest extends TestCase {
 					],
 				],
 				false,
-				['remotes' => [], 'exact' => ['remotes' => [['name' => 'User Name @ Localhost', 'label' => 'User Name @ Localhost (user name@localhost)', 'uuid' => 'uid3', 'type' => '', 'value' => ['shareType' => Share::SHARE_TYPE_REMOTE, 'shareWith' => 'user name@localhost', 'server' => 'localhost']]]]],
+				['remotes' => [], 'exact' => ['remotes' => [['name' => 'User Name @ Localhost', 'label' => 'User Name @ Localhost (user name@localhost)', 'uuid' => 'uid3', 'type' => '', 'value' => ['shareType' => IShare::TYPE_REMOTE, 'shareWith' => 'user name@localhost', 'server' => 'localhost']]]]],
 				true,
 				true,
 			],
@@ -370,7 +376,7 @@ class RemotePluginTest extends TestCase {
 					],
 				],
 				false,
-				['remotes' => [], 'exact' => ['remotes' => [['label' => 'user space@remote', 'value' => ['shareType' => Share::SHARE_TYPE_REMOTE, 'shareWith' => 'user space@remote']]]]],
+				['remotes' => [], 'exact' => ['remotes' => [['label' => 'user space (remote)', 'value' => ['shareType' => IShare::TYPE_REMOTE, 'shareWith' => 'user space@remote', 'server' => 'remote'], 'uuid' => 'user space', 'name' => 'user space']]]],
 				false,
 				true,
 			],
@@ -409,20 +415,20 @@ class RemotePluginTest extends TestCase {
 	}
 
 	public function dataTestSplitUserRemoteError() {
-		return array(
+		return [
 			// Invalid path
-			array('user@'),
+			['user@'],
 
 			// Invalid user
-			array('@server'),
-			array('us/er@server'),
-			array('us:er@server'),
+			['@server'],
+			['us/er@server'],
+			['us:er@server'],
 
 			// Invalid splitting
-			array('user'),
-			array(''),
-			array('us/erserver'),
-			array('us:erserver'),
-		);
+			['user'],
+			[''],
+			['us/erserver'],
+			['us:erserver'],
+		];
 	}
 }

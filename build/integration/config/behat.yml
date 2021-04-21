@@ -45,6 +45,16 @@ default:
               - admin
               - admin
             regular_user_password: 123456
+    collaboration:
+      paths:
+        - "%paths.base%/../collaboration_features"
+      contexts:
+        - CollaborationContext:
+            baseUrl:  http://localhost:8080/ocs/
+            admin:
+              - admin
+              - admin
+            regular_user_password: 123456
     sharees:
       paths:
         - "%paths.base%/../sharees_features"
@@ -55,6 +65,17 @@ default:
               - admin
               - admin
             regular_user_password: 123456
+    sharing:
+      paths:
+        - "%paths.base%/../sharing_features"
+      contexts:
+        - SharingContext:
+            baseUrl:  http://localhost:8080/ocs/
+            admin:
+              - admin
+              - admin
+            regular_user_password: 123456
+        - TalkContext
     setup:
       paths:
         - "%paths.base%/../setup_features"
@@ -84,7 +105,7 @@ default:
             admin:
               - admin
               - admin
-            regular_user_password: what_for
+            regular_user_password: 123456
     remoteapi:
       paths:
         - "%paths.base%/../remoteapi_features"

@@ -1,7 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @author Christoph Wurst <christoph@winzerhof-wurst.at>
+ * @author Joas Schilling <coding@schilljs.com>
+ * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
  *
@@ -16,7 +21,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -32,19 +37,19 @@ use Test\TestCase;
 
 class SettingsControllerTest extends TestCase {
 
-	/** @var IRequest|PHPUnit_Framework_MockObject_MockObject */
+	/** @var IRequest|\PHPUnit\Framework\MockObject\MockObject */
 	private $request;
 
-	/** @var BackupCodeStorage|PHPUnit_Framework_MockObject_MockObject */
+	/** @var BackupCodeStorage|\PHPUnit\Framework\MockObject\MockObject */
 	private $storage;
 
-	/** @var IUserSession|PHPUnit_Framework_MockObject_MockObject */
+	/** @var IUserSession|\PHPUnit\Framework\MockObject\MockObject */
 	private $userSession;
 
 	/** @var SettingsController */
 	private $controller;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->request = $this->getMockBuilder(IRequest::class)->getMock();
@@ -56,43 +61,28 @@ class SettingsControllerTest extends TestCase {
 		$this->controller = new SettingsController('twofactor_backupcodes', $this->request, $this->storage, $this->userSession);
 	}
 
-	public function testState() {
-		$user = $this->getMockBuilder(IUser::class)->getMock();
-
-		$this->userSession->expects($this->once())
-			->method('getUser')
-			->will($this->returnValue($user));
-		$this->storage->expects($this->once())
-			->method('getBackupCodesState')
-			->with($user)
-			->will($this->returnValue('state'));
-
-		$this->assertEquals('state', $this->controller->state());
-	}
-
 	public function testCreateCodes() {
 		$user = $this->getMockBuilder(IUser::class)->getMock();
 
 		$codes = ['a', 'b'];
 		$this->userSession->expects($this->once())
 			->method('getUser')
-			->will($this->returnValue($user));
+			->willReturn($user);
 		$this->storage->expects($this->once())
 			->method('createCodes')
 			->with($user)
-			->will($this->returnValue($codes));
+			->willReturn($codes);
 		$this->storage->expects($this->once())
 			->method('getBackupCodesState')
 			->with($user)
-			->will($this->returnValue('state'));
+			->willReturn(['state']);
 
 		$expected = [
 			'codes' => $codes,
-			'state' => 'state',
+			'state' => ['state'],
 		];
 		$response = $this->controller->createCodes();
 		$this->assertInstanceOf(JSONResponse::class, $response);
 		$this->assertEquals($expected, $response->getData());
 	}
-
 }

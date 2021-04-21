@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2018 Robin Appelman <robin@icewind.nl>
  *
@@ -49,5 +51,9 @@ class FailWriteObjectStore implements IObjectStore {
 
 	public function objectExists($urn) {
 		return $this->objectStore->objectExists($urn);
+	}
+
+	public function copyObject($from, $to) {
+		$this->objectStore->copyObject($from, $to);
 	}
 }

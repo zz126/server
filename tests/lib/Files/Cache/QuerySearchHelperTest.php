@@ -39,7 +39,7 @@ class QuerySearchHelperTest extends TestCase {
 	/** @var  IQueryBuilder */
 	private $builder;
 
-	/** @var  IMimeTypeLoader|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var  IMimeTypeLoader|\PHPUnit\Framework\MockObject\MockObject */
 	private $mimetypeLoader;
 
 	/** @var  QuerySearchHelper */
@@ -48,7 +48,7 @@ class QuerySearchHelperTest extends TestCase {
 	/** @var  integer */
 	private $numericStorageId;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 		$this->builder = \OC::$server->getDatabaseConnection()->getQueryBuilder();
 		$this->mimetypeLoader = $this->createMock(IMimeTypeLoader::class);
@@ -83,7 +83,7 @@ class QuerySearchHelperTest extends TestCase {
 			->where($this->builder->expr()->eq('storage', new Literal($this->numericStorageId)));
 	}
 
-	public function tearDown() {
+	protected function tearDown(): void {
 		parent::tearDown();
 
 		$builder = \OC::$server->getDatabaseConnection()->getQueryBuilder();
@@ -111,7 +111,7 @@ class QuerySearchHelperTest extends TestCase {
 		$data['name'] = basename($data['path']);
 		$data['parent'] = -1;
 		if (isset($data['mimetype'])) {
-			list($mimepart,) = explode('/', $data['mimetype']);
+			[$mimepart,] = explode('/', $data['mimetype']);
 			$data['mimepart'] = $this->mimetypeLoader->getId($mimepart);
 			$data['mimetype'] = $this->mimetypeLoader->getId($data['mimetype']);
 		} else {
@@ -136,7 +136,12 @@ class QuerySearchHelperTest extends TestCase {
 	private function search(ISearchOperator $operator) {
 		$dbOperator = $this->querySearchHelper->searchOperatorToDBExpr($this->builder, $operator);
 		$this->builder->andWhere($dbOperator);
-		return $this->builder->execute()->fetchAll(\PDO::FETCH_COLUMN);
+
+		$result = $this->builder->execute();
+		$rows = $result->fetchAll(\PDO::FETCH_COLUMN);
+		$result->closeCursor();
+
+		return $rows;
 	}
 
 	public function comparisonProvider() {
@@ -200,7 +205,7 @@ class QuerySearchHelperTest extends TestCase {
 			'mimetype' => 'image/png'
 		]);
 
-		$fileIds = array_map(function($i) use ($fileId) {
+		$fileIds = array_map(function ($i) use ($fileId) {
 			return $fileId[$i];
 		}, $fileIds);
 

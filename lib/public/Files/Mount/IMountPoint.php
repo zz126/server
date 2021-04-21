@@ -17,7 +17,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program. If not, see <http://www.gnu.org/licenses/>
  *
  */
 
@@ -48,7 +48,7 @@ interface IMountPoint {
 	/**
 	 * Get the storage that is mounted
 	 *
-	 * @return \OC\Files\Storage\Storage
+	 * @return \OC\Files\Storage\Storage|null
 	 * @since 8.0.0
 	 */
 	public function getStorage();

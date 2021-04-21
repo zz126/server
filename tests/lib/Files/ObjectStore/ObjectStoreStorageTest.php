@@ -20,9 +20,9 @@
 
 namespace Test\Files\ObjectStore;
 
-use OC\Files\ObjectStore\ObjectStoreStorage;
 use OC\Files\ObjectStore\StorageObjectStore;
 use OC\Files\Storage\Temporary;
+use OC\Files\Storage\Wrapper\Jail;
 use OCP\Files\ObjectStore\IObjectStore;
 use Test\Files\Storage\Storage;
 
@@ -38,7 +38,7 @@ class ObjectStoreStorageTest extends Storage {
 	 */
 	private $objectStorage;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$baseStorage = new Temporary();
@@ -47,7 +47,7 @@ class ObjectStoreStorageTest extends Storage {
 		$this->instance = new ObjectStoreStorageOverwrite($config);
 	}
 
-	protected function tearDown() {
+	protected function tearDown(): void {
 		if (is_null($this->instance)) {
 			return;
 		}
@@ -57,7 +57,6 @@ class ObjectStoreStorageTest extends Storage {
 	}
 
 	public function testStat() {
-
 		$textFile = \OC::$SERVERROOT . '/tests/data/lorem.txt';
 		$ctimeStart = time();
 		$this->instance->file_put_contents('/lorem.txt', file_get_contents($textFile));
@@ -180,5 +179,53 @@ class ObjectStoreStorageTest extends Storage {
 			$this->assertStringStartsWith('Object not found after writing', $e->getMessage());
 		}
 		$this->assertFalse($this->instance->file_exists('test.txt'));
+	}
+
+	public function testDeleteObjectFailureKeepCache() {
+		$objectStore = $this->instance->getObjectStore();
+		$this->instance->setObjectStore(new FailDeleteObjectStore($objectStore));
+		$cache = $this->instance->getCache();
+
+		$this->instance->file_put_contents('test.txt', 'foo');
+
+		$this->assertTrue($cache->inCache('test.txt'));
+
+		$this->assertFalse($this->instance->unlink('test.txt'));
+
+		$this->assertTrue($cache->inCache('test.txt'));
+
+		$this->instance->mkdir('foo');
+		$this->instance->file_put_contents('foo/test.txt', 'foo');
+
+		$this->assertTrue($cache->inCache('foo'));
+		$this->assertTrue($cache->inCache('foo/test.txt'));
+
+		$this->instance->rmdir('foo');
+
+		$this->assertTrue($cache->inCache('foo'));
+		$this->assertTrue($cache->inCache('foo/test.txt'));
+	}
+
+	public function testCopyBetweenJails() {
+		$this->instance->mkdir('a');
+		$this->instance->mkdir('b');
+		$jailA = new Jail([
+			'storage' => $this->instance,
+			'root' => 'a'
+		]);
+		$jailB = new Jail([
+			'storage' => $this->instance,
+			'root' => 'b'
+		]);
+		$jailA->mkdir('sub');
+		$jailA->file_put_contents('1.txt', '1');
+		$jailA->file_put_contents('sub/2.txt', '2');
+		$jailA->file_put_contents('sub/3.txt', '3');
+
+		$jailB->copyFromStorage($jailA, '', 'target');
+
+		$this->assertEquals('1', $this->instance->file_get_contents('b/target/1.txt'));
+		$this->assertEquals('2', $this->instance->file_get_contents('b/target/sub/2.txt'));
+		$this->assertEquals('3', $this->instance->file_get_contents('b/target/sub/3.txt'));
 	}
 }

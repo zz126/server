@@ -22,6 +22,7 @@
  */
 
 use Behat\Behat\Context\Context;
+use PHPUnit\Framework\Assert;
 
 class FileListContext implements Context, ActorAwareInterface {
 
@@ -44,7 +45,7 @@ class FileListContext implements Context, ActorAwareInterface {
 	 * @BeforeScenario
 	 */
 	public function initializeFileListAncestors() {
-		$this->fileListAncestorsByActor = array();
+		$this->fileListAncestorsByActor = [];
 		$this->fileListAncestor = null;
 	}
 
@@ -125,9 +126,60 @@ class FileListContext implements Context, ActorAwareInterface {
 	 * @return Locator
 	 */
 	public static function createNewFolderMenuItemNameInput($fileListAncestor) {
-		return Locator::forThe()->css(".filenameform input")->
+		return Locator::forThe()->css(".filenameform input[type=text]")->
 				descendantOf(self::createNewFolderMenuItem($fileListAncestor))->
 				describedAs("Name input in create new folder menu item in file list");
+	}
+
+	/**
+	 * @return Locator
+	 */
+	public static function createNewFolderMenuItemConfirmButton($fileListAncestor) {
+		return Locator::forThe()->css(".filenameform input[type=submit]")->
+				descendantOf(self::createNewFolderMenuItem($fileListAncestor))->
+				describedAs("Confirm button in create new folder menu item in file list");
+	}
+
+	/**
+	 * @return Locator
+	 */
+	public static function fileListHeader($fileListAncestor) {
+		return Locator::forThe()->css("thead")->
+				descendantOf($fileListAncestor)->
+				describedAs("Header in file list");
+	}
+
+	/**
+	 * @return Locator
+	 */
+	public static function selectedFilesActionsMenuButton($fileListAncestor) {
+		return Locator::forThe()->css(".actions-selected")->
+				descendantOf(self::fileListHeader($fileListAncestor))->
+				describedAs("Selected files actions menu button in file list");
+	}
+
+	/**
+	 * @return Locator
+	 */
+	public static function selectedFilesActionsMenu() {
+		return Locator::forThe()->css(".filesSelectMenu")->
+				describedAs("Selected files actions menu in file list");
+	}
+
+	/**
+	 * @return Locator
+	 */
+	private static function selectedFilesActionsMenuItemFor($itemText) {
+		return Locator::forThe()->xpath("//a[normalize-space() = '$itemText']")->
+				descendantOf(self::selectedFilesActionsMenu())->
+				describedAs($itemText . " item in selected files actions menu in file list");
+	}
+
+	/**
+	 * @return Locator
+	 */
+	public static function moveOrCopySelectedFilesMenuItem() {
+		return self::selectedFilesActionsMenuItemFor("Move or copy");
 	}
 
 	/**
@@ -146,6 +198,26 @@ class FileListContext implements Context, ActorAwareInterface {
 		return Locator::forThe()->xpath("//preceding-sibling::tr//span[contains(concat(' ', normalize-space(@class), ' '), ' nametext ') and normalize-space() = '$fileName1']/ancestor::tr")->
 				descendantOf(self::rowForFile($fileListAncestor, $fileName2))->
 				describedAs("Row for file $fileName1 preceding $fileName2 in file list");
+	}
+
+	/**
+	 * @return Locator
+	 */
+	public static function selectionCheckboxForFile($fileListAncestor, $fileName) {
+		// Note that the element that the user interacts with is the label, not
+		// the checbox itself.
+		return Locator::forThe()->css(".selection label")->
+				descendantOf(self::rowForFile($fileListAncestor, $fileName))->
+				describedAs("Selection checkbox for file $fileName in file list");
+	}
+
+	/**
+	 * @return Locator
+	 */
+	public static function selectionCheckboxInputForFile($fileListAncestor, $fileName) {
+		return Locator::forThe()->css(".selection input[type=checkbox]")->
+				descendantOf(self::rowForFile($fileListAncestor, $fileName))->
+				describedAs("Selection checkbox input for file $fileName in file list");
 	}
 
 	/**
@@ -268,6 +340,13 @@ class FileListContext implements Context, ActorAwareInterface {
 	/**
 	 * @return Locator
 	 */
+	public static function moveOrCopyMenuItem() {
+		return self::fileActionsMenuItemFor("Move or copy");
+	}
+
+	/**
+	 * @return Locator
+	 */
 	public static function viewFileInFolderMenuItem() {
 		return self::fileActionsMenuItemFor("View in folder");
 	}
@@ -286,7 +365,8 @@ class FileListContext implements Context, ActorAwareInterface {
 		$this->actor->find(self::createMenuButton($this->fileListAncestor), 10)->click();
 
 		$this->actor->find(self::createNewFolderMenuItem($this->fileListAncestor), 2)->click();
-		$this->actor->find(self::createNewFolderMenuItemNameInput($this->fileListAncestor), 2)->setValue($folderName . "\r");
+		$this->actor->find(self::createNewFolderMenuItemNameInput($this->fileListAncestor), 2)->setValue($folderName);
+		$this->actor->find(self::createNewFolderMenuItemConfirmButton($this->fileListAncestor), 2)->click();
 	}
 
 	/**
@@ -297,10 +377,28 @@ class FileListContext implements Context, ActorAwareInterface {
 	}
 
 	/**
+	 * @Given I select :fileName
+	 */
+	public function iSelect($fileName) {
+		$this->iSeeThatIsNotSelected($fileName);
+
+		$this->actor->find(self::selectionCheckboxForFile($this->fileListAncestor, $fileName), 10)->click();
+	}
+
+	/**
+	 * @Given I start the move or copy operation for the selected files
+	 */
+	public function iStartTheMoveOrCopyOperationForTheSelectedFiles() {
+		$this->actor->find(self::selectedFilesActionsMenuButton($this->fileListAncestor), 10)->click();
+
+		$this->actor->find(self::moveOrCopySelectedFilesMenuItem(), 2)->click();
+	}
+
+	/**
 	 * @Given I open the details view for :fileName
 	 */
 	public function iOpenTheDetailsViewFor($fileName) {
-		$this->actor->find(self::fileActionsMenuButtonForFile($this->fileListAncestor, $fileName), 10)->click();
+		$this->openFileActionsMenuForFile($fileName);
 
 		$this->actor->find(self::detailsMenuItem(), 2)->click();
 	}
@@ -309,7 +407,7 @@ class FileListContext implements Context, ActorAwareInterface {
 	 * @Given I rename :fileName1 to :fileName2
 	 */
 	public function iRenameTo($fileName1, $fileName2) {
-		$this->actor->find(self::fileActionsMenuButtonForFile($this->fileListAncestor, $fileName1), 10)->click();
+		$this->openFileActionsMenuForFile($fileName1);
 
 		$this->actor->find(self::renameMenuItem(), 2)->click();
 
@@ -322,7 +420,16 @@ class FileListContext implements Context, ActorAwareInterface {
 		// This should not be a problem, though, as the default behaviour is to
 		// bring the browser window to the foreground when switching to a
 		// different actor.
-		$this->actor->find(self::renameInputForFile($this->fileListAncestor, $fileName1), 10)->setValue($fileName2 . "\r");
+		$this->actor->find(self::renameInputForFile($this->fileListAncestor, $fileName1), 10)->setValue($fileName2);
+	}
+
+	/**
+	 * @Given I start the move or copy operation for :fileName
+	 */
+	public function iStartTheMoveOrCopyOperationFor($fileName) {
+		$this->openFileActionsMenuForFile($fileName);
+
+		$this->actor->find(self::moveOrCopyMenuItem(), 2)->click();
 	}
 
 	/**
@@ -331,7 +438,7 @@ class FileListContext implements Context, ActorAwareInterface {
 	public function iMarkAsFavorite($fileName) {
 		$this->iSeeThatIsNotMarkedAsFavorite($fileName);
 
-		$this->actor->find(self::fileActionsMenuButtonForFile($this->fileListAncestor, $fileName), 10)->click();
+		$this->openFileActionsMenuForFile($fileName);
 
 		$this->actor->find(self::addToFavoritesMenuItem(), 2)->click();
 	}
@@ -342,7 +449,7 @@ class FileListContext implements Context, ActorAwareInterface {
 	public function iUnmarkAsFavorite($fileName) {
 		$this->iSeeThatIsMarkedAsFavorite($fileName);
 
-		$this->actor->find(self::fileActionsMenuButtonForFile($this->fileListAncestor, $fileName), 10)->click();
+		$this->openFileActionsMenuForFile($fileName);
 
 		$this->actor->find(self::removeFromFavoritesMenuItem(), 2)->click();
 	}
@@ -351,7 +458,7 @@ class FileListContext implements Context, ActorAwareInterface {
 	 * @When I view :fileName in folder
 	 */
 	public function iViewInFolder($fileName) {
-		$this->actor->find(self::fileActionsMenuButtonForFile($this->fileListAncestor, $fileName), 10)->click();
+		$this->openFileActionsMenuForFile($fileName);
 
 		$this->actor->find(self::viewFileInFolderMenuItem(), 2)->click();
 	}
@@ -360,7 +467,7 @@ class FileListContext implements Context, ActorAwareInterface {
 	 * @When I delete :fileName
 	 */
 	public function iDelete($fileName) {
-		$this->actor->find(self::fileActionsMenuButtonForFile($this->fileListAncestor, $fileName), 10)->click();
+		$this->openFileActionsMenuForFile($fileName);
 
 		$this->actor->find(self::deleteMenuItem(), 2)->click();
 	}
@@ -380,7 +487,7 @@ class FileListContext implements Context, ActorAwareInterface {
 				$this->actor,
 				self::mainWorkingIcon($this->fileListAncestor),
 				$timeout = 10 * $this->actor->getFindTimeoutMultiplier())) {
-			PHPUnit_Framework_Assert::fail("The main working icon for the file list is still shown after $timeout seconds");
+			Assert::fail("The main working icon for the file list is still shown after $timeout seconds");
 		}
 	}
 
@@ -390,7 +497,7 @@ class FileListContext implements Context, ActorAwareInterface {
 	public function iSeeThatTheFileListIsCurrentlyIn($path) {
 		// The text of the breadcrumbs is the text of all the crumbs separated
 		// by white spaces.
-		PHPUnit_Framework_Assert::assertEquals(
+		Assert::assertEquals(
 			str_replace('/', ' ', $path), $this->actor->find(self::breadcrumbs($this->fileListAncestor), 10)->getText());
 	}
 
@@ -400,42 +507,90 @@ class FileListContext implements Context, ActorAwareInterface {
 	public function iSeeThatItIsNotPossibleToCreateNewFiles() {
 		// Once a file list is loaded the "Create" menu button is always in the
 		// DOM, so it is checked if it is visible or not.
-		PHPUnit_Framework_Assert::assertFalse($this->actor->find(self::createMenuButton($this->fileListAncestor))->isVisible());
+		Assert::assertFalse($this->actor->find(self::createMenuButton($this->fileListAncestor))->isVisible());
 	}
 
 	/**
 	 * @Then I see that the file list contains a file named :fileName
 	 */
 	public function iSeeThatTheFileListContainsAFileNamed($fileName) {
-		PHPUnit_Framework_Assert::assertNotNull($this->actor->find(self::rowForFile($this->fileListAncestor, $fileName), 10));
+		Assert::assertNotNull($this->actor->find(self::rowForFile($this->fileListAncestor, $fileName), 10));
+	}
+
+	/**
+	 * @Then I see that the file list does not contain a file named :fileName
+	 */
+	public function iSeeThatTheFileListDoesNotContainAFileNamed($fileName) {
+		if (!WaitFor::elementToBeEventuallyNotShown(
+				$this->actor,
+				self::rowForFile($this->fileListAncestor, $fileName),
+				$timeout = 10 * $this->actor->getFindTimeoutMultiplier())) {
+			Assert::fail("The file list still contains a file named $fileName after $timeout seconds");
+		}
 	}
 
 	/**
 	 * @Then I see that :fileName1 precedes :fileName2 in the file list
 	 */
 	public function iSeeThatPrecedesInTheFileList($fileName1, $fileName2) {
-		PHPUnit_Framework_Assert::assertNotNull($this->actor->find(self::rowForFilePreceding($this->fileListAncestor, $fileName1, $fileName2), 10));
+		Assert::assertNotNull($this->actor->find(self::rowForFilePreceding($this->fileListAncestor, $fileName1, $fileName2), 10));
+	}
+
+	/**
+	 * @Then I see that :fileName is not selected
+	 */
+	public function iSeeThatIsNotSelected($fileName) {
+		Assert::assertFalse($this->actor->find(self::selectionCheckboxInputForFile($this->fileListAncestor, $fileName), 10)->isChecked());
 	}
 
 	/**
 	 * @Then I see that :fileName is marked as favorite
 	 */
 	public function iSeeThatIsMarkedAsFavorite($fileName) {
-		PHPUnit_Framework_Assert::assertNotNull($this->actor->find(self::favoritedStateIconForFile($this->fileListAncestor, $fileName), 10));
+		Assert::assertNotNull($this->actor->find(self::favoritedStateIconForFile($this->fileListAncestor, $fileName), 10));
 	}
 
 	/**
 	 * @Then I see that :fileName is not marked as favorite
 	 */
 	public function iSeeThatIsNotMarkedAsFavorite($fileName) {
-		PHPUnit_Framework_Assert::assertNotNull($this->actor->find(self::notFavoritedStateIconForFile($this->fileListAncestor, $fileName), 10));
+		Assert::assertNotNull($this->actor->find(self::notFavoritedStateIconForFile($this->fileListAncestor, $fileName), 10));
 	}
 
 	/**
 	 * @Then I see that :fileName has unread comments
 	 */
 	public function iSeeThatHasUnreadComments($fileName) {
-		PHPUnit_Framework_Assert::assertTrue($this->actor->find(self::commentActionForFile($this->fileListAncestor, $fileName), 10)->isVisible());
+		Assert::assertTrue($this->actor->find(self::commentActionForFile($this->fileListAncestor, $fileName), 10)->isVisible());
 	}
 
+	private function waitForRowForFileToBeFullyOpaque($fileName) {
+		$actor = $this->actor;
+		$fileRowXpathExpression = $this->actor->find(self::rowForFile($this->fileListAncestor, $fileName), 10)->getWrappedElement()->getXpath();
+
+		$fileRowIsFullyOpaqueCallback = function () use ($actor, $fileRowXpathExpression) {
+			$opacity = $actor->getSession()->evaluateScript("return window.getComputedStyle(document.evaluate(\"" . $fileRowXpathExpression . "\", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue).opacity;");
+			if ($opacity === "1") {
+				return true;
+			}
+
+			return false;
+		};
+
+		if (!Utils::waitFor($fileRowIsFullyOpaqueCallback, $timeout = 2 * $this->actor->getFindTimeoutMultiplier(), $timeoutStep = 1)) {
+			Assert::fail("The row for file $fileName in file list is not fully opaque after $timeout seconds");
+		}
+	}
+
+	private function openFileActionsMenuForFile($fileName) {
+		// When a row is added to the file list the opacity of the file row is
+		// animated from transparent to fully opaque. As the file actions menu
+		// is a descendant of the row but overflows it when the row is not fully
+		// opaque clicks on the menu entries "fall-through" and are received
+		// instead by the rows behind. Therefore it should be waited until the
+		// row of the file is fully opaque before using the menu.
+		$this->waitForRowForFileToBeFullyOpaque($fileName);
+
+		$this->actor->find(self::fileActionsMenuButtonForFile($this->fileListAncestor, $fileName), 10)->click();
+	}
 }

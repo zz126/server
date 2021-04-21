@@ -28,23 +28,23 @@ use Test\TestCase;
 
 class RequestUserAgentTest extends TestCase {
 
-	/** @var IRequest|\PHPUnit_Framework_MockObject_MockObject */
+	/** @var IRequest|\PHPUnit\Framework\MockObject\MockObject */
 	protected $request;
 
 	/** @var RequestUserAgent */
 	protected $check;
 
-	public function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->request = $this->createMock(IRequest::class);
-		/** @var IL10N|\PHPUnit_Framework_MockObject_MockObject $l */
+		/** @var IL10N|\PHPUnit\Framework\MockObject\MockObject $l */
 		$l = $this->getMockBuilder(IL10N::class)
 			->disableOriginalConstructor()
 			->getMock();
 		$l->expects($this->any())
 			->method('t')
-			->willReturnCallback(function($string, $args) {
+			->willReturnCallback(function ($string, $args) {
 				return sprintf($string, $args);
 			});
 

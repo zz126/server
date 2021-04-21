@@ -18,7 +18,7 @@
  *    - TODO music upload button
  */
 
-/* global jQuery, humanFileSize, md5 */
+/* global jQuery, md5 */
 
 /**
  * File upload object
@@ -34,17 +34,38 @@
 OC.FileUpload = function(uploader, data) {
 	this.uploader = uploader;
 	this.data = data;
-	var path = '';
+	var basePath = '';
 	if (this.uploader.fileList) {
-		path = OC.joinPaths(this.uploader.fileList.getCurrentDirectory(), this.getFile().name);
-	} else {
-		path = this.getFile().name;
+		basePath = this.uploader.fileList.getCurrentDirectory();
 	}
+	var path = OC.joinPaths(basePath, this.getFile().relativePath || '', this.getFile().name);
 	this.id = 'web-file-upload-' + md5(path) + '-' + (new Date()).getTime();
 };
 OC.FileUpload.CONFLICT_MODE_DETECT = 0;
 OC.FileUpload.CONFLICT_MODE_OVERWRITE = 1;
 OC.FileUpload.CONFLICT_MODE_AUTORENAME = 2;
+
+// IE11 polyfill
+// TODO: nuke out of orbit as well as this legacy code
+if (!FileReader.prototype.readAsBinaryString) {
+	FileReader.prototype.readAsBinaryString = function(fileData) {
+		var binary = ''
+		var pt = this
+		var reader = new FileReader()
+		reader.onload = function (e) {
+			var bytes = new Uint8Array(reader.result)
+			var length = bytes.byteLength
+			for (var i = 0; i < length; i++) {
+				binary += String.fromCharCode(bytes[i])
+			}
+			// pt.result  - readonly so assign binary
+			pt.content = binary
+			$(pt).trigger('onload')
+		}
+		reader.readAsArrayBuffer(fileData)
+	}
+}
+
 OC.FileUpload.prototype = {
 
 	/**
@@ -194,7 +215,10 @@ OC.FileUpload.prototype = {
 		var data = this.data;
 		var file = this.getFile();
 
-		// it was a folder upload, so make sure the parent directory exists alrady
+		if (self.aborted === true) {
+			return $.Deferred().resolve().promise();
+		}
+		// it was a folder upload, so make sure the parent directory exists already
 		var folderPromise;
 		if (file.relativePath) {
 			folderPromise = this.uploader.ensureFolderExists(this.getFullPath());
@@ -240,11 +264,17 @@ OC.FileUpload.prototype = {
 			// TODO: if fails, it means same id already existed, need to retry
 		} else {
 			chunkFolderPromise = $.Deferred().resolve().promise();
+			var mtime = this.getFile().lastModified;
+			if (mtime) {
+				data.headers['X-OC-Mtime'] = mtime / 1000;
+			}
 		}
 
 		// wait for creation of the required directory before uploading
-		$.when(folderPromise, chunkFolderPromise).then(function() {
-			data.submit();
+		return Promise.all([folderPromise, chunkFolderPromise]).then(function() {
+			if (self.aborted !== true) {
+				data.submit();
+			}
 		}, function() {
 			self.abort();
 		});
@@ -295,6 +325,7 @@ OC.FileUpload.prototype = {
 		}
 		this.data.abort();
 		this.deleteUpload();
+		this.aborted = true;
 	},
 
 	/**
@@ -314,10 +345,10 @@ OC.FileUpload.prototype = {
 	 */
 	getResponse: function() {
 		var response = this.data.response();
-		if (response.errorThrown) {
+		if (response.errorThrown || response.textStatus === 'error') {
 			// attempt parsing Sabre exception is available
 			var xml = response.jqXHR.responseXML;
-			if (xml.documentElement.localName === 'error' && xml.documentElement.namespaceURI === 'DAV:') {
+			if (xml && xml.documentElement.localName === 'error' && xml.documentElement.namespaceURI === 'DAV:') {
 				var messages = xml.getElementsByTagNameNS('http://sabredav.org/ns', 'message');
 				var exceptions = xml.getElementsByTagNameNS('http://sabredav.org/ns', 'exception');
 				if (messages.length) {
@@ -429,6 +460,11 @@ OC.Uploader.prototype = _.extend({
 	fileList: null,
 
 	/**
+	 * @type OCA.Files.OperationProgressBar
+	 */
+	progressBar: null,
+
+	/**
 	 * @type OC.Files.Client
 	 */
 	filesClient: null,
@@ -523,7 +559,9 @@ OC.Uploader.prototype = _.extend({
 				self.filesClient.createDirectory(fullPath).always(function(status) {
 					// 405 is expected if the folder already exists
 					if ((status >= 200 && status < 300) || status === 405) {
-						self.trigger('createdfolder', fullPath);
+						if (status !== 405) {
+							self.trigger('createdfolder', fullPath);
+						}
 						deferred.resolve();
 						return;
 					}
@@ -547,7 +585,18 @@ OC.Uploader.prototype = _.extend({
 		var self = this;
 		_.each(uploads, function(upload) {
 			self._uploads[upload.data.uploadId] = upload;
-			upload.submit();
+		});
+		if (!self._uploading) {
+			self.totalToUpload = 0;
+		}
+		self.totalToUpload += _.reduce(uploads, function(memo, upload) { return memo+upload.getFile().size; }, 0);
+		var semaphore = new OCA.Files.Semaphore(5);
+		var promises = _.map(uploads, function(upload) {
+			return semaphore.acquire().then(function(){
+				return upload.submit().then(function(){
+					semaphore.release();
+				});
+			});
 		});
 	},
 
@@ -655,7 +704,7 @@ OC.Uploader.prototype = _.extend({
 				// when only replacement selected -> overwrite
 				self.onReplace(conflict.data('data'));
 			} else {
-				// when only original seleted -> skip
+				// when only original selected -> skip
 				// when none selected -> skip
 				self.onSkip(conflict.data('data'));
 			}
@@ -707,11 +756,11 @@ OC.Uploader.prototype = _.extend({
 	 *
 	 * @param {array} selection of files to upload
 	 * @param {object} callbacks - object with several callback methods
-	 * @param {function} callbacks.onNoConflicts
-	 * @param {function} callbacks.onSkipConflicts
-	 * @param {function} callbacks.onReplaceConflicts
-	 * @param {function} callbacks.onChooseConflicts
-	 * @param {function} callbacks.onCancel
+	 * @param {Function} callbacks.onNoConflicts
+	 * @param {Function} callbacks.onSkipConflicts
+	 * @param {Function} callbacks.onReplaceConflicts
+	 * @param {Function} callbacks.onChooseConflicts
+	 * @param {Function} callbacks.onCancel
 	 */
 	checkExistingFiles: function (selection, callbacks) {
 		var fileList = this.fileList;
@@ -757,14 +806,6 @@ OC.Uploader.prototype = _.extend({
 		callbacks.onNoConflicts(selection);
 	},
 
-	_hideProgressBar: function() {
-		var self = this;
-		$('#uploadprogresswrapper .stop').fadeOut();
-		$('#uploadprogressbar').fadeOut(function() {
-			self.$uploadEl.trigger(new $.Event('resized'));
-		});
-	},
-
 	_updateProgressBarOnUploadStop: function() {
 		if (this._pendingUploadDoneCount === 0) {
 			// All the uploads ended and there is no pending operation, so hide
@@ -778,17 +819,31 @@ OC.Uploader.prototype = _.extend({
 			return;
 		}
 
-		$('#uploadprogressbar .label .mobile').text(t('core', '…'));
-		$('#uploadprogressbar .label .desktop').text(t('core', 'Processing files …'));
+		this._setProgressBarText(t('files', 'Processing files …'), t('files', '…'));
 
 		// Nothing is being uploaded at this point, and the pending operations
 		// can not be cancelled, so the cancel button should be hidden.
-		$('#uploadprogresswrapper .stop').fadeOut();
+		this._hideCancelButton();
+	},
+
+	_hideProgressBar: function() {
+		this.progressBar.hideProgressBar();
+	},
+
+	_hideCancelButton: function() {
+		this.progressBar.hideCancelButton();
 	},
 
 	_showProgressBar: function() {
-		$('#uploadprogressbar').fadeIn();
-		this.$uploadEl.trigger(new $.Event('resized'));
+		this.progressBar.showProgressBar();
+	},
+
+	_setProgressBarValue: function(value) {
+		this.progressBar.setProgressBarValue(value);
+	},
+
+	_setProgressBarText: function(textDesktop, textMobile, title) {
+		this.progressBar.setProgressBarText(textDesktop, textMobile, title);
 	},
 
 	/**
@@ -824,6 +879,7 @@ OC.Uploader.prototype = _.extend({
 		options = options || {};
 
 		this.fileList = options.fileList;
+		this.progressBar = options.progressBar;
 		this.filesClient = options.filesClient || OC.Files.getClient();
 		this.davClient = new OC.Files.Client({
 			host: this.filesClient.getHost(),
@@ -837,7 +893,7 @@ OC.Uploader.prototype = _.extend({
 		this.$uploadEl = $uploadEl;
 
 		if ($uploadEl.exists()) {
-			$('#uploadprogresswrapper .stop').on('click', function() {
+			this.progressBar.on('cancel', function() {
 				self.cancelUploads();
 			});
 
@@ -845,8 +901,8 @@ OC.Uploader.prototype = _.extend({
 				type: 'PUT',
 				dropZone: options.dropZone, // restrict dropZone to content div
 				autoUpload: false,
-				sequentialUploads: true,
-				//singleFileUploads is on by default, so the data.files array will always have length 1
+				sequentialUploads: false,
+				limitConcurrentUploads: 10,
 				/**
 				 * on first add of every selection
 				 * - check all files of originalFiles array with files in dir
@@ -865,20 +921,11 @@ OC.Uploader.prototype = _.extend({
 				 */
 				add: function(e, data) {
 					self.log('add', e, data);
-					var that = $(this), freeSpace;
+					var that = $(this), freeSpace = 0;
 
 					var upload = new OC.FileUpload(self, data);
 					// can't link directly due to jQuery not liking cyclic deps on its ajax object
 					data.uploadId = upload.getId();
-
-					// we need to collect all data upload objects before
-					// starting the upload so we can check their existence
-					// and set individual conflict actions. Unfortunately,
-					// there is only one variable that we can use to identify
-					// the selection a data upload is part of, so we have to
-					// collect them in data.originalFiles turning
-					// singleFileUploads off is not an option because we want
-					// to gracefully handle server errors like 'already exists'
 
 					// create a container where we can store the data objects
 					if ( ! data.originalFiles.selection ) {
@@ -916,12 +963,13 @@ OC.Uploader.prototype = _.extend({
 
 					// in case folder drag and drop is not supported file will point to a directory
 					// http://stackoverflow.com/a/20448357
-					if ( ! file.type && file.size % 4096 === 0 && file.size <= 102400) {
+					if ( !file.type && file.size % 4096 === 0 && file.size <= 102400) {
 						var dirUploadFailure = false;
 						try {
 							var reader = new FileReader();
 							reader.readAsBinaryString(file);
-						} catch (NS_ERROR_FILE_ACCESS_DENIED) {
+						} catch (error) {
+							console.log(reader, error)
 							//file is a directory
 							dirUploadFailure = true;
 						}
@@ -944,13 +992,20 @@ OC.Uploader.prototype = _.extend({
 					}
 
 					// check free space
-					freeSpace = $('#free_space').val();
+					if (!self.fileList || upload.getTargetFolder() === self.fileList.getCurrentDirectory()) {
+						// Use global free space if there is no file list to check or the current directory is the target
+						freeSpace = $('#free_space').val()
+					} else if (upload.getTargetFolder().indexOf(self.fileList.getCurrentDirectory()) === 0) {
+						// Check subdirectory free space if file is uploaded there
+						var targetSubdir = upload._targetFolder.replace(self.fileList.getCurrentDirectory(), '')
+						freeSpace = parseInt(upload.uploader.fileList.getModelForFile(targetSubdir).get('quotaAvailableBytes'))
+					}
 					if (freeSpace >= 0 && selection.totalBytes > freeSpace) {
 						data.textStatus = 'notenoughspace';
 						data.errorThrown = t('files',
 							'Not enough free space, you are uploading {size1} but only {size2} is left', {
-							'size1': humanFileSize(selection.totalBytes),
-							'size2': humanFileSize($('#free_space').val())
+							'size1': OC.Util.humanFileSize(selection.totalBytes),
+							'size2': OC.Util.humanFileSize(freeSpace)
 						});
 					}
 
@@ -1015,7 +1070,7 @@ OC.Uploader.prototype = _.extend({
 
 					self.removeUpload(upload);
 
-					if (data.textStatus === 'abort') {
+					if (data.textStatus === 'abort' || data.errorThrown === 'abort') {
 						self.showUploadCancelMessage();
 					} else if (status === 412) {
 						// file already exists
@@ -1037,6 +1092,7 @@ OC.Uploader.prototype = _.extend({
 								message = response.message;
 							}
 						}
+						console.error(e, data, response)
 						OC.Notification.show(message || data.errorThrown, {type: 'error'});
 					}
 
@@ -1096,16 +1152,8 @@ OC.Uploader.prototype = _.extend({
 				// add progress handlers
 				fileupload.on('fileuploadstart', function(e, data) {
 					self.log('progress handle fileuploadstart', e, data);
-					$('#uploadprogresswrapper .stop').show();
-					$('#uploadprogresswrapper .label').show();
-					$('#uploadprogressbar').progressbar({value: 0});
-					$('#uploadprogressbar .ui-progressbar-value').
-						html('<em class="label inner"><span class="desktop">'
-							+ t('files', 'Uploading …')
-							+ '</span><span class="mobile">'
-							+ t('files', '…')
-							+ '</span></em>');
-					$('#uploadprogressbar').tooltip({placement: 'bottom'});
+					self._setProgressBarText(t('files', 'Uploading …'), t('files', '…'));
+					self._setProgressBarValue(0);
 					self._showProgressBar();
 					// initial remaining time variables
 					lastUpdate   = new Date().getTime();
@@ -1127,14 +1175,15 @@ OC.Uploader.prototype = _.extend({
 				});
 				fileupload.on('fileuploadprogressall', function(e, data) {
 					self.log('progress handle fileuploadprogressall', e, data);
-					var progress = (data.loaded / data.total) * 100;
+					var total = self.totalToUpload;
+					var progress = (data.loaded / total) * 100;
 					var thisUpdate = new Date().getTime();
 					var diffUpdate = (thisUpdate - lastUpdate)/1000; // eg. 2s
 					lastUpdate = thisUpdate;
 					var diffSize = data.loaded - lastSize;
 					lastSize = data.loaded;
 					diffSize = diffSize / diffUpdate; // apply timing factor, eg. 1MiB/2s = 0.5MiB/s, unit is byte per second
-					var remainingSeconds = ((data.total - data.loaded) / diffSize);
+					var remainingSeconds = ((total - data.loaded) / diffSize);
 					if(remainingSeconds >= 0) {
 						bufferTotal = bufferTotal - (buffer[bufferIndex]) + remainingSeconds;
 						buffer[bufferIndex] = remainingSeconds; //buffer to make it smoother
@@ -1155,16 +1204,12 @@ OC.Uploader.prototype = _.extend({
 						// show "Uploading ..." for durations longer than 4 hours
 						h = t('files', 'Uploading …');
 					}
-					$('#uploadprogressbar .label .mobile').text(h);
-					$('#uploadprogressbar .label .desktop').text(h);
-					$('#uploadprogressbar').attr('original-title',
-						t('files', '{loadedSize} of {totalSize} ({bitrate})' , {
-							loadedSize: humanFileSize(data.loaded),
-							totalSize: humanFileSize(data.total),
-							bitrate: humanFileSize(data.bitrate / 8) + '/s'
-						})
-					);
-					$('#uploadprogressbar').progressbar('value', progress);
+					self._setProgressBarText(h, h, t('files', '{loadedSize} of {totalSize} ({bitrate})' , {
+							loadedSize: OC.Util.humanFileSize(data.loaded),
+							totalSize: OC.Util.humanFileSize(total),
+							bitrate: OC.Util.humanFileSize(data.bitrate / 8) + '/s'
+						}));
+					self._setProgressBarValue(progress);
 					self.trigger('progressall', e, data);
 				});
 				fileupload.on('fileuploadstop', function(e, data) {
@@ -1268,6 +1313,8 @@ OC.Uploader.prototype = _.extend({
 							self.cancelUploads();
 						} else if (status === 409) {
 							OC.Notification.show(message || t('files', 'Target folder does not exist any more'), {type: 'error'});
+						} else if (status === 403) {
+							OC.Notification.show(message || t('files', 'Operation is blocked by access control'), {type: 'error'});
 						} else {
 							OC.Notification.show(message || t('files', 'Error when assembling chunks, status code {status}', {status: status}), {type: 'error'});
 						}

@@ -2,6 +2,7 @@
 /**
  * @copyright 2016 Roeland Jago Douma <roeland@famdouma.nl>
  *
+ * @author Christoph Wurst <christoph@winzerhof-wurst.at>
  * @author Roeland Jago Douma <roeland@famdouma.nl>
  *
  * @license GNU AGPL version 3 or any later version
@@ -17,13 +18,14 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 namespace OC\AppFramework\OCS;
 
-use OCP\API;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\OCSController;
 
 class V1Response extends BaseResponse {
 
@@ -34,8 +36,8 @@ class V1Response extends BaseResponse {
 	 * @return int
 	 */
 	public function getStatus() {
-		$status  = parent::getStatus();
-		if ($status === Http::STATUS_FORBIDDEN || $status === API::RESPOND_UNAUTHORISED) {
+		$status = parent::getStatus();
+		if ($status === Http::STATUS_FORBIDDEN || $status === OCSController::RESPOND_UNAUTHORISED) {
 			return Http::STATUS_UNAUTHORIZED;
 		}
 
